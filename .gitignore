@@ -1,0 +1,10 @@
+﻿bin/
+obj/
+.vs/
+*.user
+*.suo
+*.csv
+Ảnh các lỗi C#/
+*.db
+database-connection.txt
+
