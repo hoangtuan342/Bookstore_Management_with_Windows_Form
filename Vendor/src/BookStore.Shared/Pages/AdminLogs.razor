@@ -1,0 +1,118 @@
+@page "/admin/logs"
+@layout AdminLayout
+@using BookStore.Shared.Models
+@using BookStore.Shared.Security
+@using BookStore.Shared.Services
+@inject StoreApiClient StoreApi
+@inject ManagerApiClient ManagerApi
+@inject NavigationManager Navigation
+
+<PageTitle>Nhật ký hệ thống | Trang Sách</PageTitle>
+
+<main class="page-shell admin-page">
+    @if (!loaded)
+    {
+        <div class="empty-state"><p>Đang tải nhật ký hệ thống...</p></div>
+    }
+    else if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="admin-error"><h2>Không thể tải nhật ký</h2><p>@error</p></div>
+    }
+    else
+    {
+        <div class="admin-heading"><div><p class="eyebrow">KIỂM SOÁT HỆ THỐNG</p><h1>Nhật ký hoạt động</h1><p>Lượt xem khu vực quản lý, thao tác dữ liệu và lần thử đăng nhập gần nhất.</p></div><button class="table-action" @onclick="LoadAsync">Làm mới</button></div>
+        <section class="admin-panel">
+            <div class="admin-panel-heading"><div><p class="eyebrow">TỐI ĐA 500 DÒNG GẦN NHẤT</p><h2>@FilteredLogs.Count hoạt động</h2></div><input class="admin-log-search" aria-label="Lọc nhật ký" placeholder="Tìm theo người dùng, khu vực, đường dẫn..." @bind="search" @bind:event="oninput" /></div>
+            @if (FilteredLogs.Count == 0)
+            {
+                <div class="admin-empty">Không tìm thấy hoạt động phù hợp.</div>
+            }
+            else
+            {
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>THỜI GIAN</th><th>NGƯỜI THỰC HIỆN</th><th>MÃ NGƯỜI THAO TÁC</th><th>VAI TRÒ</th><th>THAO TÁC</th><th>KHU VỰC</th><th>KẾT QUẢ</th><th>ĐỊA CHỈ IP</th></tr></thead><tbody>
+                @foreach (var item in FilteredLogs)
+                {
+                    <tr><td>@item.OccurredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td><td><strong>@ActorLabel(item)</strong></td><td>@ActorCodeLabel(item)</td><td>@RoleLabel(item.ActorRole)</td><td>@ActionLabel(item.Action)</td><td>@AreaLabel(item.Area)</td><td><span class="@(item.StatusCode is >= 200 and < 300 ? "audit-status-ok" : "audit-status-failed")">@item.StatusCode</span></td><td>@(item.IpAddress ?? "—")</td></tr>
+                }
+                </tbody></table></div>
+            }
+        </section>
+        <p class="report-note">Nhật ký ghi nhận lượt xem, thao tác thay đổi dữ liệu trong khu vực quản lý và kết quả đăng nhập; không lưu mật khẩu. Các bản ghi cũ không có định danh được ghi rõ vì phiên bản trước chưa lưu mã tài khoản.</p>
+    }
+</main>
+
+@code {
+    private List<ManagerAuditLog> logs = [];
+    private bool loaded;
+    private string? error;
+    private string search = string.Empty;
+    private IReadOnlyList<ManagerAuditLog> FilteredLogs => string.IsNullOrWhiteSpace(search)
+        ? logs
+        : logs.Where(item => $"{item.ActorName} {item.ActorCode} {item.ActorRole} {item.Action} {item.Area} {item.Resource} {item.StatusCode} {item.IpAddress}".Contains(search.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            var profile = await StoreApi.GetProfileAsync();
+            if (profile.Role != StaffRoles.Manager)
+            {
+                Navigation.NavigateTo(StaffPermissions.HomePath(profile.Role));
+                return;
+            }
+            await LoadAsync();
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            error = exception.Message;
+            loaded = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            logs = (await ManagerApi.GetAuditLogsAsync()).ToList();
+            error = null;
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            error = exception.Message;
+        }
+        loaded = true;
+        StateHasChanged();
+    }
+
+    private static bool IsLegacyUnknown(ManagerAuditLog item) => item.ActorName == "Chưa xác thực" && item.ActorRole == "Unknown" && item.ActorCode is null;
+    private static string ActorLabel(ManagerAuditLog item) => IsLegacyUnknown(item) ? "Bản ghi cũ · không lưu tài khoản" : item.ActorName;
+    private static string ActorCodeLabel(ManagerAuditLog item) => IsLegacyUnknown(item) ? "Không có dữ liệu" : item.ActorCode ?? "—";
+    private static string RoleLabel(string role) => role == "Unknown" ? "Chưa ghi nhận" : StaffPermissions.EmployeeRoles.FirstOrDefault(item => item.Name == role).Label ?? role;
+    private static string AreaLabel(string area) => area switch
+    {
+        "Đăng nhập" => "Tài khoản",
+        "books" => "Sách",
+        "receipts" or "inventory" => "Nhập hàng",
+        "orders" => "Đơn hàng",
+        "promotions" or "vouchers" => "Khuyến mãi",
+        "categories" or "authors" or "publishers" => "Danh mục sách",
+        "customers" => "Khách hàng",
+        "employees" => "Nhân viên",
+        "dashboard" => "Tổng quan",
+        "reports" => "Báo cáo",
+        "lookups" => "Dữ liệu danh mục",
+        _ => area
+    };
+    private static string ActionLabel(string action) => action switch
+    {
+        "VIEW" => "Xem",
+        "LOGIN" => "Đăng nhập",
+        "POST" => "Tạo mới",
+        "PUT" => "Cập nhật",
+        "PATCH" => "Cập nhật",
+        "DELETE" => "Xóa / hủy",
+        _ => action
+    };
+}

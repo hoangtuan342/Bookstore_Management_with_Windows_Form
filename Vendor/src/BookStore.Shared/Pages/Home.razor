@@ -1,0 +1,56 @@
+@page "/"
+@using BookStore.Shared.Models
+@using BookStore.Shared.Services
+@inject BookCatalogClient CatalogClient
+
+<PageTitle>Trang Sách | Mở ra một thế giới mới</PageTitle>
+
+<main>
+    @if (!string.IsNullOrWhiteSpace(loadError))
+    {
+        <div class="api-warning page-shell">@loadError</div>
+    }
+    <section class="hero page-shell">
+        <div class="hero-copy">
+            <span class="eyebrow"><span class="eyebrow-dot"></span> MỘT GÓC NHỎ DÀNH CHO NGƯỜI YÊU SÁCH</span>
+            <h1>Mỗi cuốn sách,<br /><em>một thế giới mới.</em></h1>
+            <p>Chọn một cuốn sách hay, dành cho mình một khoảng lặng và bắt đầu chuyến đi của riêng bạn.</p>
+            <div class="hero-actions"><a class="button-primary" href="/books">Khám phá sách <span>↗</span></a><a class="text-link" href="#featured">Xem sách nổi bật <span>↓</span></a></div>
+            <div class="hero-note"><span class="note-icon">✳</span><span><strong>Đọc chậm, sống sâu</strong><br />Một trang sách mỗi ngày cũng là một khởi đầu đẹp.</span></div>
+        </div>
+        <div class="hero-art" aria-label="Những cuốn sách được xếp thành một góc đọc ấm áp">
+            <div class="sun-shape"></div><div class="plant plant-one">✳</div><div class="plant plant-two">✦</div>
+            <div class="book-stack"><div class="hero-book hero-book-back"><span>THE<br />QUIET<br />MIND</span></div><div class="hero-book hero-book-mid"><span>NHỮNG<br />NGÀY<br />THƠ ẤU</span></div><div class="hero-book hero-book-front"><small>TRANG SÁCH</small><strong>ĐI TÌM<br />MỘT<br />BÌNH YÊN</strong><i>Một câu chuyện để trở về</i></div></div>
+            <div class="art-caption"><span>01 / 06</span><span>Gợi ý cho một ngày dịu dàng</span></div>
+        </div>
+    </section>
+
+    <section class="featured-section page-shell" id="featured">
+        <div class="section-heading"><div><p class="eyebrow">ĐƯỢC BẠN ĐỌC YÊU THÍCH</p><h2>Sách nổi bật</h2></div><a class="text-link" href="/books">Xem tất cả sách <span>↗</span></a></div>
+        <div class="book-grid featured-grid">
+            @foreach (var book in books.Take(4))
+            {
+                <BookCard Book="book" />
+            }
+        </div>
+    </section>
+
+    <section class="quote-band"><div class="page-shell quote-inner"><span class="quote-mark">“</span><p>Đọc sách là cách ta sống thêm nhiều cuộc đời<br />mà không phải rời khỏi chỗ ngồi.</p><span class="quote-byline">— MỘT NGƯỜI BẠN ĐỌC</span></div></section>
+</main>
+
+@code {
+    private List<BookItem> books = [];
+    private string? loadError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            books = (await CatalogClient.GetBooksAsync()).ToList();
+        }
+        catch (HttpRequestException)
+        {
+            loadError = "Chưa kết nối được máy chủ sách. Hãy chạy BookStore.Api rồi tải lại trang.";
+        }
+    }
+}

@@ -1,0 +1,138 @@
+@page "/orders"
+@using BookStore.Shared.Models
+@using BookStore.Shared.Services
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<PageTitle>Đơn hàng của tôi | Trang Sách</PageTitle>
+
+<main class="page-shell commerce-page">
+    <div class="breadcrumbs"><a href="/">Trang chủ</a><span>/</span><span>Đơn hàng</span></div>
+    <p class="eyebrow">MỖI ĐƠN HÀNG LÀ MỘT CHUYẾN ĐI MỚI</p>
+    <h1 class="commerce-title">Đơn hàng của tôi</h1>
+
+    @if (!string.IsNullOrWhiteSpace(placedOrderId))
+    {
+        <div class="order-notice">Đặt hàng thành công. Mã đơn của bạn: <strong>@placedOrderId</strong>. Cửa hàng sẽ sớm liên hệ xác nhận.</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(actionMessage))
+    {
+        <div class="form-message @(actionSucceeded ? "success" : "error")">@actionMessage</div>
+    }
+
+    @if (!loaded)
+    {
+        <div class="empty-state"><p>Đang tải đơn hàng...</p></div>
+    }
+    else if (!signedIn)
+    {
+        <div class="empty-state"><h2>Đăng nhập để xem đơn hàng</h2><a class="button-primary" href="/account">Đăng nhập <span>↗</span></a></div>
+    }
+    else if (orders.Count == 0)
+    {
+        <div class="empty-state"><h2>Bạn chưa có đơn hàng nào</h2><p>Những cuốn sách yêu thích đang chờ bạn khám phá.</p><a class="button-primary" href="/books">Khám phá sách <span>↗</span></a></div>
+    }
+    else
+    {
+        <div class="order-list">
+            @foreach (var order in orders)
+            {
+                <article class="order-card">
+                    <div class="order-card-head"><div><h2>Đơn @order.Id</h2><p>@order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · @PaymentName(order.PaymentMethod)</p></div><span class="status-pill">@StatusName(order.Status)</span></div>
+                    <div class="order-card-lines">
+                        @foreach (var line in order.Lines)
+                        {
+                            <div class="order-card-line"><span>@line.Title <strong>×@line.Quantity</strong></span><span>@line.LineTotal.ToString("N0")₫</span></div>
+                        }
+                    </div>
+                    <div class="order-card-total"><span>Thanh toán: @PaymentStatusName(order.PaymentStatus) · Giảm @order.DiscountAmount.ToString("N0")₫</span><strong>@order.TotalAmount.ToString("N0")₫</strong></div>
+                    <p>Giao đến: @order.ShippingAddress · @order.ReceiverPhone</p>
+                    @if (order.Status is "Pending" or "Confirmed")
+                    {
+                        <div class="admin-order-actions"><button class="table-action" @onclick="() => CancelOrderAsync(order)">Hủy đơn</button></div>
+                    }
+                </article>
+            }
+        </div>
+    }
+</main>
+
+@code {
+    private List<StoreOrder> orders = [];
+    private bool loaded;
+    private bool signedIn;
+    private string? placedOrderId;
+    private string? actionMessage;
+    private bool actionSucceeded;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var query = Navigation.ToAbsoluteUri(Navigation.Uri).Query;
+        var marker = "placed=";
+        var markerIndex = query.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        if (markerIndex >= 0)
+        {
+            var encodedId = query[(markerIndex + marker.Length)..].Split('&')[0];
+            placedOrderId = Uri.UnescapeDataString(encodedId);
+        }
+
+        signedIn = !string.IsNullOrWhiteSpace(await StoreApi.GetCurrentTokenAsync());
+        if (signedIn)
+        {
+            try
+            {
+                orders = (await StoreApi.GetMyOrdersAsync()).ToList();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                signedIn = false;
+            }
+        }
+
+        loaded = true;
+        StateHasChanged();
+    }
+
+    private async Task CancelOrderAsync(StoreOrder order)
+    {
+        try
+        {
+            await StoreApi.CancelMyOrderAsync(order.Id);
+            orders = (await StoreApi.GetMyOrdersAsync()).ToList();
+            actionMessage = order.PaymentStatus == "Paid"
+                ? $"Đã hủy đơn {order.Id}. Khoản thanh toán đang chờ cửa hàng ghi nhận hoàn tiền."
+                : $"Đã hủy đơn {order.Id}. Tồn kho và lượt voucher đã được hoàn lại.";
+            actionSucceeded = true;
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            actionMessage = exception.Message; actionSucceeded = false;
+        }
+    }
+
+    private static string StatusName(string status) => status switch
+    {
+        "Pending" => "Chờ xác nhận",
+        "Confirmed" => "Đã xác nhận",
+        "Shipping" => "Đang giao",
+        "Completed" => "Hoàn tất",
+        "Cancelled" => "Đã hủy",
+        _ => status
+    };
+
+    private static string PaymentName(string method) => method == "CashOnDelivery" ? "Thanh toán khi nhận hàng" : "Chuyển khoản";
+    private static string PaymentStatusName(string status) => status switch
+    {
+        "Paid" => "Đã thanh toán",
+        "RefundPending" => "Chờ hoàn tiền",
+        "Refunded" => "Đã hoàn tiền",
+        "AwaitingPayment" => "Chờ thanh toán",
+        "Cancelled" => "Không còn khoản phải trả",
+        _ => "Chưa thanh toán"
+    };
+}

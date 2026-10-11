@@ -1,0 +1,54 @@
+@using BookStore.Shared.Models
+@using BookStore.Shared.Services
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<article class="book-card">
+    <div class="book-cover @Book.CoverStyle">
+        <span class="cover-mark">TRANG<br />SÁCH</span>
+        <span class="cover-label">@Book.Label</span>
+        <span class="cover-title">@Book.Title</span>
+        <span class="cover-author">@Book.Author</span>
+    </div>
+    <div class="book-info">
+        <span class="book-category">@Book.Category</span>
+        <h2>@Book.Title</h2>
+        <p class="book-author">@Book.Author</p>
+        <div class="book-bottom"><strong>@Book.Price.ToString("N0")₫</strong><button class="add-button" title="Thêm @Book.Title vào giỏ" aria-label="Thêm @Book.Title vào giỏ" disabled="@(Book.AvailableStock < 1)" @onclick="AddToCartAsync">+</button></div>
+        <span class="stock-note">@(Book.AvailableStock > 0 ? $"Còn {Book.AvailableStock} cuốn" : "Tạm hết hàng")</span>
+        @if (!string.IsNullOrWhiteSpace(message))
+        {
+            <span class="card-message">@message</span>
+        }
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public BookItem Book { get; set; } = null!;
+
+    private string? message;
+
+    private async Task AddToCartAsync()
+    {
+        message = null;
+        var token = await StoreApi.GetCurrentTokenAsync();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            Navigation.NavigateTo("/account?returnUrl=/cart");
+            return;
+        }
+
+        try
+        {
+            var cart = await StoreApi.GetCartAsync();
+            var currentQuantity = cart.FirstOrDefault(item => item.BookId == Book.Id)?.Quantity ?? 0;
+            await StoreApi.SetCartQuantityAsync(Book.Id, currentQuantity + 1);
+            message = "Đã thêm vào giỏ";
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or UnauthorizedAccessException or HttpRequestException)
+        {
+            message = exception.Message;
+        }
+    }
+}

@@ -1,0 +1,37 @@
+@page "/admin/profile"
+@layout AdminLayout
+@using BookStore.Shared.Models
+@using BookStore.Shared.Services
+@using BookStore.Shared.Security
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<PageTitle>Hồ sơ quản trị | Trang Sách</PageTitle>
+<main class="page-shell profile-page">
+    <div class="profile-heading"><p class="eyebrow">TÀI KHOẢN QUẢN LÝ</p><h1>Hồ sơ cá nhân</h1><p>Thông tin tài khoản quản trị đang đăng nhập.</p></div>
+    @if (!loaded) { <div class="profile-loading">Đang tải hồ sơ…</div> }
+    else if (!string.IsNullOrWhiteSpace(error)) { <div class="profile-error">@error</div> }
+    else if (profile is not null)
+    {
+        <ProfileCard Profile="profile" />
+        <div class="profile-actions"><a class="button-primary" href="/admin">Về trang tổng quan <span>↗</span></a></div>
+    }
+</main>
+
+@code {
+    private StoreProfile? profile;
+    private bool loaded;
+    private string? error;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        var role = await StoreApi.GetCurrentRoleAsync();
+        if (!StaffPermissions.CanAccess(role, "profile")) { Navigation.NavigateTo(StaffPermissions.HomePath(role)); return; }
+
+        try { profile = await StoreApi.GetProfileAsync(); }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or InvalidOperationException or HttpRequestException) { error = ex.Message; }
+        loaded = true;
+        StateHasChanged();
+    }
+}

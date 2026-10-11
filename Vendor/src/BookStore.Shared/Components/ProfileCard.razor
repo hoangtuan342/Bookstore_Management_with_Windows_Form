@@ -1,0 +1,22 @@
+@using BookStore.Shared.Models
+
+<section class="profile-card">
+    <div class="profile-card-head">
+        <span class="profile-card-avatar">@Initial</span>
+        <div><h2>@Profile.FullName</h2><span class="profile-role">@(Profile.Role == "Manager" ? "QUẢN TRỊ" : "KHÁCH HÀNG")</span></div>
+    </div>
+    <div class="profile-fields">
+        <div class="profile-field"><span>Tên đăng nhập</span><strong>@Profile.UserName</strong></div>
+        <div class="profile-field"><span>Email</span><strong>@Profile.Email</strong></div>
+        <div class="profile-field"><span>Mã hồ sơ</span><strong>@Profile.ProfileId</strong></div>
+        <div class="profile-field"><span>Số điện thoại</span><strong>@ValueOrDash(Profile.PhoneNumber)</strong></div>
+        <div class="profile-field"><span>Địa chỉ</span><strong>@ValueOrDash(Profile.Address)</strong></div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public StoreProfile Profile { get; set; } = null!;
+
+    private string Initial => string.IsNullOrWhiteSpace(Profile.FullName) ? "T" : Profile.FullName.Trim()[0].ToString().ToUpperInvariant();
+    private static string ValueOrDash(string? value) => string.IsNullOrWhiteSpace(value) ? "Chưa cập nhật" : value;
+}

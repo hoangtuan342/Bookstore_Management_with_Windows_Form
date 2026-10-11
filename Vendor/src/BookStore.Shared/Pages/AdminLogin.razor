@@ -1,0 +1,62 @@
+@page "/admin/login"
+@using System.ComponentModel.DataAnnotations
+@using BookStore.Shared.Services
+@using BookStore.Shared.Security
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<PageTitle>Đăng nhập quản lý | Trang Sách</PageTitle>
+
+<main class="page-shell account-page">
+    <div class="account-card">
+        <div class="account-intro"><span class="account-icon">t.</span><p class="eyebrow">KHU VỰC NHÂN VIÊN</p><h1>Đăng nhập quản lý</h1><p>Dành riêng cho tài khoản nhân viên được cấp quyền trong hệ thống.</p></div>
+        <EditForm Model="form" OnValidSubmit="LoginAsync" class="account-form">
+            <DataAnnotationsValidator />
+            <label>Tên đăng nhập hoặc email<InputText @bind-Value="form.UserName" autocomplete="username" placeholder="Tên đăng nhập" /></label>
+            <ValidationMessage For="() => form.UserName" />
+            <label>Mật khẩu<InputText @bind-Value="form.Password" type="password" autocomplete="current-password" placeholder="Mật khẩu" /></label>
+            <ValidationMessage For="() => form.Password" />
+            @if (!string.IsNullOrWhiteSpace(message))
+            {
+                <div class="form-message @(succeeded ? "success" : "error")">@message</div>
+            }
+            <button class="button-primary account-submit" type="submit" disabled="@busy">@(busy ? "Đang xác thực..." : "Đăng nhập quản lý") <span>↗</span></button>
+        </EditForm>
+        <a class="account-switch" href="/account">Đăng nhập hoặc đăng ký khách hàng</a>
+    </div>
+</main>
+
+@code {
+    private readonly LoginForm form = new();
+    private bool busy;
+    private bool succeeded;
+    private string? message;
+
+    private async Task LoginAsync()
+    {
+        busy = true;
+        succeeded = false;
+        message = null;
+        try
+        {
+            var result = await StoreApi.AdminLoginAsync(form.UserName, form.Password);
+            succeeded = result.Succeeded;
+            message = result.Message;
+            if (result.Succeeded) Navigation.NavigateTo(StaffPermissions.HomePath(result.Role));
+        }
+        catch (HttpRequestException exception)
+        {
+            message = "Không kết nối được máy chủ. Hãy kiểm tra API tại http://localhost:5017. " + exception.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private sealed class LoginForm
+    {
+        [Required, StringLength(100, MinimumLength = 3)] public string UserName { get; set; } = string.Empty;
+        [Required, StringLength(100, MinimumLength = 8)] public string Password { get; set; } = string.Empty;
+    }
+}

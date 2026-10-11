@@ -1,0 +1,42 @@
+@using System.Globalization
+@using BookStore.Shared.Models
+
+<div class="report-donut-layout">
+    <svg class="report-donut-chart" viewBox="0 0 220 220" role="img" aria-label="@AriaLabel">
+        <circle cx="110" cy="110" r="68" class="donut-track" />
+        @foreach (var segment in Segments.Where(item => item.Value > 0))
+        {
+            var length = segment.Value * Circumference / Total;
+            <circle cx="110" cy="110" r="68" fill="none" stroke="@segment.Color" stroke-width="22" stroke-dasharray="@Svg(length) @Svg(Circumference - length)" stroke-dashoffset="@Svg(-Offset(segment))" transform="rotate(-90 110 110)">
+                <title>@segment.Label: @segment.Value</title>
+            </circle>
+        }
+        <text x="110" y="106" text-anchor="middle" class="donut-total">@Total</text>
+        <text x="110" y="128" text-anchor="middle" class="donut-caption">@CenterCaption</text>
+    </svg>
+    <div class="report-donut-legend">
+        @foreach (var segment in Segments)
+        {
+            <div><i style="background:@segment.Color"></i><span>@segment.Label</span><strong>@segment.Value</strong></div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSegment> Segments { get; set; } = [];
+    [Parameter] public string CenterCaption { get; set; } = "mục";
+    [Parameter] public string AriaLabel { get; set; } = "Biểu đồ phân bổ";
+    private int Total => Segments.Sum(item => item.Value);
+    private double Circumference => 2d * Math.PI * 68d;
+    private double Offset(ChartSegment segment)
+    {
+        var offset = 0d;
+        foreach (var item in Segments)
+        {
+            if (ReferenceEquals(item, segment) || item == segment) break;
+            offset += Total == 0 ? 0 : item.Value * Circumference / Total;
+        }
+        return offset;
+    }
+    private static string Svg(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+}

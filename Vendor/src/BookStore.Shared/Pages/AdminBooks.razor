@@ -1,0 +1,205 @@
+@page "/admin/books"
+@layout AdminLayout
+@using System.ComponentModel.DataAnnotations
+@using BookStore.Shared.Models
+@using BookStore.Shared.Services
+@using BookStore.Shared.Security
+@inject ManagerApiClient ManagerApi
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<PageTitle>Quản lý sách | Trang Sách</PageTitle>
+
+<main class="page-shell admin-page">
+    @if (!loaded)
+    {
+        <div class="empty-state"><p>Đang tải danh mục quản lý...</p></div>
+    }
+    else if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="admin-error"><h2>Không thể mở danh mục quản lý</h2><p>@error</p><a class="button-primary" href="/admin/login">Đăng nhập quản lý <span>↗</span></a></div>
+    }
+    else
+    {
+        <div class="admin-heading"><div><p class="eyebrow">QUẢN LÝ DANH MỤC</p><h1>Sách & tồn kho</h1><p>Thêm đầu sách và kiểm soát trạng thái hiển thị.</p></div>@if (canManageBooks) { <button class="button-primary admin-add-button" @onclick="() => showForm = !showForm">@(showForm ? "Đóng biểu mẫu" : "+ Thêm sách")</button> }</div>
+
+        <section class="admin-panel">
+            <div class="admin-panel-heading"><div><p class="eyebrow">PHÂN BỔ TỒN KHO</p><h2>Số lượng sách theo thể loại</h2></div></div>
+            @if (StockByCategory.Count == 0) { <div class="admin-empty">Chưa có dữ liệu tồn kho.</div> }
+            else
+            {
+                @foreach (var item in StockByCategory)
+                {
+                    <div class="report-breakdown-row"><div class="report-breakdown-copy"><strong>@item.Category</strong><span>@item.Quantity cuốn · @item.BookCount đầu sách · @item.LowStock sắp hết</span></div><div class="report-status-track"><i class="inventory-fill" style="width:@BarWidth(item.Quantity)%"></i></div></div>
+                }
+            }
+        </section>
+
+        @if (showForm && canManageBooks)
+        {
+            <section class="admin-panel admin-form-panel"><div class="admin-panel-heading"><div><p class="eyebrow">TẠO ĐẦU SÁCH</p><h2>Thông tin sách</h2></div></div>
+                <EditForm Model="form" OnValidSubmit="SaveBookAsync" class="admin-book-form">
+                    <DataAnnotationsValidator />
+                    <label>Tên sách<input @bind="form.Title" /></label><ValidationMessage For="() => form.Title" />
+                    <label>Giá bán (₫)<input type="number" min="1" step="1000" @bind="form.SalePrice" /></label><ValidationMessage For="() => form.SalePrice" />
+                    <label>Đơn vị<input @bind="form.Unit" /></label><ValidationMessage For="() => form.Unit" />
+                    <label>Thể loại<select @bind="form.CategoryId"><option value="">Chọn thể loại</option>@foreach (var category in lookups!.Categories){<option value="@category.Id">@category.Name</option>}</select></label><ValidationMessage For="() => form.CategoryId" />
+                    <label>Nhà xuất bản<select @bind="form.PublisherId"><option value="">Chưa chọn</option>@foreach (var publisher in lookups!.Publishers){<option value="@publisher.Id">@publisher.Name</option>}</select></label>
+                    <fieldset class="author-picker"><legend>Tác giả</legend>@foreach (var author in lookups!.Authors){<label><input type="checkbox" checked="@selectedAuthorIds.Contains(author.Id)" @onchange="e => ToggleAuthor(author.Id, e.Value is true)" /> @author.Name</label>}</fieldset>
+                    @if (!string.IsNullOrWhiteSpace(formMessage))
+                    {
+                        <div class="form-message @(formSucceeded ? "success" : "error")">@formMessage</div>
+                    }
+                    <button class="button-primary" type="submit" disabled="@busy">@(busy ? "Đang lưu..." : editBookId is null ? "Tạo đầu sách" : "Lưu thay đổi") <span>↗</span></button>
+                    @if (editBookId is not null) { <button type="button" class="text-button" @onclick="ResetForm">Hủy sửa</button> }
+                </EditForm>
+                <p class="checkout-note">Sách mới bắt đầu với tồn kho 0. Tạo phiếu nhập để ghi nhận số lượng và giá nhập.</p>
+            </section>
+        }
+
+        <section class="admin-panel"><div class="admin-panel-heading"><div><p class="eyebrow">DANH MỤC HIỆN CÓ</p><h2>@books.Count đầu sách</h2></div></div>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>TÊN SÁCH</th><th>TÁC GIẢ</th><th>THỂ LOẠI</th><th>TỒN KHO</th><th>GIÁ BÁN</th><th>TRẠNG THÁI</th>@if (canManageBooks) { <th></th> }</tr></thead><tbody>
+            @foreach (var book in books)
+            {
+                <tr><td><strong>@book.Title</strong><small class="table-subtitle">@book.Id</small></td><td>@book.Author</td><td>@book.Category</td><td>@book.AvailableStock</td><td>@book.Price.ToString("N0")₫</td><td>@(book.Label == "ĐÃ ẨN" ? "Đã ẩn" : "Đang bán")</td>@if (canManageBooks) { <td><button class="table-action" @onclick="() => EditBookAsync(book.Id)">Sửa</button> <button class="table-action" @onclick="() => ToggleBookAsync(book)">@(book.Label == "ĐÃ ẨN" ? "Hiện lại" : "Ẩn sách")</button></td> }</tr>
+            }
+            </tbody></table></div>
+        </section>
+    }
+</main>
+
+@code {
+    private readonly NewBookForm form = new();
+    private List<BookItem> books = [];
+    private ManagerLookups? lookups;
+    private bool loaded;
+    private bool canManageBooks;
+    private bool showForm;
+    private bool busy;
+    private bool formSucceeded;
+    private string? error;
+    private string? formMessage;
+    private string? editBookId;
+    private readonly HashSet<int> selectedAuthorIds = [];
+    private IReadOnlyList<(string Category, int Quantity, int BookCount, int LowStock)> StockByCategory => books
+        .GroupBy(book => string.IsNullOrWhiteSpace(book.Category) ? "Chưa phân loại" : book.Category)
+        .Select(group => (group.Key, group.Sum(book => book.AvailableStock), group.Count(), group.Count(book => book.AvailableStock <= 5)))
+        .OrderByDescending(item => item.Item2).ToList();
+    private int BarWidth(int quantity) => StockByCategory.Count == 0 || StockByCategory.Max(item => item.Quantity) == 0 ? 0 : Math.Max(3, quantity * 100 / StockByCategory.Max(item => item.Quantity));
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        StoreProfile profile;
+        try
+        {
+            profile = await StoreApi.GetProfileAsync();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Navigation.NavigateTo("/admin/login");
+            return;
+        }
+
+        if (!StaffPermissions.CanAccess(profile.Role, "books"))
+        {
+            Navigation.NavigateTo(StaffPermissions.HomePath(profile.Role));
+            return;
+        }
+        canManageBooks = profile.Role is StaffRoles.Manager or StaffRoles.Catalog;
+
+        try
+        {
+            lookups = await ManagerApi.GetLookupsAsync();
+            if (lookups.Categories.Count > 0)
+            {
+                form.CategoryId = lookups.Categories[0].Id;
+            }
+            books = (await ManagerApi.GetBooksAsync()).ToList();
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            error = exception.Message;
+        }
+
+        loaded = true;
+        StateHasChanged();
+    }
+
+    private async Task SaveBookAsync()
+    {
+        busy = true;
+        formMessage = null;
+        try
+        {
+            var request = new CreateManagerBook(form.Title.Trim(), form.SalePrice, form.Unit.Trim(), form.CategoryId, form.PublisherId, selectedAuthorIds.ToArray());
+            if (editBookId is null) await ManagerApi.CreateBookAsync(request);
+            else await ManagerApi.UpdateBookAsync(editBookId, request);
+            books = (await ManagerApi.GetBooksAsync()).ToList();
+            formMessage = editBookId is null ? "Đã thêm sách. Hãy tạo phiếu nhập để tăng tồn kho." : "Đã cập nhật thông tin sách.";
+            formSucceeded = true;
+            ResetForm();
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            formMessage = exception.Message;
+            formSucceeded = false;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task EditBookAsync(string id)
+    {
+        try
+        {
+            var details = await ManagerApi.GetBookDetailsAsync(id);
+            editBookId = details.Id;
+            form.Title = details.Title; form.SalePrice = details.SalePrice; form.Unit = details.Unit;
+            form.CategoryId = details.CategoryId; form.PublisherId = details.PublisherId;
+            selectedAuthorIds.Clear(); foreach (var authorId in details.AuthorIds) selectedAuthorIds.Add(authorId);
+            formMessage = null; formSucceeded = false; showForm = true;
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException) { error = exception.Message; }
+    }
+
+    private void ToggleAuthor(int id, bool selected)
+    {
+        if (selected) selectedAuthorIds.Add(id); else selectedAuthorIds.Remove(id);
+    }
+
+    private void ResetForm()
+    {
+        editBookId = null; form.Title = string.Empty; form.SalePrice = 0; form.Unit = "cuốn";
+        form.CategoryId = lookups?.Categories.FirstOrDefault()?.Id ?? string.Empty; form.PublisherId = null;
+        selectedAuthorIds.Clear();
+    }
+
+    private async Task ToggleBookAsync(BookItem book)
+    {
+        try
+        {
+            await ManagerApi.SetBookVisibilityAsync(book.Id, book.Label == "ĐÃ ẨN");
+            books = (await ManagerApi.GetBooksAsync()).ToList();
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            error = exception.Message;
+        }
+    }
+
+    private sealed class NewBookForm
+    {
+        [Required, StringLength(250, MinimumLength = 1)] public string Title { get; set; } = string.Empty;
+        [Range(typeof(decimal), "1", "999999999")] public decimal SalePrice { get; set; }
+        [Required, StringLength(30)] public string Unit { get; set; } = "cuốn";
+        [Required] public string CategoryId { get; set; } = string.Empty;
+        public int? PublisherId { get; set; }
+    }
+}

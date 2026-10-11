@@ -1,0 +1,71 @@
+@inherits LayoutComponentBase
+@using BookStore.Shared.Services
+@using BookStore.Shared.Security
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<div class="admin-shell">
+    <header class="admin-header">
+        <a class="admin-brand" href="/admin" aria-label="Trang Sách - Quản trị">
+            <span class="admin-brand-mark">t.</span>
+            <span>TRANG SÁCH<small>KHU VỰC QUẢN LÝ</small></span>
+        </a>
+        <nav class="admin-primary-nav" aria-label="Điều hướng quản lý">
+            @if (Can("dashboard")) { <NavLink href="/admin" Match="NavLinkMatch.All">Tổng quan</NavLink> }
+            @if (Can("books")) { <NavLink href="/admin/books">Sách</NavLink> }
+            @if (Can("records")) { <NavLink href="/admin/records">Danh mục</NavLink> }
+            @if (Can("customers")) { <NavLink href="/admin/customers">Khách hàng</NavLink> }
+            @if (currentRole == StaffRoles.Manager) { <NavLink href="/admin/employees">Nhân viên & phân quyền</NavLink> }
+            @if (currentRole == StaffRoles.Manager) { <NavLink href="/admin/logs">Nhật ký hệ thống</NavLink> }
+            @if (Can("inventory")) { <NavLink href="/admin/inventory">Nhập hàng & tồn kho</NavLink> }
+            @if (Can("orders")) { <NavLink href="/admin/orders">Đơn hàng</NavLink> }
+            @if (Can("promotions")) { <NavLink href="/admin/promotions">Khuyến mãi</NavLink> }
+            @if (Can("reports")) { <NavLink href="/admin/reports">Báo cáo</NavLink> }
+        </nav>
+        <a class="admin-store-link" href="/">← Xem cửa hàng</a>
+        <div class="admin-user-actions">
+            @if (Can("profile")) { <a class="admin-profile-link" href="/admin/profile"><span class="admin-avatar">@RoleInitial</span><span>Hồ sơ</span></a> }
+            <button type="button" class="admin-signout" @onclick="SignOutAsync">Đăng xuất</button>
+        </div>
+    </header>
+    <div class="admin-layout-body">@Body</div>
+    <footer class="admin-layout-footer">TRANG SÁCH <span>·</span> HỆ THỐNG QUẢN LÝ</footer>
+</div>
+<div id="blazor-error-ui" data-nosnippet>Đã xảy ra lỗi. <a href="." class="reload">Tải lại</a><span class="dismiss">×</span></div>
+
+@code {
+    private string? currentRole;
+    private string RoleInitial => currentRole == StaffRoles.Manager ? "QL" : "NV";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        if (string.IsNullOrWhiteSpace(await StoreApi.GetCurrentTokenAsync()))
+        {
+            Navigation.NavigateTo("/admin/login");
+            return;
+        }
+
+        try
+        {
+            // Read the role from the API so a role change takes effect in an open session too.
+            currentRole = (await StoreApi.GetProfileAsync()).Role;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            currentRole = null;
+            Navigation.NavigateTo("/admin/login");
+            return;
+        }
+
+        StateHasChanged();
+    }
+
+    private bool Can(string area) => StaffPermissions.CanAccess(currentRole, area);
+
+    private async Task SignOutAsync()
+    {
+        await StoreApi.SignOutAsync();
+        Navigation.NavigateTo("/admin/login");
+    }
+}

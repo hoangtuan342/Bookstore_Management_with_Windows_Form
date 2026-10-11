@@ -1,0 +1,319 @@
+@page "/admin/orders"
+@layout AdminLayout
+@using System.ComponentModel.DataAnnotations
+@using BookStore.Shared.Models
+@using BookStore.Shared.Services
+@using BookStore.Shared.Security
+@inject ManagerApiClient ManagerApi
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<PageTitle>Quản lý đơn hàng | Trang Sách</PageTitle>
+
+<main class="page-shell admin-page">
+    @if (!loaded)
+    {
+        <div class="empty-state"><p>Đang tải đơn hàng...</p></div>
+    }
+    else if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="admin-error"><h2>Không thể mở đơn hàng</h2><p>@error</p><a class="button-primary" href="/admin/login">Đăng nhập quản lý <span>↗</span></a></div>
+    }
+    else
+    {
+        <div class="admin-heading"><div><p class="eyebrow">XỬ LÝ BÁN HÀNG</p><h1>Đơn hàng</h1><p>Tạo đơn tại cửa hàng, chỉnh thông tin giao nhận, cập nhật trạng thái và thanh toán.</p></div><button class="button-primary admin-add-button" @onclick="() => showCreateForm = !showCreateForm">@(showCreateForm ? "Đóng biểu mẫu" : "+ Tạo đơn hàng")</button></div>
+        @if (showCreateForm)
+        {
+            <section class="admin-panel admin-form-panel">
+                <div class="admin-panel-heading"><div><p class="eyebrow">ĐƠN MỚI TẠI QUẦY</p><h2>Thông tin đơn hàng</h2></div></div>
+                @if (customers.Count == 0 || books.Count == 0)
+                {
+                    <div class="admin-empty">Cần có khách hàng và sách đang bán để tạo đơn.</div>
+                }
+                else
+                {
+                    <EditForm Model="newOrderForm" OnValidSubmit="CreateOrderAsync" class="admin-form-grid">
+                        <DataAnnotationsValidator />
+                        <label>Khách hàng<select @bind="newOrderForm.CustomerId"><option value="">Chọn khách hàng</option>@foreach (var customer in customers){<option value="@customer.Id">@customer.FullName · @customer.Id</option>}</select></label>
+                        <label>Số điện thoại nhận<InputText @bind-Value="newOrderForm.ReceiverPhone" /></label>
+                        <label class="order-address-field">Địa chỉ giao hàng<InputText @bind-Value="newOrderForm.ShippingAddress" /></label>
+                        <label>Thanh toán<select @bind="newOrderForm.PaymentMethod"><option value="CashOnDelivery">Thanh toán khi nhận (COD)</option><option value="BankTransfer">Chuyển khoản</option></select></label>
+                        @foreach (var line in newOrderForm.Lines)
+                        {
+                            <div class="receipt-line-form"><label>Sách<select @bind="line.BookId"><option value="">Chọn sách</option>@foreach (var book in books){<option value="@book.Id">@book.Title (@book.AvailableStock còn)</option>}</select></label><label>Số lượng<input type="number" min="1" max="99" @bind="line.Quantity" /></label><button type="button" class="table-action" disabled="@(newOrderForm.Lines.Count == 1)" @onclick="() => newOrderForm.Lines.Remove(line)">Bỏ</button></div>
+                        }
+                        <button type="button" class="text-button" @onclick="() => newOrderForm.Lines.Add(new NewOrderLineForm { BookId = books.First().Id })">+ Thêm sách</button>
+                        @if (!string.IsNullOrWhiteSpace(createMessage)){<div class="form-message @(createSucceeded ? "success" : "error")">@createMessage</div>}
+                        <button class="button-primary" type="submit" disabled="@busy">@(busy ? "Đang tạo..." : "Tạo đơn hàng")</button>
+                    </EditForm>
+                }
+            </section>
+        }
+        <section class="admin-panel">
+            <div class="admin-filter"><label>Trạng thái<select @bind="selectedStatus"><option value="">Tất cả</option><option value="Pending">Chờ xác nhận</option><option value="Confirmed">Đã xác nhận</option><option value="Shipping">Đang giao</option><option value="Completed">Hoàn tất</option><option value="Cancelled">Đã hủy</option></select></label><button class="account-link" @onclick="LoadOrdersAsync">Lọc đơn</button></div>
+            @if (string.IsNullOrWhiteSpace(selectedStatus) && orders.Count > 0)
+            {
+                <div class="order-chart-panel"><div class="admin-panel-heading"><div><p class="eyebrow">TÌNH HÌNH XỬ LÝ</p><h2>Đơn hàng theo trạng thái</h2></div></div><StatusDonut Segments="OrderStatusSegments" CenterCaption="đơn" AriaLabel="Phân bổ đơn hàng theo trạng thái" /></div>
+            }
+            @if (orders.Count == 0)
+            {
+                <div class="admin-empty">Không có đơn hàng ở trạng thái này.</div>
+            }
+            else
+            {
+                <div class="admin-order-list">
+                    @foreach (var order in orders)
+                    {
+                        <article class="admin-order-card">
+                            <div class="admin-order-top"><div><span class="eyebrow">@order.Id · @order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span><h2>@order.CustomerName</h2><p>@order.ReceiverPhone</p></div><span class="status-pill">@StatusName(order.OrderStatus)</span></div>
+                            <div class="admin-order-details"><span>@order.ItemCount sản phẩm</span><span>@PaymentName(order.PaymentMethod) · @PaymentStatusName(order.PaymentStatus)</span><strong>@order.TotalAmount.ToString("N0")₫</strong></div>
+                            <p class="admin-address">@order.ShippingAddress</p>
+                            <details class="admin-order-lines"><summary>Chi tiết sản phẩm</summary>@foreach (var line in order.Lines){<div><span>@line.Title ×@line.Quantity</span><span>@line.UnitPrice.ToString("N0")₫ / cuốn</span><strong>@line.LineTotal.ToString("N0")₫</strong></div>}</details>
+                            @if (editingOrderId == order.Id)
+                            {
+                                <EditForm Model="orderEdit" OnValidSubmit="() => SaveOrderAsync(order)" class="admin-form-grid order-edit-form">
+                                    <DataAnnotationsValidator />
+                                    <label>Địa chỉ nhận<InputText @bind-Value="orderEdit.ShippingAddress" /></label>
+                                    <label>Số điện thoại<InputText @bind-Value="orderEdit.ReceiverPhone" /></label>
+                                    <label>Thanh toán<select @bind="orderEdit.PaymentMethod"><option value="CashOnDelivery">Thanh toán khi nhận (COD)</option><option value="BankTransfer">Chuyển khoản</option></select></label>
+                                    <ValidationMessage For="() => orderEdit.ShippingAddress" />
+                                    <ValidationMessage For="() => orderEdit.ReceiverPhone" />
+                                    <div class="admin-order-actions"><button class="table-action" type="submit">Lưu thay đổi</button><button class="text-button" type="button" @onclick="CancelEditOrder">Bỏ sửa</button></div>
+                                </EditForm>
+                            }
+                            <div class="admin-order-actions">
+                                @if (CanEdit(order))
+                                {
+                                    <button class="table-action" @onclick="() => EditOrder(order)">Sửa thông tin</button>
+                                }
+                                @foreach (var action in AvailableActions(order.OrderStatus))
+                                {
+                                    <button class="table-action" @onclick="() => ChangeStatusAsync(order, action.Status)">@action.Label</button>
+                                }
+                                @if (order.PaymentMethod == "BankTransfer" && order.PaymentStatus == "AwaitingPayment")
+                                {
+                                    <button class="table-action" @onclick="() => MarkPaidAsync(order)">Xác nhận đã nhận tiền</button>
+                                }
+                                @if (order.PaymentStatus == "RefundPending")
+                                {
+                                    <button class="table-action" @onclick="() => MarkRefundCompletedAsync(order)">Ghi nhận đã hoàn tiền</button>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    }
+</main>
+
+@code {
+    private List<ManagerOrderRow> orders = [];
+    private bool loaded;
+    private string selectedStatus = string.Empty;
+    private string? error;
+    private string? editingOrderId;
+    private bool showCreateForm;
+    private bool busy;
+    private bool createSucceeded;
+    private string? createMessage;
+    private List<ManagerCustomer> customers = [];
+    private List<BookItem> books = [];
+    private readonly NewOrderForm newOrderForm = new();
+    private readonly OrderEditForm orderEdit = new();
+    private IReadOnlyList<ChartSegment> OrderStatusSegments =>
+    [
+        new("Chờ xác nhận", orders.Count(item => item.OrderStatus == "Pending"), "#d4a268"),
+        new("Đã xác nhận", orders.Count(item => item.OrderStatus == "Confirmed"), "#6a91a2"),
+        new("Đang giao", orders.Count(item => item.OrderStatus == "Shipping"), "#8097bd"),
+        new("Hoàn tất", orders.Count(item => item.OrderStatus == "Completed"), "#4d7858"),
+        new("Đã hủy", orders.Count(item => item.OrderStatus == "Cancelled"), "#bc7467")
+    ];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!StaffPermissions.CanAccess(await StoreApi.GetCurrentRoleAsync(), "orders"))
+        {
+            Navigation.NavigateTo(StaffPermissions.HomePath(await StoreApi.GetCurrentRoleAsync()));
+            return;
+        }
+
+        try
+        {
+            customers = (await ManagerApi.GetCustomersAsync()).ToList();
+            books = (await ManagerApi.GetBooksAsync()).Where(book => book.Label != "ĐÃ ẨN").ToList();
+            if (customers.Count > 0) newOrderForm.CustomerId = customers[0].Id;
+            if (books.Count > 0) newOrderForm.Lines[0].BookId = books[0].Id;
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            error = exception.Message;
+        }
+        await LoadOrdersAsync();
+    }
+
+    private async Task CreateOrderAsync()
+    {
+        if (string.IsNullOrWhiteSpace(newOrderForm.CustomerId)
+            || newOrderForm.Lines.Any(line => string.IsNullOrWhiteSpace(line.BookId) || line.Quantity < 1))
+        {
+            createMessage = "Chọn khách hàng, sách và số lượng hợp lệ cho từng dòng.";
+            createSucceeded = false;
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            var lines = newOrderForm.Lines.Select(line => new CreateAdminOrderLine(line.BookId, line.Quantity)).ToArray();
+            await ManagerApi.CreateOrderAsync(new CreateAdminOrder(newOrderForm.CustomerId, newOrderForm.ShippingAddress.Trim(), newOrderForm.ReceiverPhone.Trim(), newOrderForm.PaymentMethod, lines));
+            createMessage = "Đã tạo đơn và giữ tồn kho.";
+            createSucceeded = true;
+            books = (await ManagerApi.GetBooksAsync()).Where(book => book.Label != "ĐÃ ẨN").ToList();
+            newOrderForm.Lines = [new NewOrderLineForm { BookId = books.FirstOrDefault()?.Id ?? string.Empty }];
+            await LoadOrdersAsync();
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            createMessage = exception.Message;
+            createSucceeded = false;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task LoadOrdersAsync()
+    {
+        try
+        {
+            orders = (await ManagerApi.GetOrdersAsync(string.IsNullOrWhiteSpace(selectedStatus) ? null : selectedStatus)).ToList();
+            error = null;
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            error = exception.Message;
+        }
+
+        loaded = true;
+        StateHasChanged();
+    }
+
+    private async Task ChangeStatusAsync(ManagerOrderRow order, string status)
+    {
+        try
+        {
+            if (status == "Cancelled") await ManagerApi.DeleteOrderAsync(order.Id);
+            else await ManagerApi.UpdateOrderStatusAsync(order.Id, status);
+            await LoadOrdersAsync();
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            error = exception.Message;
+        }
+    }
+
+    private bool CanEdit(ManagerOrderRow order) =>
+        order.OrderStatus is "Pending" or "Confirmed" && order.PaymentStatus is not ("Paid" or "RefundPending" or "Refunded");
+
+    private void EditOrder(ManagerOrderRow order)
+    {
+        editingOrderId = order.Id;
+        orderEdit.ShippingAddress = order.ShippingAddress;
+        orderEdit.ReceiverPhone = order.ReceiverPhone;
+        orderEdit.PaymentMethod = order.PaymentMethod;
+    }
+
+    private void CancelEditOrder() => editingOrderId = null;
+
+    private async Task SaveOrderAsync(ManagerOrderRow order)
+    {
+        try
+        {
+            await ManagerApi.UpdateOrderAsync(order.Id, new UpdateAdminOrder(
+                orderEdit.ShippingAddress.Trim(), orderEdit.ReceiverPhone.Trim(), orderEdit.PaymentMethod));
+            editingOrderId = null;
+            await LoadOrdersAsync();
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            error = exception.Message;
+        }
+    }
+
+    private async Task MarkPaidAsync(ManagerOrderRow order)
+    {
+        try
+        {
+            await ManagerApi.MarkBankTransferPaidAsync(order.Id);
+            await LoadOrdersAsync();
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            error = exception.Message;
+        }
+    }
+
+    private async Task MarkRefundCompletedAsync(ManagerOrderRow order)
+    {
+        try
+        {
+            await ManagerApi.MarkRefundCompletedAsync(order.Id);
+            await LoadOrdersAsync();
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            error = exception.Message;
+        }
+    }
+
+    private static IReadOnlyList<(string Status, string Label)> AvailableActions(string status) => status switch
+    {
+        "Pending" => [("Confirmed", "Xác nhận đơn"), ("Cancelled", "Xóa / hủy đơn")],
+        "Confirmed" => [("Shipping", "Bắt đầu giao"), ("Cancelled", "Xóa / hủy đơn")],
+        "Shipping" => [("Completed", "Hoàn tất")],
+        _ => []
+    };
+
+    private static string StatusName(string status) => status switch
+    {
+        "Pending" => "Chờ xác nhận", "Confirmed" => "Đã xác nhận", "Shipping" => "Đang giao",
+        "Completed" => "Hoàn tất", "Cancelled" => "Đã hủy", _ => status
+    };
+
+    private static string PaymentName(string method) => method == "CashOnDelivery" ? "COD" : "Chuyển khoản";
+    private static string PaymentStatusName(string status) => status switch
+    {
+        "Paid" => "Đã thanh toán", "AwaitingPayment" => "Chờ xác nhận",
+        "RefundPending" => "Chờ hoàn tiền", "Refunded" => "Đã hoàn tiền",
+        "Cancelled" => "Không còn khoản phải trả", _ => "Chưa thanh toán"
+    };
+
+    private sealed class OrderEditForm
+    {
+        [Required, StringLength(500, MinimumLength = 8)] public string ShippingAddress { get; set; } = string.Empty;
+        [Required, Phone, StringLength(30)] public string ReceiverPhone { get; set; } = string.Empty;
+        [Required] public string PaymentMethod { get; set; } = "CashOnDelivery";
+    }
+
+    private sealed class NewOrderForm
+    {
+        [Required] public string CustomerId { get; set; } = string.Empty;
+        [Required, StringLength(500, MinimumLength = 8)] public string ShippingAddress { get; set; } = string.Empty;
+        [Required, Phone, StringLength(30)] public string ReceiverPhone { get; set; } = string.Empty;
+        [Required] public string PaymentMethod { get; set; } = "CashOnDelivery";
+        [MinLength(1)] public List<NewOrderLineForm> Lines { get; set; } = [new()];
+    }
+
+    private sealed class NewOrderLineForm
+    {
+        [Required] public string BookId { get; set; } = string.Empty;
+        [Range(1, 99)] public int Quantity { get; set; } = 1;
+    }
+}

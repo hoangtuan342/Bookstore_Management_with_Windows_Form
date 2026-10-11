@@ -1,0 +1,209 @@
+.admin-shell {
+    min-height: 100vh;
+    background: #f5f6f3;
+    color: #26342b;
+}
+
+.admin-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 76px;
+    padding: 0 clamp(18px, 3.5vw, 56px);
+    background: #263f32;
+    color: #fff;
+    box-shadow: 0 3px 16px #1d30251a;
+}
+
+.admin-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 190px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+}
+
+.admin-brand-mark {
+    display: grid;
+    place-items: center;
+    width: 37px;
+    height: 37px;
+    border: 1px solid #d5c49a;
+    border-radius: 10px;
+    color: #eadbb6;
+    font: 700 22px Georgia, serif;
+    letter-spacing: -2px;
+}
+
+.admin-brand small {
+    display: block;
+    margin-top: 4px;
+    color: #b4c3b4;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 1.6px;
+}
+
+.admin-primary-nav {
+    display: flex;
+    align-self: stretch;
+    align-items: center;
+    gap: 5px;
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-primary-nav ::deep a {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: 10px 9px;
+    border-radius: 7px;
+    color: #d7e0d8;
+    font-size: 11px;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+}
+
+.admin-primary-nav ::deep a:hover {
+    background: #ffffff10;
+    color: #fff;
+}
+
+.admin-primary-nav ::deep a.active {
+    background: #ffffff18;
+    color: #fff;
+    font-weight: 700;
+}
+
+.admin-store-link {
+    color: #eadbb6;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.admin-user-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.admin-profile-link {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 8px;
+    border: 1px solid #ffffff30;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 10px;
+    text-decoration: none;
+}
+
+.admin-avatar {
+    display: grid;
+    place-items: center;
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+    background: #eadbb6;
+    color: #263f32;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.admin-signout {
+    padding: 8px 10px;
+    border: 1px solid #ffffff45;
+    border-radius: 6px;
+    background: transparent;
+    color: #fff;
+    font: 600 10px 'DM Sans', sans-serif;
+    cursor: pointer;
+}
+
+.admin-signout:hover {
+    background: #ffffff15;
+}
+
+.admin-layout-body {
+    min-height: calc(100vh - 124px);
+}
+
+.admin-layout-footer {
+    padding: 17px clamp(18px, 4vw, 56px);
+    border-top: 1px solid #e1e5df;
+    color: #778177;
+    font-size: 9px;
+    letter-spacing: 1.1px;
+}
+
+.admin-layout-footer span {
+    padding: 0 5px;
+    color: #b5a16e;
+}
+
+@media (max-width: 1450px) {
+    .admin-header {
+        flex-wrap: wrap;
+        gap: 9px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    .admin-brand {
+        flex: 1 0 160px;
+    }
+
+    .admin-user-actions {
+        margin-left: auto;
+    }
+
+    .admin-store-link {
+        margin-left: auto;
+    }
+
+    .admin-primary-nav {
+        order: 4;
+        flex-basis: 100%;
+        min-height: 38px;
+        gap: 7px;
+        overflow-x: auto;
+        scrollbar-width: thin;
+    }
+
+    .admin-primary-nav ::deep a {
+        padding: 8px 10px;
+    }
+}
+
+@media (max-width: 520px) {
+    .admin-primary-nav ::deep a {
+        padding: 8px 9px;
+        font-size: 10px;
+    }
+
+    .admin-brand {
+        min-width: 0;
+    }
+
+    .admin-store-link {
+        font-size: 9px;
+    }
+
+    .admin-user-actions {
+        gap: 5px;
+    }
+
+    .admin-signout {
+        padding: 7px 8px;
+    }
+}

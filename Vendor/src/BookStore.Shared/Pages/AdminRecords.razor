@@ -1,0 +1,179 @@
+@page "/admin/records"
+@page "/admin/customers"
+@page "/admin/employees"
+@layout AdminLayout
+@using System.ComponentModel.DataAnnotations
+@using BookStore.Shared.Models
+@using BookStore.Shared.Services
+@using BookStore.Shared.Security
+@inject ManagerApiClient ManagerApi
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<PageTitle>Quản lý dữ liệu | Trang Sách</PageTitle>
+<main class="page-shell admin-page">
+    @if (!loaded) { <div class="empty-state"><p>Đang tải dữ liệu quản lý...</p></div> }
+    else if (!string.IsNullOrWhiteSpace(error)) { <div class="admin-error"><h2>Không thể tải dữ liệu</h2><p>@error</p></div> }
+    else
+    {
+        <div class="admin-heading"><div><p class="eyebrow">DỮ LIỆU NỀN</p><h1>@PageHeading</h1><p>@PageDescription</p></div></div>
+        @if (!string.IsNullOrWhiteSpace(message)) { <div class="form-message @(succeeded ? "success" : "error")">@message</div> }
+        @if (!PeopleOnly)
+        {
+        <section class="admin-panel">
+            <div class="admin-panel-heading"><div><p class="eyebrow">LOAISACH</p><h2>Loại sách</h2></div></div>
+            <EditForm Model="categoryForm" OnValidSubmit="SaveCategoryAsync" class="admin-form-grid"><DataAnnotationsValidator />
+                <label>Mã loại<InputText @bind-Value="categoryForm.Id" disabled="@(editingCategory is not null)" /></label><label>Tên loại<InputText @bind-Value="categoryForm.Name" /></label>
+                <button class="button-primary" disabled="@busy">@(editingCategory is null ? "Thêm loại sách" : "Lưu thay đổi")</button>@if(editingCategory is not null){<button type="button" class="text-button" @onclick="ResetCategory">Hủy sửa</button>}
+            </EditForm>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>MÃ</th><th>TÊN LOẠI</th><th></th></tr></thead><tbody>@foreach(var x in categories){<tr><td>@x.Id</td><td>@x.Name</td><td><button class="table-action" @onclick="() => EditCategory(x)">Sửa</button> <button class="table-action" @onclick="() => DeleteAsync(() => ManagerApi.DeleteCategoryAsync(x.Id), LoadAsync)">Xóa</button></td></tr>}</tbody></table></div>
+        </section>
+        <section class="admin-panel">
+            <div class="admin-panel-heading"><div><p class="eyebrow">TACGIA</p><h2>Tác giả</h2></div></div>
+            <EditForm Model="authorForm" OnValidSubmit="SaveAuthorAsync" class="admin-form-grid"><DataAnnotationsValidator />
+                <label>Tên tác giả<InputText @bind-Value="authorForm.Name" /></label><label>Tiểu sử<InputTextArea @bind-Value="authorForm.Biography" /></label>
+                <button class="button-primary" disabled="@busy">@(editingAuthor is null ? "Thêm tác giả" : "Lưu thay đổi")</button>@if(editingAuthor is not null){<button type="button" class="text-button" @onclick="ResetAuthor">Hủy sửa</button>}
+            </EditForm>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>TÊN</th><th>TIỂU SỬ</th><th></th></tr></thead><tbody>@foreach(var x in authors){<tr><td>@x.Name</td><td>@x.Biography</td><td><button class="table-action" @onclick="() => EditAuthor(x)">Sửa</button> <button class="table-action" @onclick="() => DeleteAsync(() => ManagerApi.DeleteAuthorAsync(x.Id), LoadAsync)">Xóa</button></td></tr>}</tbody></table></div>
+        </section>
+        <section class="admin-panel">
+            <div class="admin-panel-heading"><div><p class="eyebrow">NHAXUATBAN</p><h2>Nhà xuất bản</h2></div></div>
+            <EditForm Model="publisherForm" OnValidSubmit="SavePublisherAsync" class="admin-form-grid"><DataAnnotationsValidator />
+                <label>Tên nhà xuất bản<InputText @bind-Value="publisherForm.Name" /></label><label>Địa chỉ<InputText @bind-Value="publisherForm.Address" /></label>
+                <button class="button-primary" disabled="@busy">@(editingPublisher is null ? "Thêm nhà xuất bản" : "Lưu thay đổi")</button>@if(editingPublisher is not null){<button type="button" class="text-button" @onclick="ResetPublisher">Hủy sửa</button>}
+            </EditForm>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>TÊN</th><th>ĐỊA CHỈ</th><th></th></tr></thead><tbody>@foreach(var x in publishers){<tr><td>@x.Name</td><td>@x.Address</td><td><button class="table-action" @onclick="() => EditPublisher(x)">Sửa</button> <button class="table-action" @onclick="() => DeleteAsync(() => ManagerApi.DeletePublisherAsync(x.Id), LoadAsync)">Xóa</button></td></tr>}</tbody></table></div>
+        </section>
+        }
+        @if (!EmployeesOnly)
+        {
+        <section class="admin-panel">
+            <div class="admin-panel-heading"><div><p class="eyebrow">KHACHHANG</p><h2>Khách hàng và tài khoản khách hàng</h2></div></div>
+            <EditForm Model="customerForm" OnValidSubmit="SaveCustomerAsync" class="admin-form-grid"><DataAnnotationsValidator />
+                <label>Mã khách hàng (để trống để tự tạo)<InputText @bind-Value="customerForm.Id" disabled="@(editingCustomer is not null)" /></label><label>Họ tên<InputText @bind-Value="customerForm.FullName" /></label>
+                <label>Số điện thoại<InputText @bind-Value="customerForm.PhoneNumber" /></label><label>Địa chỉ giao hàng<InputText @bind-Value="customerForm.Address" /></label>
+                <label>Tên đăng nhập<InputText @bind-Value="customerForm.UserName" /></label><label>Email<InputText @bind-Value="customerForm.Email" /></label>
+                <label>Mật khẩu (để trống nếu không đổi)<InputText type="password" @bind-Value="customerForm.Password" /></label><label>Trạng thái tài khoản<select @bind="customerForm.AccountStatus"><option value="Active">Hoạt động</option><option value="Disabled">Đã khóa</option></select></label>
+                <button class="button-primary" disabled="@busy">@(editingCustomer is null ? "Thêm khách hàng" : "Lưu thay đổi")</button>@if(editingCustomer is not null){<button type="button" class="text-button" @onclick="ResetCustomer">Hủy sửa</button>}
+            </EditForm>
+            <p class="report-note">Nếu tạo khách hàng có tài khoản, cần nhập tên đăng nhập, email và mật khẩu tối thiểu 8 ký tự. Tài khoản được quản lý trong hồ sơ khách hàng.</p>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>MÃ KH</th><th>HỌ TÊN</th><th>LIÊN HỆ</th><th>TÀI KHOẢN</th><th>TRẠNG THÁI</th><th></th></tr></thead><tbody>@foreach(var x in customers){<tr><td>@x.Id</td><td>@x.FullName</td><td>@x.PhoneNumber</td><td>@x.UserName<br />@x.Email</td><td>@x.AccountStatus</td><td><button class="table-action" @onclick="() => EditCustomer(x)">Sửa</button> <button class="table-action" @onclick="() => DeleteAsync(() => ManagerApi.DeleteCustomerAsync(x.Id), LoadAsync)">Xóa</button></td></tr>}</tbody></table></div>
+        </section>
+        }
+        @if (!CustomersOnly)
+        {
+        <section class="admin-panel">
+            <div class="admin-panel-heading"><div><p class="eyebrow">NHANVIEN</p><h2>Nhân viên và tài khoản nhân viên</h2></div></div>
+            <EditForm Model="employeeForm" OnValidSubmit="SaveEmployeeAsync" class="admin-form-grid"><DataAnnotationsValidator />
+                <label>Mã nhân viên (để trống để tự tạo)<InputText @bind-Value="employeeForm.Id" disabled="@(editingEmployee is not null)" /></label><label>Họ lót<InputText @bind-Value="employeeForm.LastName" /></label><label>Tên<InputText @bind-Value="employeeForm.FirstName" /></label><label>Ngày sinh<InputDate @bind-Value="employeeForm.BirthDate" /></label>
+                <label>Ảnh chân dung (đường dẫn)<InputText @bind-Value="employeeForm.AvatarPath" /></label><label>Địa chỉ<InputText @bind-Value="employeeForm.Address" /></label><label>Lương cơ bản<InputNumber @bind-Value="employeeForm.BaseSalary" /></label><label>Trạng thái nhân viên<select @bind="employeeForm.AccountStatus"><option value="Active">Đang làm</option><option value="Disabled">Ngừng hoạt động</option></select></label>
+                <label>Chức danh / quyền truy cập<select @bind="employeeForm.RoleName">@foreach(var role in employeeRoles){<option value="@role.Name">@role.Label</option>}</select></label>
+                <label>Tên đăng nhập<InputText @bind-Value="employeeForm.UserName" /></label><label>Email<InputText @bind-Value="employeeForm.Email" /></label><label>Mật khẩu (để trống nếu không đổi)<InputText type="password" @bind-Value="employeeForm.Password" /></label><label>Trạng thái đăng nhập<select @bind="employeeForm.AccountLoginStatus"><option value="Active">Hoạt động</option><option value="Disabled">Đã khóa</option></select></label>
+                <button class="button-primary" disabled="@busy">@(editingEmployee is null ? "Thêm nhân viên" : "Lưu thay đổi")</button>@if(editingEmployee is not null){<button type="button" class="text-button" @onclick="ResetEmployee">Hủy sửa</button>}
+            </EditForm>
+            <p class="report-note">Chức danh gắn với tài khoản và giới hạn các mục quản lý được phép truy cập. Đổi quyền được kiểm tra ngay ở API; tài khoản cần đăng nhập lại để cập nhật menu.</p>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>MÃ NV</th><th>HỌ TÊN</th><th>CHỨC DANH</th><th>LIÊN HỆ</th><th>LƯƠNG CƠ BẢN</th><th>ĐĂNG NHẬP</th><th></th></tr></thead><tbody>@foreach(var x in employees){<tr><td>@x.Id</td><td>@x.LastName @x.FirstName</td><td>@(x.RoleName is null ? "Chưa cấp tài khoản" : StaffPermissions.DisplayName(x.RoleName))</td><td>@x.UserName<br />@x.Email</td><td>@x.BaseSalary.ToString("N0")₫</td><td>@x.LoginStatus</td><td><button class="table-action" @onclick="() => EditEmployee(x)">Sửa</button> <button class="table-action" @onclick="() => DeleteAsync(() => ManagerApi.DeleteEmployeeAsync(x.Id), LoadAsync)">Xóa</button></td></tr>}</tbody></table></div>
+        </section>
+        }
+    }
+</main>
+
+@code {
+    private bool loaded, busy, succeeded;
+    private string? error, message;
+    private List<ManagerCategory> categories = [];
+    private List<ManagerAuthor> authors = [];
+    private List<ManagerPublisher> publishers = [];
+    private List<ManagerCustomer> customers = [];
+    private List<ManagerEmployee> employees = [];
+    private List<StaffRoleOption> employeeRoles = [];
+    private ManagerCategory? editingCategory;
+    private ManagerAuthor? editingAuthor;
+    private ManagerPublisher? editingPublisher;
+    private ManagerCustomer? editingCustomer;
+    private ManagerEmployee? editingEmployee;
+    private CategoryForm categoryForm = new();
+    private AuthorForm authorForm = new();
+    private PublisherForm publisherForm = new();
+    private CustomerForm customerForm = new();
+    private EmployeeForm employeeForm = new();
+    private bool CustomersOnly => new Uri(Navigation.Uri).AbsolutePath.Equals("/admin/customers", StringComparison.OrdinalIgnoreCase);
+    private bool EmployeesOnly => new Uri(Navigation.Uri).AbsolutePath.Equals("/admin/employees", StringComparison.OrdinalIgnoreCase);
+    private bool PeopleOnly => CustomersOnly || EmployeesOnly;
+    private string PageHeading => CustomersOnly ? "Khách hàng & tài khoản" : EmployeesOnly ? "Nhân viên & tài khoản" : "Danh mục & hồ sơ";
+    private string PageDescription => CustomersOnly ? "Quản lý hồ sơ khách hàng và tài khoản đăng nhập gắn với hồ sơ." : EmployeesOnly ? "Quản lý hồ sơ nhân viên và tài khoản đăng nhập gắn với hồ sơ." : "Quản lý loại sách, tác giả và nhà xuất bản.";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        var role = await StoreApi.GetCurrentRoleAsync();
+        var area = CustomersOnly ? "customers" : EmployeesOnly ? "employees" : "records";
+        if (area == "employees" ? role != StaffRoles.Manager : !StaffPermissions.CanAccess(role, area)) { Navigation.NavigateTo(StaffPermissions.HomePath(role)); return; }
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            if (CustomersOnly)
+            {
+                customers = (await ManagerApi.GetCustomersAsync()).ToList();
+            }
+            else if (EmployeesOnly)
+            {
+                var employeeTask = ManagerApi.GetEmployeesAsync();
+                var roleTask = ManagerApi.GetEmployeeRolesAsync();
+                await Task.WhenAll(employeeTask, roleTask);
+                employees = (await employeeTask).ToList();
+                employeeRoles = (await roleTask).ToList();
+                employeeForm.RoleName = employeeRoles.FirstOrDefault(role => role.Name == StaffRoles.Sales)?.Name ?? employeeRoles.FirstOrDefault()?.Name ?? StaffRoles.Sales;
+            }
+            else
+            {
+                var categoryTask = ManagerApi.GetCategoriesAsync();
+                var authorTask = ManagerApi.GetAuthorsAsync();
+                var publisherTask = ManagerApi.GetPublishersAsync();
+                await Task.WhenAll(categoryTask, authorTask, publisherTask);
+                categories = (await categoryTask).ToList();
+                authors = (await authorTask).ToList();
+                publishers = (await publisherTask).ToList();
+            }
+            error = null;
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or InvalidOperationException or HttpRequestException) { error = ex.Message; }
+        loaded = true; StateHasChanged();
+    }
+
+    private async Task SaveCategoryAsync() => await RunAsync(async () => { await ManagerApi.SaveCategoryAsync(editingCategory?.Id, new(categoryForm.Id.Trim(), categoryForm.Name.Trim())); ResetCategory(); await LoadAsync(); }, "Đã lưu loại sách.");
+    private async Task SaveAuthorAsync() => await RunAsync(async () => { await ManagerApi.SaveAuthorAsync(editingAuthor?.Id, new(authorForm.Name.Trim(), authorForm.Biography)); ResetAuthor(); await LoadAsync(); }, "Đã lưu tác giả.");
+    private async Task SavePublisherAsync() => await RunAsync(async () => { await ManagerApi.SavePublisherAsync(editingPublisher?.Id, new(publisherForm.Name.Trim(), publisherForm.Address)); ResetPublisher(); await LoadAsync(); }, "Đã lưu nhà xuất bản.");
+    private async Task SaveCustomerAsync() => await RunAsync(async () => { await ManagerApi.SaveCustomerAsync(editingCustomer?.Id, new(customerForm.Id, customerForm.FullName.Trim(), customerForm.PhoneNumber, customerForm.Address, customerForm.UserName, customerForm.Email, customerForm.Password, customerForm.AccountStatus)); ResetCustomer(); await LoadAsync(); }, "Đã lưu khách hàng.");
+    private async Task SaveEmployeeAsync() => await RunAsync(async () => { await ManagerApi.SaveEmployeeAsync(editingEmployee?.Id, new(employeeForm.Id, employeeForm.LastName.Trim(), employeeForm.FirstName.Trim(), employeeForm.BirthDate, employeeForm.AvatarPath, employeeForm.Address, employeeForm.AccountStatus, employeeForm.BaseSalary, employeeForm.UserName, employeeForm.Email, employeeForm.Password, employeeForm.AccountLoginStatus, employeeForm.RoleName)); ResetEmployee(); await LoadAsync(); }, "Đã lưu nhân viên.");
+
+    private async Task DeleteAsync(Func<Task> action, Func<Task> reload) => await RunAsync(async () => { await action(); await reload(); }, "Đã xóa dữ liệu.");
+    private async Task RunAsync(Func<Task> action, string successMessage)
+    {
+        busy = true; message = null;
+        try { await action(); message = successMessage; succeeded = true; }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or InvalidOperationException or HttpRequestException) { message = ex.Message; succeeded = false; }
+        finally { busy = false; }
+    }
+
+    private void EditCategory(ManagerCategory x) { editingCategory=x; categoryForm=new(){Id=x.Id,Name=x.Name}; }
+    private void EditAuthor(ManagerAuthor x) { editingAuthor=x; authorForm=new(){Name=x.Name,Biography=x.Biography}; }
+    private void EditPublisher(ManagerPublisher x) { editingPublisher=x; publisherForm=new(){Name=x.Name,Address=x.Address}; }
+    private void EditCustomer(ManagerCustomer x) { editingCustomer=x; customerForm=new(){Id=x.Id,FullName=x.FullName,PhoneNumber=x.PhoneNumber,Address=x.Address,UserName=x.UserName,Email=x.Email,AccountStatus=x.AccountStatus??"Active"}; }
+    private void EditEmployee(ManagerEmployee x) { editingEmployee=x; employeeForm=new(){Id=x.Id,LastName=x.LastName,FirstName=x.FirstName,BirthDate=x.BirthDate,AvatarPath=x.AvatarPath,Address=x.Address,AccountStatus=x.AccountStatus,BaseSalary=x.BaseSalary,UserName=x.UserName,Email=x.Email,AccountLoginStatus=x.LoginStatus??"Active",RoleName=x.RoleName??StaffRoles.Sales}; }
+    private void ResetCategory() { editingCategory=null; categoryForm=new(); }
+    private void ResetAuthor() { editingAuthor=null; authorForm=new(); }
+    private void ResetPublisher() { editingPublisher=null; publisherForm=new(); }
+    private void ResetCustomer() { editingCustomer=null; customerForm=new(); }
+    private void ResetEmployee() { editingEmployee=null; employeeForm=new(){RoleName=employeeRoles.FirstOrDefault(role=>role.Name==StaffRoles.Sales)?.Name??StaffRoles.Sales}; }
+
+    private sealed class CategoryForm { [Required,StringLength(20,MinimumLength=1)] public string Id {get;set;}=""; [Required,StringLength(120,MinimumLength=2)] public string Name {get;set;}=""; }
+    private sealed class AuthorForm { [Required,StringLength(180,MinimumLength=2)] public string Name {get;set;}=""; public string? Biography {get;set;} }
+    private sealed class PublisherForm { [Required,StringLength(180,MinimumLength=2)] public string Name {get;set;}=""; public string? Address {get;set;} }
+    private sealed class CustomerForm { public string? Id {get;set;} [Required,StringLength(180,MinimumLength=2)] public string FullName {get;set;}=""; public string? PhoneNumber {get;set;} public string? Address {get;set;} public string? UserName {get;set;} public string? Email {get;set;} public string? Password {get;set;} public string AccountStatus {get;set;}="Active"; }
+    private sealed class EmployeeForm { public string? Id {get;set;} [Required] public string LastName {get;set;}=""; [Required] public string FirstName {get;set;}=""; public DateOnly? BirthDate {get;set;} public string? AvatarPath {get;set;} public string? Address {get;set;} public string AccountStatus {get;set;}="Active"; [Range(typeof(decimal),"0","999999999")] public decimal BaseSalary {get;set;} public string? UserName {get;set;} public string? Email {get;set;} public string? Password {get;set;} public string AccountLoginStatus {get;set;}="Active"; public string RoleName {get;set;}=StaffRoles.Sales; }
+}

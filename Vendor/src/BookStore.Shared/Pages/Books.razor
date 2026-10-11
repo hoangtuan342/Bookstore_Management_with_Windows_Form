@@ -1,0 +1,74 @@
+@page "/books"
+@using BookStore.Shared.Models
+@using BookStore.Shared.Services
+@inject BookCatalogClient CatalogClient
+
+<PageTitle>Sách | Trang Sách</PageTitle>
+
+<main class="page-shell catalog-page">
+    @if (!string.IsNullOrWhiteSpace(loadError))
+    {
+        <div class="api-warning">@loadError</div>
+    }
+    <div class="breadcrumbs"><a href="/">Trang chủ</a><span>/</span><span>Danh mục sách</span></div>
+    <section class="catalog-heading">
+        <div>
+            <p class="eyebrow">GÓC ĐỌC CỦA BẠN</p>
+            <h1>Tìm cuốn sách tiếp theo</h1>
+            <p class="muted">Những câu chuyện hay và ý tưởng mới đang chờ bạn khám phá.</p>
+        </div>
+        <label class="search-box catalog-search">
+            <span aria-hidden="true">⌕</span>
+            <input @bind="searchTerm" @bind:event="oninput" placeholder="Tìm tên sách, tác giả..." aria-label="Tìm sách" />
+        </label>
+    </section>
+
+    <div class="category-row" aria-label="Lọc theo thể loại">
+        @foreach (var category in categories)
+        {
+            <button class="category-chip @(selectedCategory == category ? "selected" : string.Empty)" @onclick="() => selectedCategory = category">
+                @category
+            </button>
+        }
+    </div>
+
+    <div class="catalog-meta"><span><strong>@FilteredBooks.Count</strong> cuốn sách</span><span>Sắp xếp: <strong>Theo tên</strong></span></div>
+    <div class="book-grid">
+        @foreach (var book in FilteredBooks)
+        {
+            <BookCard Book="book" />
+        }
+    </div>
+
+    @if (FilteredBooks.Count == 0)
+    {
+        <div class="empty-state"><span>⌕</span><h2>Chưa tìm thấy sách phù hợp</h2><p>Thử một từ khóa hoặc thể loại khác nhé.</p></div>
+    }
+</main>
+
+@code {
+    private string searchTerm = string.Empty;
+    private string selectedCategory = "Tất cả";
+    private readonly string[] categories = ["Tất cả", "Văn học", "Kỹ năng sống", "Thiếu nhi", "Tâm lý"];
+    private List<BookItem> books = [];
+    private string? loadError;
+
+    private List<BookItem> FilteredBooks => books
+        .Where(book => selectedCategory == "Tất cả" || book.Category == selectedCategory)
+        .Where(book => string.IsNullOrWhiteSpace(searchTerm)
+            || book.Title.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase)
+            || book.Author.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase))
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            books = (await CatalogClient.GetBooksAsync()).ToList();
+        }
+        catch (HttpRequestException)
+        {
+            loadError = "Chưa kết nối được máy chủ sách. Hãy chạy BookStore.Api rồi tải lại trang.";
+        }
+    }
+}

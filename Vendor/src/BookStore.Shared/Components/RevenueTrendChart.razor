@@ -1,0 +1,59 @@
+@using System.Globalization
+@using BookStore.Shared.Models
+
+<div class="report-chart-scroll">
+    @if (Days.Count == 0)
+    {
+        <div class="admin-empty">Chưa có dữ liệu trong kỳ.</div>
+    }
+    else
+    {
+        <svg class="report-svg-chart report-flow-chart" viewBox="0 0 @Width 300" style="min-width:@(Width)px" role="img" aria-label="@AriaLabel">
+            @for (var tick = 0; tick <= 4; tick++)
+            {
+                var y = 34 + tick * 48;
+                <line x1="56" y1="@y" x2="@(Width - 12)" y2="@y" class="chart-grid-line" />
+                @((MarkupString)$"<text x=\"48\" y=\"{y + 4}\" text-anchor=\"end\" class=\"chart-axis-label\">{CompactMoney(AxisMaximum * (4 - tick) / 4m)}</text>")
+            }
+            @for (var index = 0; index < Days.Count; index++)
+            {
+                var day = Days[index];
+                var center = X(index);
+                var value = ShowPurchaseSpend ? day.PurchaseSpend : day.Revenue;
+                <rect class="@(ShowPurchaseSpend ? "chart-purchase-bar" : "chart-revenue-bar")" x="@Svg(center - BarWidth / 2)" y="@Svg(BarY(value))" width="@Svg(BarWidth)" height="@Svg(BarHeight(value))"><title>@day.Date.ToString("dd/MM/yyyy") · @SeriesName @Money(value)</title></rect>
+                @if (index % LabelStep == 0 || index == Days.Count - 1)
+                {
+                    @((MarkupString)$"<text x=\"{Svg(center)}\" y=\"270\" text-anchor=\"middle\" class=\"chart-axis-label\">{day.Date.ToString("dd/MM")}</text>")
+                }
+            }
+        </svg>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<RevenueByDay> Days { get; set; } = [];
+    [Parameter] public bool ShowPurchaseSpend { get; set; }
+    [Parameter] public string AriaLabel { get; set; } = "Biểu đồ doanh thu theo ngày";
+    private int Width => Math.Max(650, Days.Count * 55 + 70);
+    private decimal DataMaximum => Days.Select(day => ShowPurchaseSpend ? day.PurchaseSpend : day.Revenue).DefaultIfEmpty(0m).Max();
+    private decimal AxisMaximum => NiceCeiling(DataMaximum);
+    private int LabelStep => Math.Max(1, (Days.Count + 7) / 8);
+    private string SeriesName => ShowPurchaseSpend ? "Nhập hàng" : "Doanh thu";
+    private double BarWidth => Math.Min(24d, Math.Max(7d, (Width - 70d) / Math.Max(1, Days.Count) * .55d));
+    private double X(int index) => 56d + (index + .5d) * (Width - 70d) / Math.Max(1, Days.Count);
+    private double BarHeight(decimal value) => (double)(Math.Max(0m, value) / AxisMaximum) * 192d;
+    private double BarY(decimal value) => 226d - BarHeight(value);
+    private static string Svg(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+    private static string Money(decimal value) => $"{value.ToString("N0")}₫";
+    private static string CompactMoney(decimal value) => value >= 1_000_000m ? $"{(value / 1_000_000m).ToString("0.#")}tr" : value >= 1_000m ? $"{(value / 1_000m).ToString("0.#")}k" : value.ToString("0");
+    private static decimal NiceCeiling(decimal value)
+    {
+        if (value <= 0m) return 1m;
+        var magnitude = 1m;
+        while (value >= magnitude * 10m && magnitude <= decimal.MaxValue / 10m) magnitude *= 10m;
+        while (value < magnitude) magnitude /= 10m;
+        var normalized = value / magnitude;
+        var step = normalized <= 1m ? 1m : normalized <= 2m ? 2m : normalized <= 2.5m ? 2.5m : normalized <= 5m ? 5m : 10m;
+        return step * magnitude;
+    }
+}

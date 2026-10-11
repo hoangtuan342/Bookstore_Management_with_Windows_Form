@@ -1,0 +1,176 @@
+@page "/cart"
+@using System.ComponentModel.DataAnnotations
+@using BookStore.Shared.Models
+@using BookStore.Shared.Services
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<PageTitle>Giỏ hàng | Trang Sách</PageTitle>
+
+<main class="page-shell commerce-page">
+    <div class="breadcrumbs"><a href="/">Trang chủ</a><span>/</span><span>Giỏ hàng</span></div>
+    <p class="eyebrow">SẮP ĐẾN LÚC BẮT ĐẦU CUỐN SÁCH MỚI</p>
+    <h1 class="commerce-title">Giỏ hàng của bạn</h1>
+    @if (!string.IsNullOrWhiteSpace(loadError))
+    {
+        <div class="form-message error">@loadError</div>
+    }
+
+    @if (!loaded)
+    {
+        <div class="empty-state"><p>Đang tải giỏ hàng...</p></div>
+    }
+    else if (!signedIn)
+    {
+        <div class="empty-state"><span>♧</span><h2>Đăng nhập để xem giỏ hàng</h2><p>Giỏ hàng sẽ được đồng bộ với tài khoản của bạn.</p><a class="button-primary" href="/account?returnUrl=/cart">Đăng nhập / Đăng ký <span>↗</span></a></div>
+    }
+    else if (items.Count == 0)
+    {
+        <div class="empty-state"><span>♧</span><h2>Giỏ hàng đang trống</h2><p>Thêm vài cuốn sách bạn yêu thích để bắt đầu nhé.</p><a class="button-primary" href="/books">Khám phá sách <span>↗</span></a></div>
+    }
+    else
+    {
+        <div class="commerce-layout">
+            <section class="cart-items" aria-label="Sách trong giỏ hàng">
+                @foreach (var item in items)
+                {
+                    <article class="cart-item">
+                        <div class="mini-cover">t.</div>
+                        <div class="cart-book"><span class="book-category">@item.Author</span><h2>@item.Title</h2><span class="stock-note">Còn @item.AvailableStock cuốn</span></div>
+                        <strong class="cart-price">@item.UnitPrice.ToString("N0")₫</strong>
+                        <div class="quantity-control"><button @onclick="() => ChangeQuantityAsync(item, item.Quantity - 1)" aria-label="Giảm số lượng">−</button><span>@item.Quantity</span><button @onclick="() => ChangeQuantityAsync(item, item.Quantity + 1)" aria-label="Tăng số lượng" disabled="@(item.Quantity >= item.AvailableStock)">+</button></div>
+                        <strong class="cart-line-total">@item.LineTotal.ToString("N0")₫</strong>
+                        <button class="remove-item" @onclick="() => RemoveItemAsync(item.BookId)" aria-label="Xóa @item.Title khỏi giỏ">×</button>
+                    </article>
+                }
+                <a class="text-link back-to-books" href="/books">← Tiếp tục chọn sách</a>
+            </section>
+
+            <aside class="checkout-card">
+                <h2>Thông tin nhận hàng</h2>
+                <EditForm Model="checkout" OnValidSubmit="CheckoutAsync" class="checkout-form">
+                    <DataAnnotationsValidator />
+                    <label>Địa chỉ giao hàng<textarea @bind="checkout.ShippingAddress" rows="3" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"></textarea></label>
+                    <ValidationMessage For="() => checkout.ShippingAddress" />
+                    <label>Số điện thoại nhận hàng<input @bind="checkout.ReceiverPhone" autocomplete="tel" placeholder="09xx xxx xxx" /></label>
+                    <ValidationMessage For="() => checkout.ReceiverPhone" />
+                    <label>Thanh toán<select @bind="checkout.PaymentMethod"><option value="CashOnDelivery">Thanh toán khi nhận hàng (COD)</option><option value="BankTransfer">Chuyển khoản (mô phỏng)</option></select></label>
+                    <label>Mã voucher (nếu có)<input @bind="checkout.VoucherCode" autocomplete="off" placeholder="NHAPMA" /></label>
+                    <div class="checkout-total"><span>Tạm tính</span><strong>@Total.ToString("N0")₫</strong></div>
+                    <p class="checkout-note">Phí giao hàng sẽ được xác nhận khi cửa hàng xử lý đơn.</p>
+                    @if (!string.IsNullOrWhiteSpace(message))
+                    {
+                        <div class="form-message error">@message</div>
+                    }
+                    <button type="submit" class="button-primary account-submit" disabled="@busy">@(busy ? "Đang tạo đơn..." : "Đặt hàng") <span>↗</span></button>
+                </EditForm>
+            </aside>
+        </div>
+    }
+</main>
+
+@code {
+    private List<StoreCartLine> items = [];
+    private readonly CheckoutForm checkout = new();
+    private bool loaded;
+    private bool signedIn;
+    private bool busy;
+    private string? message;
+    private string? loadError;
+    private decimal Total => items.Sum(item => item.LineTotal);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            signedIn = !string.IsNullOrWhiteSpace(await StoreApi.GetCurrentTokenAsync());
+            if (signedIn)
+            {
+                await LoadCartAsync();
+            }
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            signedIn = false;
+            loadError = exception.Message;
+        }
+
+        loaded = true;
+        StateHasChanged();
+    }
+
+    private async Task LoadCartAsync() => items = (await StoreApi.GetCartAsync()).ToList();
+
+    private async Task ChangeQuantityAsync(StoreCartLine item, int quantity)
+    {
+        try
+        {
+            if (quantity <= 0)
+            {
+                await StoreApi.RemoveCartItemAsync(item.BookId);
+            }
+            else
+            {
+                await StoreApi.SetCartQuantityAsync(item.BookId, quantity);
+            }
+
+            await LoadCartAsync();
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or UnauthorizedAccessException)
+        {
+            message = exception.Message;
+        }
+    }
+
+    private async Task RemoveItemAsync(string bookId)
+    {
+        try
+        {
+            await StoreApi.RemoveCartItemAsync(bookId);
+            await LoadCartAsync();
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            message = exception.Message;
+        }
+    }
+
+    private async Task CheckoutAsync()
+    {
+        busy = true;
+        message = null;
+        try
+        {
+            var order = await StoreApi.CheckoutAsync(new CheckoutDetails(checkout.ShippingAddress, checkout.ReceiverPhone, checkout.PaymentMethod, checkout.VoucherCode));
+            Navigation.NavigateTo($"/orders?placed={Uri.EscapeDataString(order.Id)}");
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or UnauthorizedAccessException or HttpRequestException)
+        {
+            message = exception.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private sealed class CheckoutForm
+    {
+        [Required, StringLength(500, MinimumLength = 8)]
+        public string ShippingAddress { get; set; } = string.Empty;
+
+        [Required, Phone, StringLength(30)]
+        public string ReceiverPhone { get; set; } = string.Empty;
+
+        [Required]
+        public string PaymentMethod { get; set; } = "CashOnDelivery";
+
+        [StringLength(40)]
+        public string? VoucherCode { get; set; }
+    }
+}

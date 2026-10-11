@@ -1,0 +1,294 @@
+@page "/admin/inventory"
+@layout AdminLayout
+@using System.ComponentModel.DataAnnotations
+@using BookStore.Shared.Models
+@using BookStore.Shared.Services
+@using BookStore.Shared.Security
+@inject ManagerApiClient ManagerApi
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<PageTitle>Quản lý nhập hàng | Trang Sách</PageTitle>
+
+<main class="page-shell admin-page">
+    @if (!loaded)
+    {
+        <div class="empty-state"><p>Đang tải tồn kho...</p></div>
+    }
+    else if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="admin-error"><h2>Không thể mở nhập hàng</h2><p>@error</p><a class="button-primary" href="/admin/login">Đăng nhập quản lý <span>↗</span></a></div>
+    }
+    else
+    {
+        <div class="admin-heading"><div><p class="eyebrow">KIỂM SOÁT NGUỒN HÀNG</p><h1>Nhập hàng & tồn kho</h1><p>Tạo phiếu nhập để ghi nhận chi phí và tăng số lượng tồn kho.</p></div></div>
+
+        @if (purchaseTrend is not null)
+        {
+            <section class="admin-panel"><div class="admin-panel-heading"><div><p class="eyebrow">CHI PHÍ NHẬP HÀNG</p><h2>Tiền nhập hàng theo ngày · 30 ngày</h2></div></div><RevenueTrendChart Days="purchaseTrend.RevenueByDay" ShowPurchaseSpend="true" AriaLabel="Chi phí nhập hàng trong 30 ngày" /></section>
+        }
+
+        <div class="inventory-layout">
+            <section class="admin-panel"><div class="admin-panel-heading"><div><p class="eyebrow">@(editingReceiptId is null ? "PHIẾU NHẬP MỚI" : $"ĐANG SỬA {editingReceiptId}")</p><h2>@(editingReceiptId is null ? "Nhập sách từ nhà cung cấp" : "Cập nhật phiếu nhập")</h2></div></div>
+                @if (lookups!.Suppliers.Count == 0)
+                {
+                    <div class="form-message error">Tạo nhà cung cấp trước khi lập phiếu nhập.</div>
+                }
+                else
+                {
+                    <EditForm Model="receiptForm" OnValidSubmit="CreateReceiptAsync" class="admin-book-form">
+                        <DataAnnotationsValidator />
+                        <label>Nhà cung cấp<select @bind="receiptForm.SupplierId"><option value="">Chọn nhà cung cấp</option>@foreach (var supplier in lookups.Suppliers){<option value="@supplier.Id">@supplier.Name</option>}</select></label>
+                        <ValidationMessage For="() => receiptForm.SupplierId" />
+                        @foreach (var line in receiptForm.Lines)
+                        {
+                            <div class="receipt-line-form">
+                                <label>Đầu sách<select @bind="line.BookId"><option value="">Chọn sách</option>@foreach (var book in books){<option value="@book.Id">@book.Title (@book.AvailableStock cuốn)</option>}</select></label>
+                                <label>Số lượng<input type="number" min="1" @bind="line.Quantity" /></label>
+                                <label>Giá nhập / cuốn<input type="number" min="1" step="1000" @bind="line.UnitCost" /></label>
+                                <button class="table-action" type="button" @onclick="() => receiptForm.Lines.Remove(line)" disabled="@(receiptForm.Lines.Count == 1)">Bỏ</button>
+                            </div>
+                        }
+                        <button class="text-button" type="button" @onclick="() => receiptForm.Lines.Add(new ReceiptLineForm())">+ Thêm đầu sách</button>
+                        @if (!string.IsNullOrWhiteSpace(receiptMessage))
+                        {
+                            <div class="form-message @(receiptSucceeded ? "success" : "error")">@receiptMessage</div>
+                        }
+                        <button class="button-primary" type="submit" disabled="@busy">@(busy ? "Đang lưu..." : editingReceiptId is null ? "Tạo phiếu nhập" : "Lưu thay đổi") <span>↗</span></button>
+                        @if (editingReceiptId is not null) { <button class="text-button" type="button" @onclick="ResetReceiptForm">Hủy sửa</button> }
+                    </EditForm>
+                }
+            </section>
+
+            <section class="admin-panel"><div class="admin-panel-heading"><div><p class="eyebrow">ĐỐI TÁC</p><h2>Nhà cung cấp</h2></div></div>
+                <EditForm Model="supplierForm" OnValidSubmit="CreateSupplierAsync" class="supplier-form">
+                    <DataAnnotationsValidator />
+                    <label>Tên nhà cung cấp<input @bind="supplierForm.Name" placeholder="Tên đơn vị" /></label>
+                    <label>Số điện thoại<input @bind="supplierForm.PhoneNumber" placeholder="Số liên hệ" /></label>
+                    <button class="account-link" type="submit" disabled="@busy">@(editingSupplierId is null ? "Thêm nhà cung cấp" : "Lưu thay đổi")</button>
+                    @if(editingSupplierId is not null){<button type="button" class="text-button" @onclick="ResetSupplier">Hủy sửa</button>}
+                </EditForm>
+                @if (!string.IsNullOrWhiteSpace(supplierMessage))
+                {
+                    <div class="form-message @(supplierSucceeded ? "success" : "error")">@supplierMessage</div>
+                }
+                @foreach (var supplier in lookups!.Suppliers)
+                {
+                    <div class="supplier-row"><strong>@supplier.Name</strong><span>@supplier.PhoneNumber</span><button class="table-action" @onclick="() => EditSupplier(supplier)">Sửa</button><button class="table-action" @onclick="() => DeleteSupplierAsync(supplier.Id)">Xóa</button></div>
+                }
+            </section>
+        </div>
+
+        <section class="admin-panel"><div class="admin-panel-heading"><div><p class="eyebrow">LỊCH SỬ KHO</p><h2>Phiếu nhập gần đây</h2></div></div>
+            @if (receipts.Count == 0)
+            {
+                <div class="admin-empty">Chưa có phiếu nhập.</div>
+            }
+            else
+            {
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>MÃ PHIẾU</th><th>NGÀY NHẬP</th><th>NHÀ CUNG CẤP</th><th>SỐ ĐẦU SÁCH</th><th>TỔNG TIỀN</th><th>TRẠNG THÁI</th><th></th></tr></thead><tbody>
+                @foreach (var receipt in receipts)
+                {
+                    <tr><td>@receipt.Id</td><td>@receipt.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td><td>@receipt.SupplierName</td><td>@receipt.Lines.Count</td><td>@receipt.TotalAmount.ToString("N0")₫</td><td>@(receipt.Status == "Cancelled" ? "Đã hủy" : "Đã ghi nhận")</td><td><button class="table-action" @onclick="() => ToggleReceiptDetails(receipt.Id)">@(expandedReceiptId == receipt.Id ? "Ẩn chi tiết" : "Chi tiết")</button> @if(receipt.Status == "Posted"){<button class="table-action" @onclick="() => EditReceipt(receipt)">Sửa</button><button class="table-action" @onclick="() => CancelReceiptAsync(receipt)">Xóa / hủy</button>}</td></tr>
+                    @if (expandedReceiptId == receipt.Id)
+                    {
+                        <tr><td colspan="7"><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>MÃ SÁCH</th><th>TÊN SÁCH</th><th>SỐ LƯỢNG</th><th>ĐƠN GIÁ NHẬP</th><th>THÀNH TIỀN</th></tr></thead><tbody>@foreach(var line in receipt.Lines){<tr><td>@line.BookId</td><td>@line.BookTitle</td><td>@line.Quantity</td><td>@line.UnitCost.ToString("N0")₫</td><td>@line.LineTotal.ToString("N0")₫</td></tr>}</tbody></table></div></td></tr>
+                    }
+                }
+                </tbody></table></div>
+            }
+        </section>
+    }
+</main>
+
+@code {
+    private readonly ReceiptForm receiptForm = new();
+    private readonly SupplierForm supplierForm = new();
+    private ManagerLookups? lookups;
+    private List<BookItem> books = [];
+    private List<ManagerReceipt> receipts = [];
+    private ManagerReport? purchaseTrend;
+    private bool loaded;
+    private bool busy;
+    private bool receiptSucceeded;
+    private bool supplierSucceeded;
+    private string? error;
+    private string? receiptMessage;
+    private string? supplierMessage;
+    private string? editingSupplierId;
+    private string? editingReceiptId;
+    private string? expandedReceiptId;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!StaffPermissions.CanAccess(await StoreApi.GetCurrentRoleAsync(), "inventory"))
+        {
+            Navigation.NavigateTo(StaffPermissions.HomePath(await StoreApi.GetCurrentRoleAsync()));
+            return;
+        }
+
+        try
+        {
+            lookups = await ManagerApi.GetLookupsAsync();
+            books = (await ManagerApi.GetBooksAsync()).ToList();
+            receipts = (await ManagerApi.GetReceiptsAsync()).ToList();
+            try { purchaseTrend = await ManagerApi.GetReportAsync(30); }
+            catch (Exception) { purchaseTrend = null; }
+            if (lookups.Suppliers.Count > 0)
+            {
+                receiptForm.SupplierId = lookups.Suppliers[0].Id;
+            }
+            if (books.Count > 0)
+            {
+                receiptForm.Lines[0].BookId = books[0].Id;
+            }
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            error = exception.Message;
+        }
+
+        loaded = true;
+        StateHasChanged();
+    }
+
+    private async Task CreateSupplierAsync()
+    {
+        busy = true;
+        try
+        {
+            var supplier = new CreateSupplier(supplierForm.Name.Trim(), supplierForm.PhoneNumber?.Trim());
+            if (editingSupplierId is null) await ManagerApi.CreateSupplierAsync(supplier);
+            else await ManagerApi.UpdateSupplierAsync(editingSupplierId, supplier);
+            lookups = await ManagerApi.GetLookupsAsync();
+            ResetSupplier();
+            supplierMessage = "Đã lưu nhà cung cấp.";
+            supplierSucceeded = true;
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            supplierMessage = exception.Message;
+            supplierSucceeded = false;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private void EditSupplier(SupplierOption supplier)
+    {
+        editingSupplierId = supplier.Id; supplierForm.Name = supplier.Name; supplierForm.PhoneNumber = supplier.PhoneNumber;
+        supplierMessage = null;
+    }
+
+    private void ResetSupplier()
+    {
+        editingSupplierId = null; supplierForm.Name = string.Empty; supplierForm.PhoneNumber = string.Empty;
+    }
+
+    private async Task DeleteSupplierAsync(string id)
+    {
+        try
+        {
+            await ManagerApi.DeleteSupplierAsync(id); lookups = await ManagerApi.GetLookupsAsync();
+            supplierMessage = "Đã xóa nhà cung cấp."; supplierSucceeded = true;
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        { supplierMessage = exception.Message; supplierSucceeded = false; }
+    }
+
+    private void ToggleReceiptDetails(string id) => expandedReceiptId = expandedReceiptId == id ? null : id;
+
+    private void EditReceipt(ManagerReceipt receipt)
+    {
+        editingReceiptId = receipt.Id;
+        receiptForm.SupplierId = receipt.SupplierId;
+        receiptForm.Lines = receipt.Lines.Select(line => new ReceiptLineForm
+        {
+            BookId = line.BookId,
+            Quantity = line.Quantity,
+            UnitCost = line.UnitCost
+        }).ToList();
+        receiptMessage = null;
+        expandedReceiptId = receipt.Id;
+    }
+
+    private void ResetReceiptForm()
+    {
+        editingReceiptId = null;
+        receiptForm.SupplierId = lookups?.Suppliers.FirstOrDefault()?.Id ?? string.Empty;
+        receiptForm.Lines = [new ReceiptLineForm { BookId = books.FirstOrDefault()?.Id ?? string.Empty }];
+        receiptMessage = null;
+    }
+
+    private async Task CancelReceiptAsync(ManagerReceipt receipt)
+    {
+        try
+        {
+            await ManagerApi.CancelReceiptAsync(receipt.Id);
+            receipts = (await ManagerApi.GetReceiptsAsync()).ToList();
+            books = (await ManagerApi.GetBooksAsync()).ToList();
+            receiptMessage = "Đã hủy phiếu nhập và giảm tồn kho tương ứng."; receiptSucceeded = true;
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        { receiptMessage = exception.Message; receiptSucceeded = false; }
+    }
+
+    private async Task CreateReceiptAsync()
+    {
+        if (receiptForm.Lines.Any(line => string.IsNullOrWhiteSpace(line.BookId) || line.Quantity < 1 || line.UnitCost <= 0))
+        {
+            receiptMessage = "Mỗi dòng cần có sách, số lượng dương và giá nhập lớn hơn 0.";
+            receiptSucceeded = false;
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            var lines = receiptForm.Lines.Select(line => new CreateReceiptLine(line.BookId, line.Quantity, line.UnitCost)).ToArray();
+            var request = new CreateReceipt(receiptForm.SupplierId, lines);
+            if (editingReceiptId is null) await ManagerApi.CreateReceiptAsync(request);
+            else await ManagerApi.UpdateReceiptAsync(editingReceiptId, request);
+            books = (await ManagerApi.GetBooksAsync()).ToList();
+            receipts = (await ManagerApi.GetReceiptsAsync()).ToList();
+            receiptMessage = editingReceiptId is null ? "Đã tạo phiếu nhập và cập nhật tồn kho." : "Đã cập nhật phiếu nhập và điều chỉnh tồn kho.";
+            receiptSucceeded = true;
+            editingReceiptId = null;
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            receiptMessage = exception.Message;
+            receiptSucceeded = false;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private sealed class ReceiptForm
+    {
+        [Required] public string SupplierId { get; set; } = string.Empty;
+        [MinLength(1)] public List<ReceiptLineForm> Lines { get; set; } = [new()];
+    }
+
+    private sealed class ReceiptLineForm
+    {
+        [Required] public string BookId { get; set; } = string.Empty;
+        [Range(1, 100000)] public int Quantity { get; set; } = 1;
+        [Range(typeof(decimal), "0.01", "999999999")] public decimal UnitCost { get; set; }
+    }
+
+    private sealed class SupplierForm
+    {
+        [Required, StringLength(180, MinimumLength = 2)] public string Name { get; set; } = string.Empty;
+        [Phone, StringLength(30)] public string? PhoneNumber { get; set; }
+    }
+}

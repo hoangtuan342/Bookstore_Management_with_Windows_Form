@@ -1,0 +1,98 @@
+@page "/admin"
+@layout AdminLayout
+@using BookStore.Shared.Models
+@using BookStore.Shared.Services
+@using BookStore.Shared.Security
+@inject ManagerApiClient ManagerApi
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<PageTitle>Quản lý | Trang Sách</PageTitle>
+
+<main class="page-shell admin-page">
+    @if (!loaded)
+    {
+        <div class="empty-state"><p>Đang tải bảng quản lý...</p></div>
+    }
+    else if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="admin-error"><h2>Không thể mở khu vực quản lý</h2><p>@error</p><a class="button-primary" href="/admin/login">Đăng nhập quản lý <span>↗</span></a></div>
+    }
+    else if (dashboard is not null)
+    {
+        <div class="admin-heading"><div><p class="eyebrow">TRANG SÁCH · QUẢN TRỊ</p><h1>Tổng quan cửa hàng</h1><p>Chào mừng bạn trở lại. Đây là tình hình hoạt động gần đây.</p></div></div>
+        <section class="admin-stat-grid">
+            <article class="admin-stat"><span>DOANH THU THÁNG</span><strong>@dashboard.RevenueThisMonth.ToString("N0")₫</strong><small>Đơn đã hoàn tất trong tháng</small></article>
+            <article class="admin-stat"><span>ĐƠN HÔM NAY</span><strong>@dashboard.OrdersToday</strong><small>@dashboard.PendingOrders đơn chờ xác nhận</small></article>
+            <article class="admin-stat"><span>ĐẦU SÁCH ĐANG BÁN</span><strong>@dashboard.ActiveBooks</strong><small>@dashboard.LowStockBooks đầu sách sắp hết</small></article>
+            <article class="admin-stat"><span>KHÁCH HÀNG</span><strong>@dashboard.CustomerCount</strong><small>Tài khoản trong hệ thống</small></article>
+        </section>
+        @if (trend is not null)
+        {
+            <section class="admin-panel">
+                <div class="admin-panel-heading"><div><p class="eyebrow">XU HƯỚNG DOANH THU</p><h2>7 ngày gần đây</h2></div><a class="text-link" href="/admin/reports">Báo cáo chi tiết ↗</a></div>
+                <RevenueTrendChart Days="trend.RevenueByDay" AriaLabel="Doanh thu 7 ngày gần đây" />
+            </section>
+        }
+        <section class="admin-panel"><div class="admin-panel-heading"><div><p class="eyebrow">CẦN XỬ LÝ</p><h2>Đơn hàng gần đây</h2></div><a class="text-link" href="/admin/orders">Xem tất cả ↗</a></div>
+            @if (dashboard.RecentOrders.Count == 0)
+            {
+                <div class="admin-empty">Chưa có đơn hàng.</div>
+            }
+            else
+            {
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>MÃ ĐƠN</th><th>KHÁCH HÀNG</th><th>NGÀY ĐẶT</th><th>TRẠNG THÁI</th><th>TỔNG TIỀN</th></tr></thead><tbody>
+                @foreach (var order in dashboard.RecentOrders)
+                {
+                    <tr><td><a class="table-link" href="/admin/orders">@order.Id</a></td><td>@order.CustomerName</td><td>@order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td><td><span class="status-pill">@StatusName(order.OrderStatus)</span></td><td>@order.TotalAmount.ToString("N0")₫</td></tr>
+                }
+                </tbody></table></div>
+            }
+        </section>
+    }
+</main>
+
+@code {
+    private ManagerDashboard? dashboard;
+    private ManagerReport? trend;
+    private bool loaded;
+    private string? error;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!StaffPermissions.CanAccess(await StoreApi.GetCurrentRoleAsync(), "dashboard"))
+        {
+            Navigation.NavigateTo(StaffPermissions.HomePath(await StoreApi.GetCurrentRoleAsync()));
+            return;
+        }
+
+        try
+        {
+            dashboard = await ManagerApi.GetDashboardAsync();
+            try { trend = await ManagerApi.GetReportAsync(7); }
+            catch (Exception) { trend = null; }
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException or HttpRequestException)
+        {
+            error = exception.Message;
+        }
+
+        loaded = true;
+        StateHasChanged();
+    }
+
+    private static string StatusName(string status) => status switch
+    {
+        "Pending" => "Chờ xác nhận",
+        "Confirmed" => "Đã xác nhận",
+        "Shipping" => "Đang giao",
+        "Completed" => "Hoàn tất",
+        "Cancelled" => "Đã hủy",
+        _ => status
+    };
+}

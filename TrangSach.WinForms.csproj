@@ -9,19 +9,16 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.5" />
-    <ProjectReference Include="..\Quản lý cửa hàng sách\src\BookStore.Shared\BookStore.Shared.csproj" />
-    <ProjectReference Include="..\Quản lý cửa hàng sách\src\BookStore.Domain\BookStore.Domain.csproj" />
-    <ProjectReference Include="..\Quản lý cửa hàng sách\src\BookStore.Infrastructure\BookStore.Infrastructure.csproj" />
-    <ProjectReference Include="..\Quản lý cửa hàng sách\src\BookStore.Api\BookStore.Api.csproj" />
+    <ProjectReference Include="Vendor\src\BookStore.Shared\BookStore.Shared.csproj" />
+    <ProjectReference Include="Vendor\src\BookStore.Domain\BookStore.Domain.csproj" />
+    <ProjectReference Include="Vendor\src\BookStore.Infrastructure\BookStore.Infrastructure.csproj" />
+    <ProjectReference Include="Vendor\src\BookStore.Api\BookStore.Api.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.5" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="Program.cs;LauncherForm.cs;CustomerApp\**\*.cs;ManagementApp\**\*.cs" />
+    <Compile Remove="Program.cs;LauncherForm.cs;CustomerApp\**\*.cs;ManagementApp\**\*.cs;Vendor\**\*.cs" />
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="..\Quản lý cửa hàng sách\src\BookStore.Api\appsettings.json" Link="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

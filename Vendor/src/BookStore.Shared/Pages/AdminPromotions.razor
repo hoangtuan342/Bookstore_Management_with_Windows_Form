@@ -1,0 +1,221 @@
+@page "/admin/promotions"
+@layout AdminLayout
+@using System.ComponentModel.DataAnnotations
+@using BookStore.Shared.Models
+@using BookStore.Shared.Services
+@using BookStore.Shared.Security
+@inject ManagerApiClient ManagerApi
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<PageTitle>Khuyến mãi | Trang Sách</PageTitle>
+<main class="page-shell admin-page">
+    @if (!loaded) { <div class="empty-state"><p>Đang tải khuyến mãi...</p></div> }
+    else if (!string.IsNullOrWhiteSpace(error)) { <div class="admin-error"><h2>Không thể mở khuyến mãi</h2><p>@error</p></div> }
+    else
+    {
+        <div class="admin-heading"><div><p class="eyebrow">MARKETING</p><h1>Khuyến mãi & voucher</h1><p>Tạo ưu đãi theo sách, theo giá trị đơn hoặc theo mã voucher.</p></div></div>
+        @if (editingPromotion is not null)
+        {
+            <section class="admin-panel admin-form-panel"><h2>Sửa chương trình @editingPromotion.Id</h2>
+                <EditForm Model="editForm" OnValidSubmit="SavePromotionDetailsAsync" class="admin-form-grid"><DataAnnotationsValidator />
+                    <label>Tên chương trình<InputText @bind-Value="editForm.Name" /></label><label>Bắt đầu<InputDate @bind-Value="editForm.StartsAt" /></label><label>Kết thúc<InputDate @bind-Value="editForm.EndsAt" /></label>
+                    <fieldset class="rule-editor"><legend>Giảm theo sách</legend>@foreach(var rule in editForm.Books){<div><select @bind="rule.BookId"><option value="">Chọn sách</option>@foreach(var book in books){<option value="@book.Id">@book.Title</option>}</select><InputNumber @bind-Value="rule.DiscountPercent" /><button type="button" class="table-action" @onclick="() => editForm.Books.Remove(rule)">Bỏ</button></div>}<button type="button" class="text-button" @onclick="() => editForm.Books.Add(new())">+ Thêm quy tắc sách</button></fieldset>
+                    <fieldset class="rule-editor"><legend>Giảm theo giá trị đơn</legend>@foreach(var rule in editForm.Orders){<div><InputNumber @bind-Value="rule.MinimumOrderAmount" /><InputNumber @bind-Value="rule.DiscountPercent" /><button type="button" class="table-action" @onclick="() => editForm.Orders.Remove(rule)">Bỏ</button></div>}<button type="button" class="text-button" @onclick="() => editForm.Orders.Add(new())">+ Thêm ngưỡng đơn</button></fieldset>
+                    <fieldset class="rule-editor"><legend>Giảm theo voucher</legend>@foreach(var rule in editForm.Vouchers){<div><select @bind="rule.VoucherId"><option value="">Chọn voucher</option>@foreach(var voucher in vouchers){<option value="@voucher.Id">@voucher.Id</option>}</select><InputNumber @bind-Value="rule.DiscountPercent" /><button type="button" class="table-action" @onclick="() => editForm.Vouchers.Remove(rule)">Bỏ</button></div>}<button type="button" class="text-button" @onclick="() => editForm.Vouchers.Add(new())">+ Thêm voucher đã có</button></fieldset>
+                    <button class="button-primary" disabled="@busy">Lưu thay đổi</button><button type="button" class="text-button" @onclick="() => editingPromotion = null">Hủy</button>
+                </EditForm>
+            </section>
+        }
+        <section class="admin-panel">
+            <h2>Tạo chương trình</h2>
+            <EditForm Model="form" OnValidSubmit="CreateAsync" class="admin-form-grid">
+                <DataAnnotationsValidator />
+                <label>Tên chương trình<InputText @bind-Value="form.Name" /></label>
+                <label>Bắt đầu<InputDate @bind-Value="form.StartsAt" /></label>
+                <label>Kết thúc<InputDate @bind-Value="form.EndsAt" /></label>
+                <label>Mã sách (bỏ trống nếu không dùng)<InputText @bind-Value="form.BookId" placeholder="sach-01" /></label>
+                <label>Giảm giá sách (%)<InputNumber @bind-Value="form.BookDiscountPercent" /></label>
+                <label>Đơn tối thiểu (₫)<InputNumber @bind-Value="form.MinimumOrderAmount" /></label>
+                <label>Giảm giá đơn (%)<InputNumber @bind-Value="form.OrderDiscountPercent" /></label>
+                <label>Mã voucher<InputText @bind-Value="form.VoucherCode" /></label>
+                <label>Giảm giá voucher (%)<InputNumber @bind-Value="form.VoucherDiscountPercent" /></label>
+                <label>Lượt dùng tối đa<InputNumber @bind-Value="form.VoucherMaxUses" /></label>
+                <button class="button-primary account-submit" type="submit" disabled="@busy">@(busy ? "Đang lưu..." : "Tạo chương trình")</button>
+            </EditForm>
+            @if (!string.IsNullOrWhiteSpace(message)) { <p class="form-message">@message</p> }
+        </section>
+        <section class="admin-panel"><div class="admin-panel-heading"><div><p class="eyebrow">TÌNH TRẠNG CHƯƠNG TRÌNH</p><h2>Khuyến mãi theo thời hạn</h2></div></div><StatusDonut Segments="PromotionSegments" CenterCaption="chương trình" AriaLabel="Phân bổ chương trình khuyến mãi theo thời hạn" /><p class="report-note">Phân loại theo ngày bắt đầu và kết thúc; không phản ánh số lượt sử dụng voucher.</p></section>
+        <section class="admin-panel">
+            <h2>Các chương trình đã tạo</h2>
+            @if (promotions.Count == 0) { <div class="admin-empty">Chưa có chương trình khuyến mãi.</div> }
+            @foreach (var promotion in promotions)
+            {
+                <article class="admin-order-card"><div class="admin-order-top"><div><span class="eyebrow">@promotion.Id · @promotion.StartsAt.ToString("dd/MM/yyyy") – @promotion.EndsAt.ToString("dd/MM/yyyy")</span><h2>@promotion.Name</h2></div><div class="admin-order-actions"><button class="table-action" @onclick="() => EditPromotion(promotion)">Sửa tên/thời hạn</button><button class="table-action" @onclick="() => DeletePromotionAsync(promotion.Id)">Xóa</button></div></div>
+                    @if (promotion.BookOffers.Count > 0) { <p>Sách: @string.Join(" · ", promotion.BookOffers)</p> }
+                    @if (promotion.OrderOffers.Count > 0) { <p>Đơn hàng: @string.Join(" · ", promotion.OrderOffers)</p> }
+                    @if (promotion.Vouchers.Count > 0) { <p>Voucher: @string.Join(" · ", promotion.Vouchers)</p> }
+                </article>
+            }
+        </section>
+        <section class="admin-panel"><div class="admin-panel-heading"><div><p class="eyebrow">MÃ ƯU ĐÃI</p><h2>Voucher</h2></div></div>
+            @if (vouchers.Count == 0) { <div class="admin-empty">Chưa có voucher. Tạo voucher trong biểu mẫu chương trình khuyến mãi.</div> }
+            @foreach (var voucher in vouchers)
+            {
+                <div class="supplier-row"><strong>@voucher.Id</strong><span>@voucher.Status · hết hạn @(voucher.ExpiresAt?.ToString("dd/MM/yyyy") ?? "không giới hạn") · @voucher.UsageCount/@(voucher.MaxUsageCount?.ToString() ?? "∞") lượt · @voucher.OrderCount đơn</span>
+                    <select @bind="voucherEdits[voucher.Id].Status"><option value="Active">Hoạt động</option><option value="Disabled">Ngừng sử dụng</option></select>
+                    <input type="date" @bind="voucherEdits[voucher.Id].ExpiresAt" />
+                    <input type="number" min="1" placeholder="Không giới hạn" @bind="voucherEdits[voucher.Id].MaxUsageCount" />
+                    <button class="table-action" @onclick="() => SaveVoucherAsync(voucher)">Lưu</button>
+                    <button class="table-action" disabled="@(voucher.OrderCount > 0)" @onclick="() => DeleteVoucherAsync(voucher.Id)">Xóa</button>
+                </div>
+                @if (voucher.Promotions.Count > 0) { <p class="report-note">Chương trình: @string.Join(" · ", voucher.Promotions)</p> }
+            }
+        </section>
+    }
+</main>
+
+@code {
+    private readonly PromotionForm form = new() { StartsAt = DateTime.Today, EndsAt = DateTime.Today.AddDays(7) };
+    private List<ManagerPromotion> promotions = [];
+    private List<ManagerVoucher> vouchers = [];
+    private List<BookItem> books = [];
+    private readonly Dictionary<string, VoucherForm> voucherEdits = [];
+    private ManagerPromotion? editingPromotion;
+    private PromotionEditForm editForm = new();
+    private bool loaded, busy;
+    private string? error, message;
+    private IReadOnlyList<ChartSegment> PromotionSegments
+    {
+        get
+        {
+            var today = DateTime.Today;
+            return
+            [
+                new("Đang diễn ra", promotions.Count(item => item.StartsAt.Date <= today && item.EndsAt.Date >= today), "#4d7858"),
+                new("Sắp diễn ra", promotions.Count(item => item.StartsAt.Date > today), "#d4a268"),
+                new("Đã kết thúc", promotions.Count(item => item.EndsAt.Date < today), "#89918a")
+            ];
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        var role = await StoreApi.GetCurrentRoleAsync();
+        if (!StaffPermissions.CanAccess(role, "promotions")) { Navigation.NavigateTo(StaffPermissions.HomePath(role)); return; }
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            promotions = (await ManagerApi.GetPromotionsAsync()).ToList();
+            vouchers = (await ManagerApi.GetVouchersAsync()).ToList();
+            books = (await ManagerApi.GetBooksForPromotionsAsync()).ToList();
+            voucherEdits.Clear();
+            foreach (var voucher in vouchers)
+                voucherEdits[voucher.Id] = new() { Status = voucher.Status, ExpiresAt = voucher.ExpiresAt?.Date, MaxUsageCount = voucher.MaxUsageCount };
+            error = null;
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or InvalidOperationException or HttpRequestException) { error = ex.Message; }
+        loaded = true; StateHasChanged();
+    }
+
+    private async Task CreateAsync()
+    {
+        busy = true; message = null;
+        try
+        {
+            await ManagerApi.CreatePromotionAsync(new CreatePromotion(form.Name, form.StartsAt, form.EndsAt.AddDays(1).AddTicks(-1),
+                form.BookId, form.BookDiscountPercent, form.MinimumOrderAmount, form.OrderDiscountPercent,
+                form.VoucherCode, form.VoucherDiscountPercent, form.VoucherMaxUses));
+            message = "Đã tạo chương trình khuyến mãi.";
+            form.Name = string.Empty; form.BookId = form.VoucherCode = null;
+            form.BookDiscountPercent = form.MinimumOrderAmount = form.OrderDiscountPercent = form.VoucherDiscountPercent = null;
+            form.VoucherMaxUses = null;
+            await LoadAsync();
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or InvalidOperationException or HttpRequestException) { message = ex.Message; }
+        finally { busy = false; }
+    }
+
+    private void EditPromotion(ManagerPromotion item)
+    {
+        editingPromotion = item;
+        editForm = new()
+        {
+            Name = item.Name, StartsAt = item.StartsAt.Date, EndsAt = item.EndsAt.Date,
+            Books = item.BookRules.Select(x => new BookRuleEdit { BookId = x.BookId, DiscountPercent = x.DiscountPercent }).ToList(),
+            Orders = item.OrderRules.Select(x => new OrderRuleEdit { MinimumOrderAmount = x.MinimumOrderAmount, DiscountPercent = x.DiscountPercent }).ToList(),
+            Vouchers = item.VoucherRules.Select(x => new VoucherRuleEdit { VoucherId = x.VoucherId, DiscountPercent = x.DiscountPercent }).ToList()
+        };
+    }
+
+    private async Task SavePromotionDetailsAsync()
+    {
+        if (editingPromotion is null) return;
+        busy = true;
+        try
+        {
+            await ManagerApi.UpdatePromotionAsync(editingPromotion.Id, new(editForm.Name.Trim(), editForm.StartsAt, editForm.EndsAt.AddDays(1).AddTicks(-1)));
+            await ManagerApi.UpdatePromotionRulesAsync(editingPromotion.Id, new(
+                editForm.Books.Where(x => !string.IsNullOrWhiteSpace(x.BookId)).Select(x => new PromotionBookRule(x.BookId, x.DiscountPercent)).ToArray(),
+                editForm.Orders.Select(x => new PromotionOrderRule(x.MinimumOrderAmount, x.DiscountPercent)).ToArray(),
+                editForm.Vouchers.Where(x => !string.IsNullOrWhiteSpace(x.VoucherId)).Select(x => new PromotionVoucherRule(x.VoucherId, x.DiscountPercent)).ToArray()));
+            editingPromotion = null; message = "Đã cập nhật chương trình."; await LoadAsync();
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or InvalidOperationException or HttpRequestException) { message = ex.Message; }
+        finally { busy = false; }
+    }
+
+    private async Task DeletePromotionAsync(string id)
+    {
+        busy = true;
+        try { await ManagerApi.DeletePromotionAsync(id); message = "Đã xóa chương trình và các quy tắc đi kèm."; await LoadAsync(); }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or InvalidOperationException or HttpRequestException) { message = ex.Message; }
+        finally { busy = false; }
+    }
+
+    private async Task SaveVoucherAsync(ManagerVoucher item)
+    {
+        busy = true;
+        try
+        {
+            var form = voucherEdits[item.Id];
+            await ManagerApi.UpdateVoucherAsync(item.Id, new(form.Status, form.ExpiresAt, form.MaxUsageCount));
+            message = "Đã cập nhật voucher."; await LoadAsync();
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or InvalidOperationException or HttpRequestException) { message = ex.Message; }
+        finally { busy = false; }
+    }
+
+    private async Task DeleteVoucherAsync(string id)
+    {
+        busy = true;
+        try { await ManagerApi.DeleteVoucherAsync(id); message = "Đã xóa voucher."; await LoadAsync(); }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or InvalidOperationException or HttpRequestException) { message = ex.Message; }
+        finally { busy = false; }
+    }
+
+    private sealed class PromotionForm
+    {
+        [Required, StringLength(180, MinimumLength = 2)] public string Name { get; set; } = string.Empty;
+        public DateTime StartsAt { get; set; }
+        public DateTime EndsAt { get; set; }
+        public string? BookId { get; set; }
+        [Range(typeof(decimal), "0", "90")] public decimal? BookDiscountPercent { get; set; }
+        [Range(typeof(decimal), "0", "999999999")] public decimal? MinimumOrderAmount { get; set; }
+        [Range(typeof(decimal), "0", "90")] public decimal? OrderDiscountPercent { get; set; }
+        public string? VoucherCode { get; set; }
+        [Range(typeof(decimal), "0", "90")] public decimal? VoucherDiscountPercent { get; set; }
+        [Range(1, 1000000)] public int? VoucherMaxUses { get; set; }
+    }
+
+    private sealed class PromotionEditForm { [Required,StringLength(180,MinimumLength=2)] public string Name {get;set;}=""; public DateTime StartsAt {get;set;}=DateTime.Today; public DateTime EndsAt {get;set;}=DateTime.Today.AddDays(7); public List<BookRuleEdit> Books {get;set;}=[]; public List<OrderRuleEdit> Orders {get;set;}=[]; public List<VoucherRuleEdit> Vouchers {get;set;}=[]; }
+    private sealed class BookRuleEdit { public string BookId {get;set;}=""; public decimal DiscountPercent {get;set;} }
+    private sealed class OrderRuleEdit { public decimal MinimumOrderAmount {get;set;} public decimal DiscountPercent {get;set;} }
+    private sealed class VoucherRuleEdit { public string VoucherId {get;set;}=""; public decimal DiscountPercent {get;set;} }
+    private sealed class VoucherForm { public string Status {get;set;}="Active"; public DateTime? ExpiresAt {get;set;} public int? MaxUsageCount {get;set;} }
+}

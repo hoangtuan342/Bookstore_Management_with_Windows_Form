@@ -1,0 +1,208 @@
+@page "/admin/reports"
+@layout AdminLayout
+@using BookStore.Shared.Models
+@using BookStore.Shared.Services
+@using BookStore.Shared.Security
+@using System.Globalization
+@inject ManagerApiClient ManagerApi
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<PageTitle>Báo cáo | Trang Sách</PageTitle>
+<main class="page-shell admin-page">
+    @if (!loaded)
+    {
+        <div class="empty-state"><p>Đang tải báo cáo...</p></div>
+    }
+    else if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="admin-error"><h2>Không thể mở báo cáo</h2><p>@error</p></div>
+    }
+    else if (report is not null)
+    {
+        <div class="admin-heading report-heading">
+            <div><p class="eyebrow">PHÂN TÍCH KINH DOANH</p><h1>Báo cáo cửa hàng</h1><p>Dữ liệu đơn hàng và phiếu nhập trong @report.Days ngày gần nhất.</p></div>
+            <div class="report-period" aria-label="Chọn kỳ báo cáo">
+                @foreach (var period in periods)
+                {
+                    <button type="button" class="@(report.Days == period.Days ? "selected" : "")" disabled="@refreshing" @onclick="() => LoadPeriodAsync(period.Days)">@period.Label</button>
+                }
+            </div>
+        </div>
+
+        @if (refreshing) { <div class="report-refreshing">Đang cập nhật báo cáo…</div> }
+        <section class="admin-stat-grid report-stat-grid">
+            <article class="admin-stat"><span>DOANH THU THUẦN</span><strong>@Money(report.Revenue)</strong><small>Đơn hoàn tất, sau giảm giá đơn</small></article>
+            <article class="admin-stat"><span>ĐƠN HÀNG</span><strong>@report.TotalOrders</strong><small>@report.CompletedOrders hoàn tất · @report.PendingOrders chờ xử lý</small></article>
+            <article class="admin-stat"><span>GIÁ TRỊ ĐƠN TB</span><strong>@Money(report.AverageOrderValue)</strong><small>Tính trên đơn hoàn tất</small></article>
+            <article class="admin-stat"><span>GIẢM GIÁ</span><strong>@Money(report.Discounts)</strong><small>Tổng giảm giá trên đơn hoàn tất</small></article>
+            <article class="admin-stat"><span>CHI NHẬP HÀNG</span><strong>@Money(report.PurchaseSpend)</strong><small>Phiếu nhập trong kỳ</small></article>
+            <article class="admin-stat"><span>LÃI GỘP ƯỚC TÍNH</span><strong>@Money(report.EstimatedGrossProfit)</strong><small>Độ phủ giá vốn: @report.CostCoveragePercent.ToString("N1")%</small></article>
+        </section>
+
+        <section class="admin-panel">
+            <div class="admin-panel-heading"><div><p class="eyebrow">DÒNG TIỀN BÁN HÀNG</p><h2>Doanh thu và nhập hàng theo ngày</h2></div><div class="report-legend"><span><i class="legend-revenue"></i>Doanh thu</span><span><i class="legend-purchase"></i>Nhập hàng</span></div></div>
+            <p class="report-note">Doanh thu tính từ đơn hoàn tất. Chi nhập hàng dựa trên phiếu nhập đã ghi nhận.</p>
+            <div class="report-chart-scroll">
+                <svg class="report-svg-chart report-flow-chart" viewBox="0 0 @ChartWidth 300" style="min-width:@(ChartWidth)px" role="img" aria-label="Biểu đồ cột doanh thu và nhập hàng theo ngày">
+                    @for (var tick = 0; tick <= 4; tick++)
+                    {
+                        var y = 34 + tick * 48;
+                        <line x1="56" y1="@y" x2="@(ChartWidth - 12)" y2="@y" class="chart-grid-line" />
+                        @((MarkupString)$"<text x=\"48\" y=\"{y + 4}\" text-anchor=\"end\" class=\"chart-axis-label\">{CompactMoney(ChartMax * (4 - tick) / 4m)}</text>")
+                    }
+                    @for (var index = 0; index < report.RevenueByDay.Count; index++)
+                    {
+                        var day = report.RevenueByDay[index];
+                        var center = ChartX(index);
+                        <rect class="chart-revenue-bar" x="@Svg(center - ChartBarWidth - 1)" y="@Svg(ChartBarY(day.Revenue))" width="@Svg(ChartBarWidth)" height="@Svg(ChartBarHeight(day.Revenue))">
+                            <title>@day.Date.ToString("dd/MM/yyyy") · Doanh thu @Money(day.Revenue)</title>
+                        </rect>
+                        <rect class="chart-purchase-bar" x="@Svg(center + 1)" y="@Svg(ChartBarY(day.PurchaseSpend))" width="@Svg(ChartBarWidth)" height="@Svg(ChartBarHeight(day.PurchaseSpend))">
+                            <title>@day.Date.ToString("dd/MM/yyyy") · Nhập hàng @Money(day.PurchaseSpend)</title>
+                        </rect>
+                        @if (ShouldShowDate(index))
+                        {
+                            @((MarkupString)$"<text x=\"{Svg(center)}\" y=\"270\" text-anchor=\"middle\" class=\"chart-axis-label\">{day.Date.ToString("dd/MM")}</text>")
+                        }
+                    }
+                </svg>
+            </div>
+        </section>
+
+        <div class="report-lower-grid">
+            <section class="admin-panel">
+                <div class="admin-panel-heading"><div><p class="eyebrow">HIỆU QUẢ SẢN PHẨM</p><h2>Top 10 sách bán chạy</h2></div></div>
+                @if (report.BestSellers.Count == 0) { <div class="admin-empty">Chưa có đơn hoàn tất trong kỳ.</div> }
+                else
+                {
+                    var maxQuantity = report.BestSellers.Max(item => item.Quantity);
+                    @foreach (var item in report.BestSellers)
+                    {
+                        <div class="report-seller"><div class="report-seller-copy"><span><strong>@item.Title</strong><small>@item.BookId · @item.Quantity cuốn</small></span><b>@Money(item.Revenue)</b></div><div class="report-status-track"><i class="seller-fill" style="width:@(maxQuantity == 0 ? 0 : item.Quantity * 100 / maxQuantity)%"></i></div></div>
+                    }
+                }
+            </section>
+        </div>
+        <section class="admin-panel report-comparison-panel">
+            <div class="admin-panel-heading"><div><p class="eyebrow">SO SÁNH HIỆU QUẢ</p><h2>So với kỳ liền trước</h2></div></div>
+            <div class="report-comparison-grid">
+                <article><span>Doanh thu thuần</span><strong class="@ChangeTone(report.RevenueChangePercent)">@ChangeLabel(report.RevenueChangePercent)</strong><small>Kỳ trước: @Money(report.PreviousPeriodRevenue)</small></article>
+                <article><span>Đơn hoàn tất</span><strong class="@ChangeTone(report.CompletedOrdersChangePercent)">@ChangeLabel(report.CompletedOrdersChangePercent)</strong><small>Kỳ trước: @report.PreviousPeriodCompletedOrders đơn</small></article>
+            </div>
+        </section>
+
+        <div class="report-visual-grid">
+            <section class="admin-panel">
+                <div class="admin-panel-heading"><div><p class="eyebrow">CƠ CẤU DOANH THU</p><h2>Doanh thu theo thể loại</h2></div></div>
+                @if (report.RevenueByCategory.Count == 0) { <div class="admin-empty">Chưa có doanh thu trong kỳ.</div> }
+                else
+                {
+                    @foreach (var item in report.RevenueByCategory)
+                    {
+                        <div class="report-breakdown-row"><div class="report-breakdown-copy"><strong>@item.Category</strong><span>@item.Quantity cuốn · @Money(item.Revenue)</span></div><div class="report-status-track"><i class="category-fill" style="width:@CategoryRevenueWidth(item.Revenue)%"></i></div></div>
+                    }
+                }
+            </section>
+
+            <section class="admin-panel">
+                <div class="admin-panel-heading"><div><p class="eyebrow">KHÁCH HÀNG THÂN THIẾT</p><h2>Khách mua nhiều nhất</h2></div></div>
+                @if (report.TopCustomers.Count == 0) { <div class="admin-empty">Chưa có đơn hoàn tất trong kỳ.</div> }
+                else
+                {
+                    @foreach (var item in report.TopCustomers)
+                    {
+                        <div class="report-breakdown-row"><div class="report-breakdown-copy"><strong>@item.CustomerName</strong><span>@item.Orders đơn · @item.Quantity cuốn · @Money(item.Revenue)</span></div><div class="report-status-track"><i class="customer-fill" style="width:@CustomerRevenueWidth(item.Revenue)%"></i></div></div>
+                    }
+                }
+            </section>
+        </div>
+        <p class="report-disclaimer">Lãi gộp là ước tính theo giá vốn bình quân từ các phiếu nhập đã lưu. Sách chưa có phiếu nhập hoặc dữ liệu giá vốn đầy đủ sẽ làm độ phủ giá vốn thấp hơn 100%.</p>
+    }
+</main>
+
+@code {
+    private static readonly (int Days, string Label)[] periods = [(7, "7 ngày"), (30, "30 ngày"), (90, "90 ngày"), (365, "1 năm")];
+    private ManagerReport? report;
+    private bool loaded;
+    private bool refreshing;
+    private string? error;
+    private int ChartWidth => Math.Max(850, (report?.Days ?? 30) * 24 + 70);
+    private decimal ChartMax
+    {
+        get
+        {
+            var max = report?.RevenueByDay.Select(day => Math.Max(day.Revenue, day.PurchaseSpend)).DefaultIfEmpty(0m).Max() ?? 0m;
+            return NiceCeiling(max);
+        }
+    }
+    private double ChartBarWidth => Math.Min(10d, Math.Max(3d, (ChartWidth - 70d) / (report?.Days ?? 30) * 0.28d));
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            var role = await StoreApi.GetCurrentRoleAsync();
+            if (!StaffPermissions.CanAccess(role, "reports")) { Navigation.NavigateTo(StaffPermissions.HomePath(role)); return; }
+            await LoadPeriodAsync(30);
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            loaded = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task LoadPeriodAsync(int days)
+    {
+        refreshing = true;
+        error = null;
+        try { report = await ManagerApi.GetReportAsync(days); }
+        catch (Exception ex) { error = ex.Message; report = null; }
+        finally
+        {
+            refreshing = false;
+            loaded = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private double ChartX(int index) => 56d + (index + 0.5d) * (ChartWidth - 70d) / Math.Max(1, report?.RevenueByDay.Count ?? 1);
+    private double ChartBarHeight(decimal value) => (double)(Math.Max(0m, value) / ChartMax) * 192d;
+    private double ChartBarY(decimal value) => 226d - ChartBarHeight(value);
+
+    private static string Svg(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static string CompactMoney(decimal value) => value >= 1_000_000m
+        ? $"{(value / 1_000_000m).ToString("0.#")}tr"
+        : value >= 1_000m ? $"{(value / 1_000m).ToString("0.#")}k" : value.ToString("0");
+
+    private bool ShouldShowDate(int index) => report is not null && report.RevenueByDay.Count > 0 &&
+        (index % Math.Max(1, (report.RevenueByDay.Count + 7) / 8) == 0 || index == report.RevenueByDay.Count - 1);
+
+    private static string ChangeLabel(decimal? value) => value is null
+        ? "Chưa có dữ liệu kỳ trước"
+        : $"{(value >= 0 ? "+" : "")}{value.Value.ToString("N1")}%";
+
+    private static string ChangeTone(decimal? value) => value is null ? "change-neutral" : value >= 0 ? "change-positive" : "change-negative";
+
+    private int CategoryRevenueWidth(decimal value) => WidthPercent(value, report?.RevenueByCategory.Select(item => item.Revenue).DefaultIfEmpty(0m).Max() ?? 0m);
+    private int CustomerRevenueWidth(decimal value) => WidthPercent(value, report?.TopCustomers.Select(item => item.Revenue).DefaultIfEmpty(0m).Max() ?? 0m);
+    private static int WidthPercent(decimal value, decimal max) => max <= 0 ? 0 : Math.Max(3, (int)(value / max * 100m));
+    private static int WidthPercent(int value, int max) => max <= 0 ? 0 : Math.Max(3, value * 100 / max);
+
+    private static decimal NiceCeiling(decimal value)
+    {
+        if (value <= 0m) return 1m;
+        var magnitude = 1m;
+        while (value >= magnitude * 10m && magnitude <= decimal.MaxValue / 10m) magnitude *= 10m;
+        while (value < magnitude) magnitude /= 10m;
+        var normalized = value / magnitude;
+        var step = normalized <= 1m ? 1m : normalized <= 2m ? 2m : normalized <= 2.5m ? 2.5m : normalized <= 5m ? 5m : 10m;
+        return step * magnitude;
+    }
+
+    private static string Money(decimal value) => $"{value.ToString("N0")}₫";
+}

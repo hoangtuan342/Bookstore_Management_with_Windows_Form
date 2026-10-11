@@ -1,0 +1,6 @@
+.admin-log-search { width: min(100%, 440px); min-height: 44px; padding: 10px 14px; border: 1px solid var(--line, #d8d4cc); border-radius: 10px; background: white; color: inherit; }
+.admin-table { min-width: 1050px; }
+.audit-status-ok, .audit-status-failed { display: inline-flex; padding: 4px 9px; border-radius: 999px; font-size: .82rem; font-weight: 700; }
+.audit-status-ok { color: #23633f; background: #e8f5ed; }
+.audit-status-failed { color: #963e31; background: #faeae6; }
+@media (max-width: 760px) { .admin-panel-heading { align-items: stretch; flex-direction: column; } .admin-log-search { width: 100%; } }

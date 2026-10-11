@@ -1,0 +1,68 @@
+@page "/admin/setup"
+@layout MainLayout
+@using System.ComponentModel.DataAnnotations
+@using BookStore.Shared.Services
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<PageTitle>Thiết lập quản lý | Trang Sách</PageTitle>
+
+<main class="page-shell account-page">
+    <div class="account-card">
+        <div class="account-intro"><span class="account-icon">t.</span><p class="eyebrow">CHỈ DÙNG CHO LẦN KHỞI TẠO ĐẦU</p><h1>Tạo tài khoản quản lý</h1><p>Đường dẫn này chỉ hoạt động trong môi trường Development và chỉ tạo được tài khoản quản lý đầu tiên.</p></div>
+        <EditForm Model="form" OnValidSubmit="CreateManagerAsync" class="account-form">
+            <DataAnnotationsValidator />
+            <label>Họ và tên<input @bind="form.FullName" autocomplete="name" /></label><ValidationMessage For="() => form.FullName" />
+            <label>Email<input @bind="form.Email" type="email" autocomplete="email" /></label><ValidationMessage For="() => form.Email" />
+            <label>Tên đăng nhập<input @bind="form.UserName" autocomplete="username" /></label><ValidationMessage For="() => form.UserName" />
+            <label>Mật khẩu<input @bind="form.Password" type="password" autocomplete="new-password" /></label><ValidationMessage For="() => form.Password" />
+            @if (!string.IsNullOrWhiteSpace(message))
+            {
+                <div class="form-message error">@message</div>
+            }
+            <button class="button-primary account-submit" type="submit" disabled="@busy">@(busy ? "Đang tạo..." : "Tạo tài khoản quản lý") <span>↗</span></button>
+        </EditForm>
+        <a class="account-switch" href="/admin/login">Quay lại đăng nhập quản lý</a>
+    </div>
+</main>
+
+@code {
+    private readonly SetupForm form = new();
+    private bool busy;
+    private string? message;
+
+    private async Task CreateManagerAsync()
+    {
+        busy = true;
+        message = null;
+        try
+        {
+            var result = await StoreApi.SetupFirstManagerAsync(form.UserName, form.Email, form.Password, form.FullName, form.PhoneNumber);
+            if (result.Succeeded)
+            {
+                Navigation.NavigateTo("/admin");
+            }
+            else
+            {
+                message = result.Message;
+            }
+        }
+        catch (HttpRequestException)
+        {
+            message = "Chưa kết nối được API. Hãy chạy BookStore.Api rồi thử lại.";
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private sealed class SetupForm
+    {
+        [Required, StringLength(80, MinimumLength = 3)] public string UserName { get; set; } = string.Empty;
+        [Required, EmailAddress, StringLength(254)] public string Email { get; set; } = string.Empty;
+        [Required, StringLength(100, MinimumLength = 8)] public string Password { get; set; } = string.Empty;
+        [Required, StringLength(180, MinimumLength = 2)] public string FullName { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
+    }
+}

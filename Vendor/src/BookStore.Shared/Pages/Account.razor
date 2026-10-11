@@ -1,0 +1,229 @@
+@page "/account"
+@using System.ComponentModel.DataAnnotations
+@using BookStore.Shared.Services
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<PageTitle>Tài khoản | Trang Sách</PageTitle>
+
+<main class="page-shell account-page">
+    <div class="account-card">
+        <div class="account-intro"><span class="account-icon">t.</span><p class="eyebrow">CHÀO MỪNG BẠN ĐẾN VỚI TRANG SÁCH</p><h1>@(signedIn ? "Bạn đã đăng nhập" : (isLogin ? "Tiếp tục hành trình đọc" : "Tạo tài khoản mới"))</h1><p>Đăng nhập để lưu giỏ hàng và theo dõi đơn sách của bạn.</p></div>
+
+        @if (signedIn)
+        {
+            <div class="form-message success">@message</div>
+            <a class="button-primary account-submit" href="/books">Tiếp tục mua sách <span>↗</span></a>
+            <button class="account-switch" @onclick="SignOutAsync">Đăng xuất</button>
+        }
+        else
+        {
+            <EditForm Model="form" OnSubmit="SubmitAsync" FormName="AccountForm" class="account-form">
+                <DataAnnotationsValidator />
+                @if (!isLogin)
+                {
+                    <label>Họ và tên<InputText @bind-Value="form.FullName" autocomplete="name" placeholder="Nguyễn Minh An" /></label>
+                    <ValidationMessage For="() => form.FullName" />
+                    <label>Email<InputText @bind-Value="form.Email" type="email" autocomplete="email" placeholder="ban@email.com" /></label>
+                    <ValidationMessage For="() => form.Email" />
+                    <label>Số điện thoại <span class="optional-label">(không bắt buộc)</span><InputText @bind-Value="form.PhoneNumber" autocomplete="tel" placeholder="09xx xxx xxx" /></label>
+                }
+                <label>@(isLogin ? "Tên đăng nhập hoặc email" : "Tên đăng nhập")<InputText @bind-Value="form.UserName" autocomplete="username" placeholder="Tên đăng nhập" /></label>
+                <ValidationMessage For="() => form.UserName" />
+                <label>Mật khẩu<InputText @bind-Value="form.Password" type="password" autocomplete="@(isLogin ? "current-password" : "new-password")" placeholder="Ít nhất 8 ký tự" /></label>
+                <ValidationMessage For="() => form.Password" />
+                @if (!string.IsNullOrWhiteSpace(message))
+                {
+                    <div class="form-message @(operationSucceeded ? "success" : "error")">@message</div>
+                }
+                <button class="button-primary account-submit" type="submit" disabled="@busy">@(busy ? "Đang xử lý..." : (isLogin ? "Đăng nhập" : "Tạo tài khoản")) <span>↗</span></button>
+            </EditForm>
+            <button class="account-switch" @onclick="ToggleMode">@(isLogin ? "Bạn chưa có tài khoản? Đăng ký" : "Đã có tài khoản? Đăng nhập")</button>
+            <a class="account-switch" href="/admin/login">Đăng nhập dành cho nhân viên quản lý</a>
+        }
+    </div>
+</main>
+
+@code {
+    [SupplyParameterFromForm(Name = "form", FormName = "AccountForm")]
+    private AccountForm? submittedForm { get; set; }
+    private AccountForm form => submittedForm ??= new AccountForm();
+    private bool isLogin = true;
+    private bool busy;
+    private bool signedIn;
+    private bool operationSucceeded;
+    private string message = string.Empty;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || string.IsNullOrWhiteSpace(await StoreApi.GetCurrentTokenAsync())) return;
+        try
+        {
+            var profile = await StoreApi.GetProfileAsync();
+            if (profile.Role != "Customer")
+            {
+                Navigation.NavigateTo(BookStore.Shared.Security.StaffPermissions.HomePath(profile.Role));
+                return;
+            }
+            signedIn = true;
+            operationSucceeded = true;
+            message = $"Đang đăng nhập với tài khoản {profile.UserName}.";
+            StateHasChanged();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // An expired or revoked session is cleared by StoreApiClient; keep the sign-in form visible.
+        }
+    }
+
+    private async Task SubmitAsync(EditContext editContext)
+    {
+        busy = true;
+        operationSucceeded = false;
+        message = "Đã nhận thao tác đăng nhập, đang kiểm tra thông tin…";
+        StateHasChanged();
+
+        var validationError = ValidateCurrentForm(editContext);
+        if (validationError is not null)
+        {
+            busy = false;
+            message = validationError;
+            StateHasChanged();
+            return;
+        }
+
+        message = "Đang gửi yêu cầu đăng nhập đến máy chủ…";
+        try
+        {
+            var result = isLogin
+                ? await StoreApi.LoginAsync(form.UserName, form.Password)
+                : await StoreApi.RegisterAsync(form.UserName, form.Email, form.Password, form.FullName, form.PhoneNumber);
+            operationSucceeded = result.Succeeded;
+            message = result.Message;
+            signedIn = result.Succeeded;
+            if (signedIn && Navigation.Uri.Contains("returnUrl=", StringComparison.OrdinalIgnoreCase))
+            {
+                Navigation.NavigateTo("/cart");
+            }
+            else if (signedIn)
+            {
+                Navigation.NavigateTo("/profile");
+            }
+        }
+        catch (Exception exception)
+        {
+            message = exception switch
+            {
+                HttpRequestException => "Không kết nối được API. Hãy kiểm tra BookStore.Api tại http://localhost:5017. " + exception.Message,
+                JSException => "API đã phản hồi nhưng trình duyệt không lưu được phiên đăng nhập. " + exception.Message,
+                _ => $"Lỗi đăng nhập [{exception.GetType().Name}]: {exception.Message}"
+            };
+        }
+        finally
+        {
+            busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void AddFieldIssue(EditContext editContext, string propertyName, string label, List<string> issues)
+    {
+        if (propertyName == nameof(AccountForm.Email) && isLogin ||
+            propertyName == nameof(AccountForm.FullName) && isLogin ||
+            propertyName == nameof(AccountForm.PhoneNumber) && isLogin)
+        {
+            return;
+        }
+
+        var field = new FieldIdentifier(form, propertyName);
+        foreach (var issue in editContext.GetValidationMessages(field))
+        {
+            issues.Add($"{label}: {issue}");
+        }
+    }
+
+    private string? ValidateCurrentForm(EditContext editContext)
+    {
+        if (isLogin)
+        {
+            if (string.IsNullOrWhiteSpace(form.UserName))
+            {
+                return "Chưa nhận được tên đăng nhập. Hãy nhập lại tên tài khoản rồi thử lại.";
+            }
+
+            if (form.UserName.Trim().Length < 3)
+            {
+                return "Tên đăng nhập cần có ít nhất 3 ký tự.";
+            }
+
+            if (string.IsNullOrEmpty(form.Password))
+            {
+                return "Chưa nhận được mật khẩu. Hãy nhập mật khẩu rồi thử lại.";
+            }
+
+            if (form.Password.Length < 8)
+            {
+                return "Mật khẩu cần có ít nhất 8 ký tự.";
+            }
+
+            return null;
+        }
+
+        if (editContext.Validate())
+        {
+            return null;
+        }
+
+        var messages = editContext.GetValidationMessages().Distinct().ToArray();
+        return messages.Length > 0
+            ? $"Thông tin chưa hợp lệ: {string.Join(" ", messages)}"
+            : "Thông tin đăng ký chưa hợp lệ. Hãy kiểm tra họ tên, email, tên đăng nhập và mật khẩu.";
+    }
+
+    private void ToggleMode()
+    {
+        isLogin = !isLogin;
+        form.IsRegistration = !isLogin;
+        message = string.Empty;
+    }
+
+    private async Task SignOutAsync()
+    {
+        await StoreApi.SignOutAsync();
+        signedIn = false;
+        message = "Bạn đã đăng xuất.";
+        operationSucceeded = true;
+    }
+
+    private sealed class AccountForm : IValidatableObject
+    {
+        [Required, StringLength(80, MinimumLength = 3)]
+        public string UserName { get; set; } = string.Empty;
+
+        [EmailAddress, StringLength(254)]
+        public string Email { get; set; } = string.Empty;
+
+        [Required, StringLength(100, MinimumLength = 8)]
+        public string Password { get; set; } = string.Empty;
+
+        public bool IsRegistration { get; set; }
+
+        public string FullName { get; set; } = string.Empty;
+
+        [Phone, StringLength(30)]
+        public string? PhoneNumber { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (IsRegistration && string.IsNullOrWhiteSpace(FullName))
+            {
+                yield return new ValidationResult("Vui lòng nhập họ tên.", [nameof(FullName)]);
+            }
+
+            if (IsRegistration && string.IsNullOrWhiteSpace(Email))
+            {
+                yield return new ValidationResult("Vui lòng nhập email.", [nameof(Email)]);
+            }
+        }
+    }
+}

@@ -1,0 +1,46 @@
+@inherits LayoutComponentBase
+@using BookStore.Shared.Services
+@inject StoreApiClient StoreApi
+@inject NavigationManager Navigation
+
+<div class="site-shell">
+    <header class="site-header page-shell">
+        <a class="brand" href="/" aria-label="Trang Sách - Trang chủ"><span class="brand-symbol">t.</span><span>trang sách<span class="brand-period">.</span><small>ĐỌC ĐỂ THẤY THẾ GIỚI</small></span></a>
+        <nav class="main-nav" aria-label="Điều hướng chính"><a href="/">Trang chủ</a><a href="/books">Cửa hàng</a><a href="/books">Thể loại</a><a href="/#featured">Sách nổi bật</a></nav>
+        <div class="header-actions"><a class="icon-link search-link" href="/books" aria-label="Tìm kiếm">⌕</a><a class="cart-link" href="/cart" aria-label="Giỏ hàng"><span>♧</span><small>Giỏ hàng</small></a>
+            @if (currentRole is not null)
+            {
+                <a class="account-link" href="@(currentRole == "Customer" ? "/profile" : "/admin/profile")">Hồ sơ <span>↗</span></a>
+                <button class="header-signout" type="button" @onclick="SignOutAsync">Đăng xuất</button>
+            }
+            else
+            {
+                <a class="account-link" href="/account">Tài khoản <span>↗</span></a>
+            }
+        </div>
+    </header>
+    @Body
+    <footer class="site-footer"><div class="page-shell footer-inner"><a class="brand footer-brand" href="/"><span class="brand-symbol">t.</span><span>trang sách<span class="brand-period">.</span><small>ĐỌC ĐỂ THẤY THẾ GIỚI</small></span></a><p>Một góc nhỏ dành cho những người yêu sách.</p><a href="/admin/login">Đăng nhập quản lý</a><span>© 2026 Trang Sách</span></div></footer>
+</div>
+<div id="blazor-error-ui" data-nosnippet>Đã xảy ra lỗi. <a href="." class="reload">Tải lại</a><span class="dismiss">×</span></div>
+
+@code {
+    private string? currentRole;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var role = await StoreApi.GetCurrentRoleAsync();
+        if (role != currentRole)
+        {
+            currentRole = role;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SignOutAsync()
+    {
+        await StoreApi.SignOutAsync();
+        currentRole = null;
+        Navigation.NavigateTo(currentRole == "Customer" ? "/account" : "/admin/login");
+    }
+}
