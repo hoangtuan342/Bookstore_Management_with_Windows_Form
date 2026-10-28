@@ -1,38 +1,50 @@
-# Trang Sách — Windows Forms
+﻿# Trang Sách — Windows Forms
 
-Hai ứng dụng Windows Forms (.NET 10) kết nối trực tiếp tới SQL Server. Repo này tự chứa entities, migrations, dữ liệu mẫu và lớp nghiệp vụ cần thiết trong `Vendor/src`; không phụ thuộc mã nguồn dự án Web/Mobile và không cần chạy API riêng.
+Dự án gồm ứng dụng khách hàng và ứng dụng quản lý viết bằng WinForms, REST API và SQL Server. Khách hàng truy cập dữ liệu qua HTTPS API; ứng dụng quản lý nội bộ gọi BUS và DAO trực tiếp trong cùng tiến trình.
 
 ## Yêu cầu
 
 - Windows 10/11 và .NET 10 SDK.
-- SQL Server đang chạy; tài khoản Windows chạy ứng dụng có quyền tạo/cập nhật schema và đọc/ghi database.
-- Một instance SQL Server có thể truy cập từ máy đang chạy ứng dụng.
-
-## Lấy mã nguồn trên GitHub
-
-Chỉ cần clone repository Windows Forms:
-
-```powershell
-git clone https://github.com/hoangtuan342/Bookstore_Management_with_Windows_Form.git "Quản lý của hàng sách (C#)"
-cd "Quản lý của hàng sách (C#)"
-```
-
-Sau đó mở PowerShell tại thư mục Windows Forms và chạy các lệnh ở phần bên dưới. Nếu SQL Server trên máy dùng cấu hình khác, mở ứng dụng, chọn **Cơ sở dữ liệu**, nhập connection string rồi khởi động lại. Mã nguồn Web/Mobile không cần được cài đặt hoặc clone.
+- SQL Server được cấu hình để API hoặc ứng dụng quản lý nội bộ truy cập.
+- Ứng dụng khách hàng cần API server đang chạy và có thể truy cập qua HTTPS.
 
 ## Chạy ứng dụng
 
+Mở PowerShell tại thư mục gốc repository. Chạy API:
+
 ```powershell
-dotnet run --project ".\CustomerApp\TrangSach.Customer.csproj"
-dotnet run --project ".\ManagementApp\TrangSach.Management.csproj"
+dotnet run --project ".\API\BookStore.Api\BookStore.Api.csproj" --launch-profile https
 ```
 
-Mỗi lệnh mở ứng dụng riêng. Mặc định ứng dụng thử `(localdb)\MSSQLLocalDB` với database `TrangSachDb`. Nút **Cơ sở dữ liệu** cho phép lưu connection string riêng tại `%LOCALAPPDATA%\TrangSach\database-connection.txt`; khởi động lại ứng dụng để áp dụng. Khi mở, WinForms dùng migrations và dữ liệu khởi tạo nằm trong repo này.
+Mở cửa sổ PowerShell thứ hai để chạy ứng dụng khách hàng:
 
-## Phạm vi
+```powershell
+dotnet run --project ".\GUI\CustomerApp\TrangSach.Customer.csproj"
+```
 
-- `CustomerApp`: đăng nhập/đăng ký khách, xem sách, giỏ hàng, checkout, theo dõi đơn.
-- `ManagementApp`: đăng nhập nhân viên, dashboard, CRUD sách/khách hàng/nhân viên/đơn hàng/nhập hàng/nhà cung cấp/danh mục/khuyến mãi, báo cáo và nhật ký theo vai trò.
-- Hai ứng dụng WinForms đọc/ghi cùng database `TrangSachDb` theo connection string đã cấu hình. Chỉ database được chia sẻ với Web/Mobile; hai phần mềm có source riêng.
-- Mã OOP: interface `IPaymentOption` được lớp trừu tượng `CheckoutPaymentOption` triển khai; các kiểu thanh toán cụ thể ghi đè hành vi và được xử lý qua interface. Có `BookCsvFileService`, danh sách đối tượng, đọc/ghi CSV, cùng thuộc tính và phương thức `static`.
+Chạy ứng dụng quản lý nội bộ:
 
-Không lưu mật khẩu SQL hoặc thông tin đăng nhập trong thư mục dự án. Quyền SQL của từng Windows user cần được cấp trên SQL Server.
+```powershell
+dotnet run --project ".\GUI\ManagementApp\TrangSach.Management.csproj"
+```
+
+Để theo dõi thay đổi mã nguồn khi phát triển, thay `dotnet run` bằng `dotnet watch run` cho project cần chạy. Những thay đổi WinForms hoặc thay đổi không hỗ trợ hot reload có thể yêu cầu khởi động lại ứng dụng. Nhấn `Ctrl+C` trong cửa sổ PowerShell để dừng.
+
+API phát triển mặc định dùng `https://localhost:7215/`, cấu hình tại `GUI/CustomerApp/appsettings.json`. Khi triển khai, cấu hình URL HTTPS của API server và chứng thư TLS hợp lệ. Chỉ máy chủ API cần connection string SQL Server; không mở SQL Server trực tiếp ra Internet và không phân phối connection string database cùng ứng dụng khách hàng.
+
+## Cấu trúc dự án
+
+- `GUI/CustomerApp`: WinForms khách hàng, form, view và `CustomerApiGateway`.
+- `GUI/ManagementApp`: WinForms quản lý và composition root gọi BUS.
+- `GUI/Common`: control và tiện ích WinForms dùng chung.
+- `GUI/BlazorShared`: giao diện Blazor và HTTP clients dùng API.
+- `BUS`: service và quy tắc nghiệp vụ.
+- `DAO`: truy cập dữ liệu qua DAO.
+- `API/BookStore.Api`: REST API host và HTTP controllers.
+- `Contracts/BookStore.Contracts`: DTO chia sẻ giữa client và server.
+- `Domain/BookStore.Domain`: entity nghiệp vụ.
+- `Infrastructure/BookStore.Infrastructure`: EF Core, migrations và database context.
+- `docs`: tài liệu kiến trúc và bản đồ entity.
+- `TrangSach.sln`: solution tổng để mở/build toàn bộ project.
+
+Xem [kiến trúc](docs/ARCHITECTURE.md) và [bản đồ entity theo lớp](docs/ENTITY_LAYER_MAP.md).
