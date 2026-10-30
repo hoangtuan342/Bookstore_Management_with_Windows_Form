@@ -10,7 +10,7 @@ public sealed class ReportDashboardView : UserControl
         Line = Color.FromArgb(231,233,226), Canvas = Color.FromArgb(247,248,244);
     private readonly Panel _scroll = new() { Dock=DockStyle.Fill, AutoScroll=true, BackColor=Canvas };
     private readonly FlowLayoutPanel _stack = new() { Dock=DockStyle.Top, FlowDirection=FlowDirection.TopDown, WrapContents=false, Padding=new Padding(16), BackColor=Canvas };
-    private readonly Panel _heading = new() { Height=100, Margin=new Padding(0,0,0,10), BackColor=Canvas };
+    private readonly Panel _heading = new() { Height=140, Margin=new Padding(0,0,0,10), BackColor=Canvas };
     private readonly TableLayoutPanel _stats = new() { Height=205, Margin=new Padding(0,0,0,10), ColumnCount=3, RowCount=2, BackColor=Canvas };
     private readonly Panel _chartCard = new() { Height=360, Margin=new Padding(0,0,0,10), BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
     private readonly Panel _chartHost = new() { Left=12, Top=88, Height=258, Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right, AutoScroll=true, BackColor=Color.White };
@@ -19,6 +19,15 @@ public sealed class ReportDashboardView : UserControl
     private readonly Panel _comparison = new() { Height=152, Margin=new Padding(0,0,0,8), BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
     private readonly Panel _footer = new() { Height=46, Margin=new Padding(0,0,0,10), BackColor=Canvas };
     private readonly FlowLayoutPanel _periods = new() { Location=new Point(0,64), Height=31, AutoSize=false, WrapContents=false, BackColor=Color.FromArgb(233,237,231), Padding=new Padding(3) };
+    private readonly FlowLayoutPanel _rangeTools = new() { Location=new Point(0,101), Height=32, AutoScroll=true, WrapContents=false, BackColor=Canvas, Padding=Padding.Empty };
+    private readonly DateTimePicker _fromDate = new() { Format=DateTimePickerFormat.Short, Width=112, Font=new Font("Segoe UI",8.5f), Margin=new Padding(2,2,4,0) };
+    private readonly DateTimePicker _toDate = new() { Format=DateTimePickerFormat.Short, Width=112, Font=new Font("Segoe UI",8.5f), Margin=new Padding(2,2,4,0) };
+    private readonly TabControl _analysisTabs = new() { Height=280, Margin=new Padding(0,0,0,10) };
+    private readonly DataGridView _monthlyGrid = CreateAnalysisGrid();
+    private readonly DataGridView _quarterlyGrid = CreateAnalysisGrid();
+    private readonly DataGridView _yearlyGrid = CreateAnalysisGrid();
+    private readonly DataGridView _employeeGrid = CreateAnalysisGrid();
+    private readonly DataGridView _productGrid = CreateAnalysisGrid();
     private readonly Label _status = new() { AutoSize=true, Location=new Point(440,70), ForeColor=Muted, Font=new Font("Segoe UI",9f) };
     private readonly Button[] _periodButtons = new Button[4];
     private readonly Label[] _values = new Label[6], _notes = new Label[6];
@@ -30,20 +39,24 @@ public sealed class ReportDashboardView : UserControl
     private ManagerReport? _report;
     private int _days=30;
     public event Action<int>? PeriodSelected;
+    public event Action<DateOnly, DateOnly>? DateRangeSelected;
+    public event Action<ManagerReport>? ExportPdfRequested;
+    public event Action<ManagerReport>? ExportExcelRequested;
 
     public ReportDashboardView()
     {
         BackColor=Canvas; Controls.Add(_scroll); _scroll.Controls.Add(_stack);
-        BuildHeading(); BuildStats(); BuildChart(); BuildLists(); BuildComparison();
+        BuildHeading(); BuildStats(); BuildChart(); BuildLists(); BuildComparison(); BuildAnalysisTables();
         _footer.Controls.Add(new Label { Text="Lãi gộp là ước tính theo giá vốn bình quân từ phiếu nhập đã lưu; dữ liệu giá vốn chưa đầy đủ sẽ làm độ phủ thấp hơn 100%.", Dock=DockStyle.Fill, ForeColor=Muted, Font=new Font("Segoe UI",8.5f), TextAlign=ContentAlignment.MiddleLeft, AutoEllipsis=true });
-        _stack.Controls.AddRange([_heading,_stats,_chartCard,_lists,_comparison,_footer]);
+        _stack.Controls.AddRange([_heading,_stats,_chartCard,_lists,_comparison,_analysisTabs,_footer]);
         _scroll.Resize += (_,_)=>ResizePage(); ResizePage(); Empty();
     }
 
     public void SetLoading(int days) { _days=days; UpdatePeriods(); _status.Text=$"Đang cập nhật báo cáo {days} ngày…"; }
+    public void SetLoading(DateOnly from, DateOnly to) => _status.Text=$"Đang tổng hợp {from:dd/MM/yyyy} đến {to:dd/MM/yyyy}…";
     public void ShowReport(ManagerReport report)
     {
-        _report=report; _days=report.Days; UpdatePeriods(); _status.Text=$"Dữ liệu trong {report.Days} ngày gần nhất";
+        _report=report; _days=report.Days; _fromDate.Value=report.FromDate; _toDate.Value=report.ToDate; UpdatePeriods(); _status.Text=$"Dữ liệu {report.FromDate:dd/MM/yyyy} – {report.ToDate:dd/MM/yyyy}";
         SetMetric(0,Money(report.Revenue),"Đơn hoàn tất, sau giảm giá đơn");
         SetMetric(1,report.TotalOrders.ToString("N0"),$"{report.CompletedOrders:N0} hoàn tất · {report.PendingOrders:N0} chờ xử lý");
         SetMetric(2,Money(report.AverageOrderValue),"Tính trên đơn hoàn tất");
@@ -62,6 +75,11 @@ public sealed class ReportDashboardView : UserControl
         _customers.SetRows(report.TopCustomers.Select(x=>new BarItem(x.CustomerName,$"{x.Orders:N0} đơn · {x.Quantity:N0} cuốn",Money(x.Revenue),x.Revenue)).ToArray(),"Chưa có đơn hoàn tất trong kỳ.");
         Change(_revChange,report.RevenueChangePercent); _revNote.Text=$"Kỳ trước: {Money(report.PreviousPeriodRevenue)}";
         Change(_orderChange,report.CompletedOrdersChangePercent); _orderNote.Text=$"Kỳ trước: {report.PreviousPeriodCompletedOrders:N0} đơn";
+        _monthlyGrid.DataSource=report.RevenueByMonth.ToList();
+        _quarterlyGrid.DataSource=report.RevenueByQuarter.ToList();
+        _yearlyGrid.DataSource=report.RevenueByYear.ToList();
+        _employeeGrid.DataSource=report.RevenueByEmployeeYear.ToList();
+        _productGrid.DataSource=report.ProductSalesByQuarter.ToList();
     }
 
     private void BuildHeading()
@@ -71,6 +89,24 @@ public sealed class ReportDashboardView : UserControl
         var periods=new[]{(7,"7 ngày"),(30,"30 ngày"),(90,"90 ngày"),(365,"1 năm")};
         for(int i=0;i<periods.Length;i++){var days=periods[i].Item1;var b=new Button{Text=periods[i].Item2,Tag=days,AutoSize=true,Height=27,FlatStyle=FlatStyle.Flat,Margin=new Padding(2,0,2,0),Padding=new Padding(9,1,9,1),Font=new Font("Segoe UI",8.5f,FontStyle.Bold),Cursor=Cursors.Hand};b.FlatAppearance.BorderSize=0;b.Click+=(_,_)=>PeriodSelected?.Invoke(days);_periodButtons[i]=b;_periods.Controls.Add(b);}
         _heading.Controls.Add(_periods);_heading.Controls.Add(_status);
+        _fromDate.Value=DateTime.Today.AddDays(-29); _toDate.Value=DateTime.Today;
+        _rangeTools.Controls.Add(new Label{Text="Từ ngày",AutoSize=true,Margin=new Padding(2,8,2,0),ForeColor=Muted,Font=new Font("Segoe UI",8.5f,FontStyle.Bold)});
+        _rangeTools.Controls.Add(_fromDate);
+        _rangeTools.Controls.Add(new Label{Text="Đến ngày",AutoSize=true,Margin=new Padding(5,8,2,0),ForeColor=Muted,Font=new Font("Segoe UI",8.5f,FontStyle.Bold)});
+        _rangeTools.Controls.Add(_toDate);
+        var apply=CreateActionButton("Thống kê kỳ này");
+        apply.Click+=(_,_)=>DateRangeSelected?.Invoke(DateOnly.FromDateTime(_fromDate.Value),DateOnly.FromDateTime(_toDate.Value));
+        var pdf=CreateActionButton("Xuất PDF"); pdf.Click+=(_,_)=>{if(_report is not null)ExportPdfRequested?.Invoke(_report);};
+        var excel=CreateActionButton("Xuất Excel"); excel.Click+=(_,_)=>{if(_report is not null)ExportExcelRequested?.Invoke(_report);};
+        _rangeTools.Controls.AddRange([apply,pdf,excel]); _heading.Controls.Add(_rangeTools);
+    }
+    private void BuildAnalysisTables()
+    {
+        _analysisTabs.TabPages.Add(new TabPage("Doanh thu theo tháng") { Controls = { _monthlyGrid } });
+        _analysisTabs.TabPages.Add(new TabPage("Doanh thu theo quý") { Controls = { _quarterlyGrid } });
+        _analysisTabs.TabPages.Add(new TabPage("Doanh thu theo năm") { Controls = { _yearlyGrid } });
+        _analysisTabs.TabPages.Add(new TabPage("Doanh thu theo nhân viên / năm") { Controls = { _employeeGrid } });
+        _analysisTabs.TabPages.Add(new TabPage("Sản phẩm theo quý / năm") { Controls = { _productGrid } });
     }
     private void BuildStats()
     {
@@ -113,6 +149,7 @@ public sealed class ReportDashboardView : UserControl
         int full=Math.Max(420,_scroll.ClientSize.Width-2);_stack.Width=full;int inner=Math.Max(360,full-_stack.Padding.Horizontal);
         foreach(Control c in _stack.Controls)c.Width=inner;
         _periods.Width=Math.Min(inner,420);_status.Left=_periods.Right+12;_status.MaximumSize=new Size(Math.Max(120,inner-_status.Left),0);
+        _rangeTools.Width=inner;
         foreach(Control c in _lists.Controls)c.Width=Math.Max(150,(inner-20)/2);
         _stack.Height=_stack.Controls.Cast<Control>().Sum(c=>c.Height+c.Margin.Vertical)+_stack.Padding.Vertical+4;
         _scroll.AutoScrollMinSize=new Size(0,_stack.Height);ResizeChart();
@@ -128,6 +165,18 @@ public sealed class ReportDashboardView : UserControl
     private static Label Title(string text,Point p)=>new(){Text=text,AutoSize=true,ForeColor=Ink,Font=new Font("Segoe UI",11.5f,FontStyle.Bold),Location=p};
     private static Control Legend(string text,Color color){var p=new FlowLayoutPanel{AutoSize=true,WrapContents=false,FlowDirection=FlowDirection.LeftToRight,Margin=new Padding(6,2,4,0),BackColor=Color.White};p.Controls.Add(new Panel{Width=10,Height=10,BackColor=color,Margin=new Padding(0,4,5,0)});p.Controls.Add(new Label{Text=text,AutoSize=true,ForeColor=Muted,Font=new Font("Segoe UI",8f)});return p;}
     private static string Money(decimal n)=>MoneyFormatter.ToVnd(n);
+    private static Button CreateActionButton(string caption)
+    {
+        var button=new Button{Text=caption,AutoSize=true,Height=29,FlatStyle=FlatStyle.Flat,BackColor=Color.White,ForeColor=Ink,Font=new Font("Segoe UI",8.5f,FontStyle.Bold),Margin=new Padding(4,1,3,0),Padding=new Padding(7,1,7,1),Cursor=Cursors.Hand};
+        button.FlatAppearance.BorderColor=Line; return button;
+    }
+    private static DataGridView CreateAnalysisGrid() => new()
+    {
+        Dock=DockStyle.Fill,ReadOnly=true,AllowUserToAddRows=false,AllowUserToDeleteRows=false,
+        AutoGenerateColumns=true,AutoSizeColumnsMode=DataGridViewAutoSizeColumnsMode.Fill,
+        SelectionMode=DataGridViewSelectionMode.FullRowSelect,BackgroundColor=Color.White,
+        BorderStyle=BorderStyle.None,RowHeadersVisible=false
+    };
     private sealed record BarItem(string Name,string Detail,string Amount,decimal Value);
 
     private sealed class BreakdownCard:Panel

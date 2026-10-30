@@ -1,4 +1,4 @@
-namespace TrangSach.Management.Forms;
+﻿namespace TrangSach.Management.Forms;
 
 public partial class ManagementForm
 {
@@ -15,6 +15,14 @@ public partial class ManagementForm
         finally { UseWaitCursor = false; }
     }
 
+    private void SafeAction(Action action)
+    {
+        try { UseWaitCursor = true; action(); }
+        catch (Exception ex) { MessageBox.Show(this, ex.Message, "Không thực hiện được", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+        finally { UseWaitCursor = false; }
+    }
+
     private static Button HeaderButton(string text, int x, int y, int width) =>
         new() { Text = text, Left = x, Top = y, Width = width, Height = 29, FlatStyle = FlatStyle.Flat };
 }
+

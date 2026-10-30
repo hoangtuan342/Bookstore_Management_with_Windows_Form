@@ -57,24 +57,24 @@ public partial class ManagementForm
     private async Task LoadAccessibleManagementPagesAsync(string role)
     {
         var loaders = new List<(string Page, Func<Task> Load)>();
-        if (StaffPermissions.CanAccess(role, "dashboard")) loaders.Add(("Tổng quan", LoadDashboardAsync));
-        if (StaffPermissions.CanAccess(role, "books")) loaders.Add(("Sách", LoadBooksAsync));
-        if (StaffPermissions.CanAccess(role, "customers")) loaders.Add(("Khách hàng", LoadCustomersAsync));
-        if (role == StaffRoles.Manager) loaders.Add(("Nhân viên", LoadEmployeesAsync));
-        if (StaffPermissions.CanAccess(role, "orders")) loaders.Add(("Đơn hàng", LoadOrdersAsync));
+        if (StaffPermissions.CanAccess(role, "dashboard")) loaders.Add(("Tổng quan", () => LoadDashboardAsync()));
+        if (StaffPermissions.CanAccess(role, "books")) loaders.Add(("Sách", () => LoadBooksAsync()));
+        if (StaffPermissions.CanAccess(role, "customers")) loaders.Add(("Khách hàng", () => LoadCustomersAsync()));
+        if (role == StaffRoles.Manager) loaders.Add(("Nhân viên", () => LoadEmployeesAsync()));
+        if (StaffPermissions.CanAccess(role, "orders")) loaders.Add(("Đơn hàng", () => LoadOrdersAsync()));
         if (StaffPermissions.CanAccess(role, "inventory"))
         {
-            loaders.Add(("Phiếu nhập", LoadReceiptsAsync));
-            loaders.Add(("Nhà cung cấp", LoadSuppliersAsync));
+            loaders.Add(("Phiếu nhập", () => LoadReceiptsAsync()));
+            loaders.Add(("Nhà cung cấp", () => LoadSuppliersAsync()));
         }
         if (StaffPermissions.CanAccess(role, "reports")) loaders.Add(("Báo cáo", () => LoadReportAsync(30)));
-        if (StaffPermissions.CanAccess(role, "records")) loaders.Add(("Danh mục tham chiếu", LoadReferencesAsync));
+        if (StaffPermissions.CanAccess(role, "records")) loaders.Add(("Danh mục tham chiếu", () => LoadReferencesAsync()));
         if (StaffPermissions.CanAccess(role, "promotions"))
         {
-            loaders.Add(("Khuyến mãi", LoadPromotionsAsync));
-            loaders.Add(("Voucher", LoadVouchersAsync));
+            loaders.Add(("Khuyến mãi", () => LoadPromotionsAsync()));
+            loaders.Add(("Voucher", () => LoadVouchersAsync()));
         }
-        if (role == StaffRoles.Manager) loaders.Add(("Nhật ký hệ thống", LoadLogsAsync));
+        if (role == StaffRoles.Manager) loaders.Add(("Nhật ký hệ thống", () => LoadLogsAsync()));
 
         var failures = new List<string>();
         foreach (var (page, load) in loaders)

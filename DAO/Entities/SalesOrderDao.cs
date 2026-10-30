@@ -40,6 +40,7 @@ public sealed class SalesOrderDao(BookStoreDbContext context) : EntityDao<SalesO
         Query.AsNoTracking().Where(order => order.OrderStatus == "Completed"
                 && order.CreatedAt >= fromUtc && order.CreatedAt < untilUtc)
             .Include(order => order.Customer)
+            .Include(order => order.Employee)
             .Include(order => order.Lines).ThenInclude(line => line.Book).ThenInclude(book => book.Category)
             .ToListAsync(cancellationToken);
 

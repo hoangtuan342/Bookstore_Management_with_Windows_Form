@@ -10,6 +10,8 @@ public partial class ManagementForm : Form
 {
     private readonly ManagementAppServices _services = new();
     private readonly BookCsvFileService _bookFiles = new();
+    private readonly BookExcelFileService _bookExcelFiles = new();
+    private readonly ReportExportService _reportFiles = new();
     private readonly string? _initialPage;
     private readonly Panel _header = new();
     private readonly Panel _workspace = new();

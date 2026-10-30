@@ -14,7 +14,7 @@ public partial class ManagementForm
         {
             var page = new DashboardPageView();
             _dashboardGrid = page.Grid;
-            AddManagementPage(page, new() { ["refresh"] = LoadDashboardAsync });
+            AddManagementPage(page, new() { ["refresh"] = () => LoadDashboardAsync(true) });
         }
         if (StaffPermissions.CanAccess(_role, "books"))
         {
@@ -22,7 +22,7 @@ public partial class ManagementForm
             _booksGrid = page.Grid;
             AddManagementPage(page, new()
             {
-                ["load"] = LoadBooksAsync,
+                ["load"] = () => LoadBooksAsync(true),
                 ["add"] = () => EditBookAsync(null),
                 ["edit"] = EditSelectedBookAsync,
                 ["hide"] = HideSelectedBookAsync,
@@ -36,7 +36,7 @@ public partial class ManagementForm
             _customersGrid = page.Grid;
             AddManagementPage(page, new()
             {
-                ["load"] = LoadCustomersAsync,
+                ["load"] = () => LoadCustomersAsync(true),
                 ["add"] = () => EditCustomerAsync(null),
                 ["edit"] = EditSelectedCustomerAsync,
                 ["delete"] = DeleteSelectedCustomerAsync
@@ -48,7 +48,7 @@ public partial class ManagementForm
             _employeesGrid = page.Grid;
             AddManagementPage(page, new()
             {
-                ["load"] = LoadEmployeesAsync,
+                ["load"] = () => LoadEmployeesAsync(true),
                 ["add"] = () => EditEmployeeAsync(null),
                 ["edit"] = EditSelectedEmployeeAsync,
                 ["delete"] = DeleteSelectedEmployeeAsync
@@ -60,7 +60,7 @@ public partial class ManagementForm
             _ordersGrid = page.Grid;
             AddManagementPage(page, new()
             {
-                ["load"] = LoadOrdersAsync,
+                ["load"] = () => LoadOrdersAsync(true),
                 ["status"] = ChangeOrderStatusAsync,
                 ["create"] = CreateOrderAsync,
                 ["edit"] = EditSelectedOrderAsync,
@@ -73,7 +73,7 @@ public partial class ManagementForm
             _receiptsGrid = page.Grid;
             AddManagementPage(page, new()
             {
-                ["load"] = LoadReceiptsAsync,
+                ["load"] = () => LoadReceiptsAsync(true),
                 ["create"] = CreateReceiptAsync,
                 ["cancel"] = CancelSelectedReceiptAsync
             });
@@ -83,6 +83,9 @@ public partial class ManagementForm
             var page = new TabPage("Báo cáo");
             _reportView = new ReportDashboardView { Dock = DockStyle.Fill };
             _reportView.PeriodSelected += days => { _ = SafeAsync(() => LoadReportAsync(days)); };
+            _reportView.DateRangeSelected += (from, to) => { _ = SafeAsync(() => LoadReportAsync(from, to)); };
+            _reportView.ExportPdfRequested += report => SafeAction(() => ExportReportPdf(report));
+            _reportView.ExportExcelRequested += report => SafeAction(() => ExportReportExcel(report));
             page.Controls.Add(_reportView);
             AddManagementTab(page);
         }
@@ -93,7 +96,7 @@ public partial class ManagementForm
             _referenceType = page.ReferenceType;
             AddManagementPage(page, new()
             {
-                ["load"] = LoadReferencesAsync,
+                ["load"] = () => LoadReferencesAsync(true),
                 ["add"] = () => SaveReferenceAsync(false),
                 ["edit"] = () => SaveReferenceAsync(true),
                 ["delete"] = DeleteReferenceAsync
@@ -105,7 +108,7 @@ public partial class ManagementForm
             _suppliersGrid = page.Grid;
             AddManagementPage(page, new()
             {
-                ["load"] = LoadSuppliersAsync,
+                ["load"] = () => LoadSuppliersAsync(true),
                 ["add"] = () => SaveSupplierAsync(null),
                 ["edit"] = EditSelectedSupplierAsync,
                 ["delete"] = DeleteSelectedSupplierAsync
@@ -117,7 +120,7 @@ public partial class ManagementForm
             _promotionsGrid = promotions.Grid;
             AddManagementPage(promotions, new()
             {
-                ["load"] = LoadPromotionsAsync,
+                ["load"] = () => LoadPromotionsAsync(true),
                 ["create"] = CreatePromotionAsync,
                 ["edit"] = EditPromotionAsync,
                 ["delete"] = DeletePromotionAsync
@@ -127,7 +130,7 @@ public partial class ManagementForm
             _vouchersGrid = vouchers.Grid;
             AddManagementPage(vouchers, new()
             {
-                ["load"] = LoadVouchersAsync,
+                ["load"] = () => LoadVouchersAsync(true),
                 ["edit"] = EditVoucherAsync,
                 ["delete"] = DeleteVoucherAsync
             });
@@ -136,7 +139,7 @@ public partial class ManagementForm
         {
             var page = new AuditLogsPageView();
             _logsGrid = page.Grid;
-            AddManagementPage(page, new() { ["load"] = LoadLogsAsync });
+            AddManagementPage(page, new() { ["load"] = () => LoadLogsAsync(true) });
         }
     }
 
@@ -188,4 +191,5 @@ public partial class ManagementForm
         }
     }
 }
+
 

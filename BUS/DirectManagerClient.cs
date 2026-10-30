@@ -66,6 +66,7 @@ public sealed class DirectManagerClient(ManagerApplicationService dispatch)
         dispatch.UpdateVoucherAsync(id, new VoucherUpdateCommand(item.Status, item.ExpiresAt, item.MaxUsageCount), cancellationToken);
     public Task DeleteVoucherAsync(string id, CancellationToken cancellationToken = default) => dispatch.DeleteVoucherAsync(id, cancellationToken);
     public Task<ManagerReport> GetReportAsync(int days = 30, CancellationToken cancellationToken = default) => dispatch.GetReportAsync(days, cancellationToken);
+    public Task<ManagerReport> GetReportAsync(DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken = default) => dispatch.GetReportAsync(fromDate, toDate, cancellationToken);
 
     public Task CreateBookAsync(CreateManagerBook book, CancellationToken cancellationToken = default) => dispatch.CreateManagerBookAsync(ToBookCommand(book), cancellationToken);
     public async Task<ManagerBookDetails> GetBookDetailsAsync(string id, CancellationToken cancellationToken = default)

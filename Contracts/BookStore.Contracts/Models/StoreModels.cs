@@ -115,8 +115,19 @@ public sealed record ManagerReport(int Days, int TotalOrders, int CompletedOrder
     decimal? RevenueChangePercent, decimal? CompletedOrdersChangePercent,
     IReadOnlyList<RevenueByDay> RevenueByDay, IReadOnlyList<BestSeller> BestSellers,
     IReadOnlyList<CategorySales> RevenueByCategory, IReadOnlyList<CustomerSales> TopCustomers,
-    IReadOnlyList<CategoryInventorySummary> InventoryByCategory);
+    IReadOnlyList<CategoryInventorySummary> InventoryByCategory,
+    DateTime FromDate, DateTime ToDate,
+    IReadOnlyList<MonthlyRevenue> RevenueByMonth,
+    IReadOnlyList<QuarterlyRevenue> RevenueByQuarter,
+    IReadOnlyList<YearlyRevenue> RevenueByYear,
+    IReadOnlyList<EmployeeYearSales> RevenueByEmployeeYear,
+    IReadOnlyList<ProductQuarterSales> ProductSalesByQuarter);
 public sealed record RevenueByDay(DateTime Date, decimal Revenue, decimal PurchaseSpend, int Orders);
+public sealed record MonthlyRevenue(int Year, int Month, decimal Revenue, int Orders);
+public sealed record QuarterlyRevenue(int Year, int Quarter, decimal Revenue, int Orders);
+public sealed record YearlyRevenue(int Year, decimal Revenue, int Orders);
+public sealed record EmployeeYearSales(string EmployeeId, string EmployeeName, int Year, int Orders, decimal Revenue);
+public sealed record ProductQuarterSales(string BookId, string Title, int Year, int Quarter, int Quantity, decimal Revenue);
 public sealed record BestSeller(string BookId, string Title, int Quantity, decimal Revenue);
 public sealed record CategorySales(string Category, int Quantity, decimal Revenue);
 public sealed record CustomerSales(string CustomerId, string CustomerName, int Orders, int Quantity, decimal Revenue);

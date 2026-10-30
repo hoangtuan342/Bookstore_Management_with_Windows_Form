@@ -1,4 +1,4 @@
-namespace TrangSach.Management.Views;
+﻿namespace TrangSach.Management.Views;
 
 internal sealed class ManagementPageActionEventArgs(string action) : EventArgs
 {
@@ -110,6 +110,7 @@ internal class ManagementGridPageView : UserControl
         _search.Margin = new Padding(2, 2, 8, 0);
         _search.PlaceholderText = "Nhập từ khóa cần tìm...";
         _search.Font = new Font("Segoe UI", 9);
+        new ToolTip().SetToolTip(_search, "Tìm thường: nhập từ khóa. Tìm nâng cao: Giá bán >= 100000 AND Tồn kho < 5. Có thể dùng =, !=, >, <, >=, <=, AND, OR, NOT và ngoặc.");
         _search.TextChanged += (_, _) => ApplyQuickFilter();
         _rowCount.AutoSize = true;
         _rowCount.Margin = new Padding(2, 9, 5, 0);
@@ -213,7 +214,13 @@ internal class ManagementGridPageView : UserControl
         if (_applyingFilter) return;
         var query = _search.Text.Trim();
         var allRows = (_unfilteredDataSource as System.Collections.IEnumerable)?.Cast<object>().ToList() ?? [];
-        var filteredRows = allRows.Where(item => (query.Length == 0 || ContainsSearchTerm(item)) && MatchesAdditionalFilters(item)).ToList();
+        Func<object, bool>? expression = null;
+        string? syntaxError = null;
+        var isExpression = ManagementSearchExpression.IsExpression(query);
+        if (isExpression) ManagementSearchExpression.TryCreate(query, allRows.FirstOrDefault(), out expression, out syntaxError);
+        var filteredRows = allRows.Where(item =>
+            (query.Length == 0 || (isExpression ? syntaxError is null && expression?.Invoke(item) == true : ContainsSearchTerm(item)))
+            && MatchesAdditionalFilters(item)).ToList();
         object? requestedSource = _unfilteredDataSource;
         var hasFilters = query.Length > 0 || HasAdditionalFilters;
         if (hasFilters && _unfilteredDataSource is not null)
@@ -225,7 +232,8 @@ internal class ManagementGridPageView : UserControl
             for (var index = 0; index < filteredRows.Count; index++) typedRows.SetValue(filteredRows[index], index);
             requestedSource = typedRows;
         }
-        _rowCount.Text = !hasFilters || _unfilteredDataSource is null
+        if (syntaxError is not null) _rowCount.Text = syntaxError;
+        else _rowCount.Text = !hasFilters || _unfilteredDataSource is null
             ? $"{allRows.Count:N0} dòng"
             : $"{filteredRows.Count:N0} / {allRows.Count:N0} dòng";
         if (ReferenceEquals(Grid.DataSource, requestedSource)) return;
@@ -317,3 +325,4 @@ internal class ManagementGridPageView : UserControl
         RowTemplate = { Height = 32 }
     };
 }
+

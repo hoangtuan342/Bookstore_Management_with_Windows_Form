@@ -31,6 +31,13 @@ public sealed class ManagerApplicationService(DirectCustomerClient session, IPas
         await using var dao = BookStoreDao.Create();
         return await new AdminReportsService(dao).GetAsync(days, cancellationToken);
     }
+
+    public async Task<ManagerReport> GetReportAsync(DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken = default)
+    {
+        EnsureAccess("AdminReportsController", "Get");
+        await using var dao = BookStoreDao.Create();
+        return await new AdminReportsService(dao).GetAsync(fromDate, toDate, cancellationToken);
+    }
     public async Task<IReadOnlyList<BookItem>> GetManagerBooksAsync(CancellationToken cancellationToken = default)
     {
         EnsureAccess("AdminBooksController", "GetBooks");
