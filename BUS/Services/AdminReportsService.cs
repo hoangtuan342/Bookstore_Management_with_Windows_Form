@@ -62,19 +62,52 @@ public sealed class AdminReportsService(BookStoreDao dao)
             .Select(group => new CustomerSales(group.Key.CustomerId, group.Key.FullName, group.Count(),
                 group.Sum(order => order.Lines.Sum(line => line.Quantity)), group.Sum(order => order.TotalAmount)))
             .OrderByDescending(item => item.Revenue).Take(8).ToArray();
-        var revenueByMonth = orders.GroupBy(order =>
+        var monthlySales = orders.GroupBy(order =>
                 (Year: order.CreatedAt.ToLocalTime().Year, Month: order.CreatedAt.ToLocalTime().Month))
-            .OrderBy(group => group.Key.Year).ThenBy(group => group.Key.Month)
-            .Select(group => new MonthlyRevenue(group.Key.Year, group.Key.Month,
-                group.Sum(order => order.TotalAmount), group.Count())).ToArray();
-        var revenueByQuarter = orders.GroupBy(order =>
+            .ToDictionary(group => group.Key, group => (Revenue: group.Sum(order => order.TotalAmount), Orders: group.Count()));
+        var monthlyPurchases = receiptLines.GroupBy(line =>
+                (Year: line.CreatedAt.ToLocalTime().Year, Month: line.CreatedAt.ToLocalTime().Month))
+            .ToDictionary(group => group.Key, group => group.Sum(line => line.LineTotal));
+        var monthlyProfit = netLines.GroupBy(row =>
+                (Year: row.Order.CreatedAt.ToLocalTime().Year, Month: row.Order.CreatedAt.ToLocalTime().Month))
+            .ToDictionary(group => group.Key, group => group.Sum(row => row.NetRevenue - averageCosts.GetValueOrDefault(row.Line.BookId) * row.Line.Quantity));
+        var monthKeys = EnumerateMonths(fromDate, toDate);
+        var revenueByMonth = monthKeys.Select(key =>
+        {
+            var sales = monthlySales.GetValueOrDefault(key);
+            return new MonthlyRevenue(key.Year, key.Month, sales.Revenue, sales.Orders,
+                monthlyPurchases.GetValueOrDefault(key), monthlyProfit.GetValueOrDefault(key));
+        }).ToArray();
+
+        var quarterlySales = orders.GroupBy(order =>
                 (Year: order.CreatedAt.ToLocalTime().Year, Quarter: (order.CreatedAt.ToLocalTime().Month - 1) / 3 + 1))
-            .OrderBy(group => group.Key.Year).ThenBy(group => group.Key.Quarter)
-            .Select(group => new QuarterlyRevenue(group.Key.Year, group.Key.Quarter,
-                group.Sum(order => order.TotalAmount), group.Count())).ToArray();
-        var revenueByYear = orders.GroupBy(order => order.CreatedAt.ToLocalTime().Year)
-            .OrderBy(group => group.Key)
-            .Select(group => new YearlyRevenue(group.Key, group.Sum(order => order.TotalAmount), group.Count())).ToArray();
+            .ToDictionary(group => group.Key, group => (Revenue: group.Sum(order => order.TotalAmount), Orders: group.Count()));
+        var quarterlyPurchases = receiptLines.GroupBy(line =>
+                (Year: line.CreatedAt.ToLocalTime().Year, Quarter: (line.CreatedAt.ToLocalTime().Month - 1) / 3 + 1))
+            .ToDictionary(group => group.Key, group => group.Sum(line => line.LineTotal));
+        var quarterlyProfit = netLines.GroupBy(row =>
+                (Year: row.Order.CreatedAt.ToLocalTime().Year, Quarter: (row.Order.CreatedAt.ToLocalTime().Month - 1) / 3 + 1))
+            .ToDictionary(group => group.Key, group => group.Sum(row => row.NetRevenue - averageCosts.GetValueOrDefault(row.Line.BookId) * row.Line.Quantity));
+        var quarterKeys = EnumerateQuarters(fromDate, toDate);
+        var revenueByQuarter = quarterKeys.Select(key =>
+        {
+            var sales = quarterlySales.GetValueOrDefault(key);
+            return new QuarterlyRevenue(key.Year, key.Quarter, sales.Revenue, sales.Orders,
+                quarterlyPurchases.GetValueOrDefault(key), quarterlyProfit.GetValueOrDefault(key));
+        }).ToArray();
+
+        var yearlySales = orders.GroupBy(order => order.CreatedAt.ToLocalTime().Year)
+            .ToDictionary(group => group.Key, group => (Revenue: group.Sum(order => order.TotalAmount), Orders: group.Count()));
+        var yearlyPurchases = receiptLines.GroupBy(line => line.CreatedAt.ToLocalTime().Year)
+            .ToDictionary(group => group.Key, group => group.Sum(line => line.LineTotal));
+        var yearlyProfit = netLines.GroupBy(row => row.Order.CreatedAt.ToLocalTime().Year)
+            .ToDictionary(group => group.Key, group => group.Sum(row => row.NetRevenue - averageCosts.GetValueOrDefault(row.Line.BookId) * row.Line.Quantity));
+        var revenueByYear = Enumerable.Range(fromDate.Year, toDate.Year - fromDate.Year + 1).Select(year =>
+        {
+            var sales = yearlySales.GetValueOrDefault(year);
+            return new YearlyRevenue(year, sales.Revenue, sales.Orders,
+                yearlyPurchases.GetValueOrDefault(year), yearlyProfit.GetValueOrDefault(year));
+        }).ToArray();
         var revenueByEmployeeYear = orders.GroupBy(order => new
                 { EmployeeId = order.EmployeeId ?? "(Chưa phân công)", EmployeeName = order.Employee is null ? "Chưa phân công" : $"{order.Employee.LastName} {order.Employee.FirstName}".Trim(), Year = order.CreatedAt.ToLocalTime().Year })
             .OrderBy(group => group.Key.Year).ThenBy(group => group.Key.EmployeeName)
@@ -113,5 +146,29 @@ public sealed class AdminReportsService(BookStoreDao dao)
     {
         var local = DateTime.SpecifyKind(date.ToDateTime(TimeOnly.MinValue), DateTimeKind.Unspecified);
         return TimeZoneInfo.ConvertTimeToUtc(local, TimeZoneInfo.Local);
+    }
+
+    private static IEnumerable<(int Year, int Month)> EnumerateMonths(DateOnly from, DateOnly to)
+    {
+        var year = from.Year;
+        var month = from.Month;
+        while (year < to.Year || year == to.Year && month <= to.Month)
+        {
+            yield return (year, month);
+            if (++month == 13) { month = 1; year++; }
+        }
+    }
+
+    private static IEnumerable<(int Year, int Quarter)> EnumerateQuarters(DateOnly from, DateOnly to)
+    {
+        var year = from.Year;
+        var quarter = (from.Month - 1) / 3 + 1;
+        var lastYear = to.Year;
+        var lastQuarter = (to.Month - 1) / 3 + 1;
+        while (year < lastYear || year == lastYear && quarter <= lastQuarter)
+        {
+            yield return (year, quarter);
+            if (++quarter == 5) { quarter = 1; year++; }
+        }
     }
 }

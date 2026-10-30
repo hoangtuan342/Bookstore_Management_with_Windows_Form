@@ -16,9 +16,9 @@ internal sealed class ReportExportService
         var sheets = new[]
         {
             new ExcelSheetData("Tong quan", BuildSummary(report)),
-            new ExcelSheetData("Theo thang", [ ["Năm", "Tháng", "Số đơn", "Doanh thu"], .. report.RevenueByMonth.Select(row => new object?[] { row.Year, row.Month, row.Orders, row.Revenue }) ]),
-            new ExcelSheetData("Theo quy", [ ["Năm", "Quý", "Số đơn", "Doanh thu"], .. report.RevenueByQuarter.Select(row => new object?[] { row.Year, row.Quarter, row.Orders, row.Revenue }) ]),
-            new ExcelSheetData("Theo nam", [ ["Năm", "Số đơn", "Doanh thu"], .. report.RevenueByYear.Select(row => new object?[] { row.Year, row.Orders, row.Revenue }) ]),
+            new ExcelSheetData("Theo thang", [ ["Năm", "Tháng", "Số đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], .. report.RevenueByMonth.Select(row => new object?[] { row.Year, row.Month, row.Orders, row.Revenue, row.PurchaseSpend, row.EstimatedGrossProfit }) ]),
+            new ExcelSheetData("Theo quy", [ ["Năm", "Quý", "Số đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], .. report.RevenueByQuarter.Select(row => new object?[] { row.Year, row.Quarter, row.Orders, row.Revenue, row.PurchaseSpend, row.EstimatedGrossProfit }) ]),
+            new ExcelSheetData("Theo nam", [ ["Năm", "Số đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], .. report.RevenueByYear.Select(row => new object?[] { row.Year, row.Orders, row.Revenue, row.PurchaseSpend, row.EstimatedGrossProfit }) ]),
             new ExcelSheetData("Theo nhan vien", [ ["Mã nhân viên", "Nhân viên", "Năm", "Số đơn", "Doanh thu"], .. report.RevenueByEmployeeYear.Select(row => new object?[] { row.EmployeeId, row.EmployeeName, row.Year, row.Orders, row.Revenue }) ]),
             new ExcelSheetData("Theo san pham", [ ["Mã sách", "Tên sách", "Năm", "Quý", "Số lượng", "Doanh thu"], .. report.ProductSalesByQuarter.Select(row => new object?[] { row.BookId, row.Title, row.Year, row.Quarter, row.Quantity, row.Revenue }) ])
         };
@@ -52,11 +52,11 @@ internal sealed class ReportExportService
                     ["Lãi gộp ước tính", Money(report.EstimatedGrossProfit)]
                 ]);
                 column.Item().Text("Doanh thu theo tháng").FontSize(12).SemiBold();
-                AddTable(column, ["Năm", "Tháng", "Số đơn", "Doanh thu"], report.RevenueByMonth.Select(row => new[] { row.Year.ToString(), row.Month.ToString("00"), row.Orders.ToString("N0"), Money(row.Revenue) }).ToArray());
+                AddTable(column, ["Năm", "Tháng", "Đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], report.RevenueByMonth.Select(row => new[] { row.Year.ToString(), row.Month.ToString("00"), row.Orders.ToString("N0"), Money(row.Revenue), Money(row.PurchaseSpend), Money(row.EstimatedGrossProfit) }).ToArray());
                 column.Item().Text("Doanh thu theo quý").FontSize(12).SemiBold();
-                AddTable(column, ["Năm", "Quý", "Số đơn", "Doanh thu"], report.RevenueByQuarter.Select(row => new[] { row.Year.ToString(), $"Q{row.Quarter}", row.Orders.ToString("N0"), Money(row.Revenue) }).ToArray());
+                AddTable(column, ["Năm", "Quý", "Đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], report.RevenueByQuarter.Select(row => new[] { row.Year.ToString(), $"Q{row.Quarter}", row.Orders.ToString("N0"), Money(row.Revenue), Money(row.PurchaseSpend), Money(row.EstimatedGrossProfit) }).ToArray());
                 column.Item().Text("Doanh thu theo năm").FontSize(12).SemiBold();
-                AddTable(column, ["Năm", "Số đơn", "Doanh thu"], report.RevenueByYear.Select(row => new[] { row.Year.ToString(), row.Orders.ToString("N0"), Money(row.Revenue) }).ToArray());
+                AddTable(column, ["Năm", "Đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], report.RevenueByYear.Select(row => new[] { row.Year.ToString(), row.Orders.ToString("N0"), Money(row.Revenue), Money(row.PurchaseSpend), Money(row.EstimatedGrossProfit) }).ToArray());
                 column.Item().Text("Doanh thu theo nhân viên và năm").FontSize(12).SemiBold();
                 AddTable(column, ["Mã nhân viên", "Nhân viên", "Năm", "Số đơn", "Doanh thu"], report.RevenueByEmployeeYear.Select(row => new[] { row.EmployeeId, row.EmployeeName, row.Year.ToString(), row.Orders.ToString("N0"), Money(row.Revenue) }).ToArray());
                 column.Item().Text("Doanh thu sản phẩm theo quý và năm").FontSize(12).SemiBold();

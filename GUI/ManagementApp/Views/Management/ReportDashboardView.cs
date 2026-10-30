@@ -80,6 +80,29 @@ public sealed class ReportDashboardView : UserControl
         _yearlyGrid.DataSource=report.RevenueByYear.ToList();
         _employeeGrid.DataSource=report.RevenueByEmployeeYear.ToList();
         _productGrid.DataSource=report.ProductSalesByQuarter.ToList();
+        var periodHeaders = new Dictionary<string, string>
+        {
+            ["Year"] = "Năm", ["Month"] = "Tháng", ["Quarter"] = "Quý", ["Orders"] = "Số đơn bán",
+            ["Revenue"] = "Tiền bán", ["PurchaseSpend"] = "Tiền nhập hàng", ["EstimatedGrossProfit"] = "Lãi gộp ước tính"
+        };
+        SetHeaders(_monthlyGrid, periodHeaders);
+        SetHeaders(_quarterlyGrid, periodHeaders);
+        SetHeaders(_yearlyGrid, periodHeaders);
+        SetHeaders(_employeeGrid, periodHeaders.Concat(new Dictionary<string, string>
+        {
+            ["EmployeeId"] = "Mã nhân viên", ["EmployeeName"] = "Nhân viên"
+        }).ToDictionary(pair => pair.Key, pair => pair.Value));
+        SetHeaders(_productGrid, new Dictionary<string, string>
+        {
+            ["BookId"] = "Mã sách", ["Title"] = "Tên sách", ["Year"] = "Năm", ["Quarter"] = "Quý",
+            ["Quantity"] = "Số lượng bán", ["Revenue"] = "Doanh thu phân bổ"
+        });
+    }
+
+    private static void SetHeaders(DataGridView grid, IReadOnlyDictionary<string, string> headers)
+    {
+        foreach (DataGridViewColumn column in grid.Columns)
+            if (headers.TryGetValue(column.DataPropertyName, out var title)) column.HeaderText = title;
     }
 
     private void BuildHeading()
