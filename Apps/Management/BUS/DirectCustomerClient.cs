@@ -3,7 +3,7 @@ using TrangSach.BUS.Models;
 using TrangSach.BUS.Services;
 using TrangSach.DAO.Entities;
 
-namespace TrangSach.BUS;
+namespace TrangSach.Management.BUS;
 
 /// <summary>WinForms-facing customer application service. All persistence and rules are delegated to BUS services.</summary>
 public sealed class DirectCustomerClient(IPasswordHashingService passwordHasher)

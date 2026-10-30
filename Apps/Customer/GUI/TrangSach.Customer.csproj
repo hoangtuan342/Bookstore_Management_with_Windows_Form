@@ -7,8 +7,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Common\TrangSach.GUI.Common.csproj" />
-    <ProjectReference Include="..\..\Contracts\BookStore.Contracts\BookStore.Contracts.csproj" />
+    <ProjectReference Include="..\..\Shared\GUI\Common\TrangSach.GUI.Common.csproj" />
+    <ProjectReference Include="..\BUS\TrangSach.Customer.BUS.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Contracts\BookStore.Contracts\BookStore.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />

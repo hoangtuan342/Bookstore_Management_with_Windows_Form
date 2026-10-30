@@ -1,6 +1,6 @@
 # Entity coverage by GUI, BUS and DAO
 
-Each persisted entity has a domain model and a typed DAO in `DAO/Entities`. BUS services enforce workflow rules and call those DAOs. API controllers adapt HTTP requests to BUS commands. Customer WinForms calls the API through `CustomerApiGateway`; management WinForms uses in-process BUS services in the trusted management environment. Detail and join entities are handled inside the owning workflow to preserve stock, totals, voucher usage and audit history.
+Each persisted entity has a domain model in `Server/Domain` and a typed DAO in `Server/DAO/Entities`. BUS services enforce workflow rules and call those DAOs. API controllers adapt HTTP requests to BUS commands. Customer WinForms uses `Apps/Customer/BUS/CustomerApiGateway` to call the API; management WinForms uses its App BUS and server BUS in-process. Detail and join entities are handled inside the owning workflow to preserve stock, totals, voucher usage and audit history.
 
 | Database entity | GUI workflow | BUS service/workflow | DAO set/table |
 |---|---|---|---|
@@ -28,10 +28,11 @@ Each persisted entity has a domain model and a typed DAO in `DAO/Entities`. BUS 
 
 ## Layer boundaries
 
-- GUI projects: `GUI/CustomerApp`, `GUI/ManagementApp`, shared controls in `GUI/Common`, and Blazor components in `GUI/BlazorShared/BookStore.Shared`.
-- BUS: server business services in `BUS`, referenced by ManagementApp and API. CustomerApiGateway belongs to `GUI/CustomerApp/Services`, not BUS.
-- DAO/persistence: typed DAOs and unit of work in `DAO`; EF Core context, mapping, migrations, seeding and initializer in `Infrastructure/BookStore.Infrastructure`; persisted entity definitions in `Domain/BookStore.Domain`.
-- Contracts: `Contracts/BookStore.Contracts` contains shared API/data DTOs and role constants without persistence dependencies.
-- API: `API/BookStore.Api/Controllers` and `API/BookStore.Api/Contracts` are HTTP adapters. Controllers call BUS services; persistence remains behind DAO methods.
+- GUI projects: `Apps/Customer/GUI`, `Apps/Management/GUI`, shared controls in `Apps/Shared/GUI/Common`, and Blazor components in `Apps/Shared/GUI/BlazorShared/BookStore.Shared`.
+- App BUS: `Apps/Management/BUS` coordinates internal management use cases; `Apps/Customer/BUS` contains the HTTPS API client facade.
+- Server BUS: reusable business services in `Server/BUS`, used by the API and management app.
+- DAO/persistence: typed DAOs in `Server/DAO`; EF Core context, mapping, migrations, seeding and initializer in `Server/Infrastructure/BookStore.Infrastructure`; persisted entity definitions in `Server/Domain/BookStore.Domain`.
+- Contracts: `Shared/Contracts/BookStore.Contracts` contains shared API/data DTOs and role constants without persistence dependencies.
+- API: `Server/API/BookStore.Api/Controllers` and `Server/API/BookStore.Api/Contracts` are HTTP adapters. Controllers call BUS services; persistence remains behind DAO methods.
 
-Customer WinForms references shared contracts only; it has no project reference to BUS server, DAO or Infrastructure. Management WinForms composes in-process BUS/DAO access for internal use. The API host uses the same BUS service rules and typed DAO operations.
+Customer WinForms references its client BUS and shared contracts; it has no project reference to server BUS, DAO or Infrastructure. Management WinForms composes its App BUS and server BUS/DAO in-process for internal use. The API host uses the same server BUS rules and typed DAO operations.

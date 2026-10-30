@@ -20,7 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\DAO\TrangSach.DAO.csproj" />
     <ProjectReference Include="..\..\BUS\TrangSach.BUS.csproj" />
-    <ProjectReference Include="..\..\Contracts\BookStore.Contracts\BookStore.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Contracts\BookStore.Contracts\BookStore.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

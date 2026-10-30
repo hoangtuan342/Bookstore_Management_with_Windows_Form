@@ -3,10 +3,10 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using BookStore.Shared.Models;
 
-namespace TrangSach.Customer.Services;
+namespace TrangSach.Customer.BUS;
 
 /// <summary>WinForms customer facade. It communicates with the server API and has no database dependency.</summary>
-internal sealed class CustomerApiGateway : IDisposable
+public sealed class CustomerApiGateway : IDisposable
 {
     private readonly HttpClient _httpClient;
     private string? _accessToken;

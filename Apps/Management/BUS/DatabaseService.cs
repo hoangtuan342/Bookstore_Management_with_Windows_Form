@@ -1,6 +1,6 @@
 using TrangSach.DAO;
 
-namespace TrangSach.BUS;
+namespace TrangSach.Management.BUS;
 
 /// <summary>Business-layer entry point for database setup and connection settings.</summary>
 public sealed class DatabaseService

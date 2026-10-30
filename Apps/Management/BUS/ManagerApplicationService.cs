@@ -6,7 +6,7 @@ using BookStore.Shared.Models;
 using TrangSach.BUS.Models;
 using TrangSach.BUS.Results;
 
-namespace TrangSach.BUS;
+namespace TrangSach.Management.BUS;
 
 /// <summary>Coordinates manager use cases and authorization for the in-process WinForms application.</summary>
 public sealed class ManagerApplicationService(DirectCustomerClient session, IPasswordHashingService passwordHasher)

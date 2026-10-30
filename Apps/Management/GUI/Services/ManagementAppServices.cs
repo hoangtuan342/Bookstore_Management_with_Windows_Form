@@ -1,7 +1,7 @@
 using BookStore.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using System.Collections.Concurrent;
-using TrangSach.BUS;
+using TrangSach.Management.BUS;
 using TrangSach.BUS.Services;
 
 namespace TrangSach.Management.Services;

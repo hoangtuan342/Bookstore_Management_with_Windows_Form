@@ -1,7 +1,7 @@
 using TrangSach.BUS.Models;
 using BookStore.Shared.Models;
 
-namespace TrangSach.BUS;
+namespace TrangSach.Management.BUS;
 
 /// <summary>Admin operations call the existing EF-backed actions locally in-process, not over HTTP.</summary>
 public sealed class DirectManagerClient(ManagerApplicationService dispatch)

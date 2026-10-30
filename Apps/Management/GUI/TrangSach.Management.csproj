@@ -8,8 +8,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NPOI" Version="2.7.5" />
-    <ProjectReference Include="..\Common\TrangSach.GUI.Common.csproj" />
-    <ProjectReference Include="..\..\BUS\TrangSach.BUS.csproj" />
+    <ProjectReference Include="..\..\Shared\GUI\Common\TrangSach.GUI.Common.csproj" />
+    <ProjectReference Include="..\BUS\TrangSach.Management.BUS.csproj" />
+    <ProjectReference Include="..\..\..\Server\BUS\TrangSach.BUS.csproj" />
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.5" />
     <PackageReference Include="QuestPDF" Version="2026.9.1" />
   </ItemGroup>

@@ -5,8 +5,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Security\**\*.cs" />
-    <ProjectReference Include="..\DAO\TrangSach.DAO.csproj" />
-    <ProjectReference Include="..\Contracts\BookStore.Contracts\BookStore.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Contracts\BookStore.Contracts\BookStore.Contracts.csproj" />
   </ItemGroup>
 </Project>
