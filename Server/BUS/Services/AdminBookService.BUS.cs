@@ -31,61 +31,56 @@ namespace TrangSach.BUS
             return _books;
         }
 
-        public OperationResult<BookEditDetailsDto> GetBookForEdit(string id)
+        public BookEditDetailsDto? GetBookForEdit(string id)
         {
-            var dto = _dao.Catalog.GetBookForEdit(id);
-            if (dto == null) return OperationResult<BookEditDetailsDto>.NotFound();
-            return OperationResult<BookEditDetailsDto>.Success(dto);
+            return _dao.Catalog.GetBookForEdit(id);
         }
 
-        public OperationResult<BookItemDto> CreateBook(BookManagementCommandDto command)
+        public BookItemDto CreateBook(BookManagementCommandDto command)
         {
             var err = Validate(command);
-            if (err != null) return OperationResult<BookItemDto>.Invalid(err);
+            if (err != null) throw new ArgumentException(err);
 
             var id = $"S{Convert.ToHexString(RandomNumberGenerator.GetBytes(6))}";
             _dao.Catalog.InsertBook(id, command);
 
             _books = _dao.Catalog.GetAllBooks();
             var created = _books.FirstOrDefault(b => b.Id == id);
-            if (created == null) return OperationResult<BookItemDto>.Invalid("Không thể tải sách vừa tạo.");
-            return OperationResult<BookItemDto>.Created(created);
+            if (created == null) throw new InvalidOperationException("Không thể tải sách vừa tạo.");
+            return created;
         }
 
-        public OperationResult<Unit> UpdateBook(string id, BookManagementCommandDto command)
+        public void UpdateBook(string id, BookManagementCommandDto command)
         {
             var err = Validate(command);
-            if (err != null) return OperationResult<Unit>.Invalid(err);
+            if (err != null) throw new ArgumentException(err);
 
             if (_books.Count == 0) GetBooks();
             var existing = _books.FirstOrDefault(b => b.Id == id);
-            if (existing == null) return OperationResult<Unit>.NotFound();
+            if (existing == null) throw new KeyNotFoundException("Không tìm thấy sách cần cập nhật.");
 
             _dao.Catalog.UpdateBook(id, command);
             _books = _dao.Catalog.GetAllBooks();
-            return OperationResult<Unit>.Success(new Unit());
         }
 
-        public OperationResult<Unit> HideBook(string id)
+        public void HideBook(string id)
         {
             if (_books.Count == 0) GetBooks();
             var existing = _books.FirstOrDefault(b => b.Id == id);
-            if (existing == null) return OperationResult<Unit>.NotFound();
+            if (existing == null) throw new KeyNotFoundException("Không tìm thấy sách.");
 
             _dao.Catalog.SetBookVisibility(id, false);
             _books = _dao.Catalog.GetAllBooks();
-            return OperationResult<Unit>.Success(new Unit());
         }
 
-        public OperationResult<Unit> SetVisibility(string id, BookVisibilityCommandDto command)
+        public void SetVisibility(string id, BookVisibilityCommandDto command)
         {
             if (_books.Count == 0) GetBooks();
             var existing = _books.FirstOrDefault(b => b.Id == id);
-            if (existing == null) return OperationResult<Unit>.NotFound();
+            if (existing == null) throw new KeyNotFoundException("Không tìm thấy sách.");
 
             _dao.Catalog.SetBookVisibility(id, command.IsActive);
             _books = _dao.Catalog.GetAllBooks();
-            return OperationResult<Unit>.Success(new Unit());
         }
         private static string? Validate(BookManagementCommandDto c)
         {

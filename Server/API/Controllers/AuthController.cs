@@ -6,6 +6,7 @@ using TrangSach.Shared.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+
 namespace TrangSach.API.Controllers;
 
 [ApiController]
@@ -17,9 +18,19 @@ public sealed class AuthController(AuthenticationService service, IConfiguration
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public IActionResult Register(RegisterRequest request)
     {
-        var result = service.Register(ToCommand(request));
-        return result.Status switch { OperationStatus.Created => StatusCode(StatusCodes.Status201Created, CreateToken(result.Value!)),
-            OperationStatus.Conflict => Conflict(new { message = result.Message }), OperationStatus.Invalid => BadRequest(new { message = result.Message }), _ => StatusCode(500) };
+        try
+        {
+            var account = service.Register(ToCommand(request));
+            return StatusCode(StatusCodes.Status201Created, CreateToken(account));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     [AllowAnonymous, HttpPost("setup-manager")]
@@ -29,9 +40,19 @@ public sealed class AuthController(AuthenticationService service, IConfiguration
     public IActionResult SetupFirstManager(RegisterRequest request)
     {
         if (!environment.IsDevelopment()) return NotFound();
-        var result = service.SetupFirstManager(ToCommand(request));
-        return result.Status switch { OperationStatus.Created => StatusCode(StatusCodes.Status201Created, CreateToken(result.Value!)),
-            OperationStatus.Conflict => Conflict(new { message = result.Message }), _ => StatusCode(500) };
+        try
+        {
+            var account = service.SetupFirstManager(ToCommand(request));
+            return StatusCode(StatusCodes.Status201Created, CreateToken(account));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     [AllowAnonymous, HttpPost("login")]
@@ -39,8 +60,19 @@ public sealed class AuthController(AuthenticationService service, IConfiguration
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public IActionResult Login(LoginRequest request)
     {
-        var result = service.LoginCustomer(new LoginCommandDto(request.UserNameOrEmail, request.Password));
-        return result.Succeeded ? Ok(CreateToken(result.Value!)) : Unauthorized(new { message = result.Message });
+        try
+        {
+            var account = service.LoginCustomer(new LoginCommandDto(request.UserNameOrEmail, request.Password));
+            return Ok(CreateToken(account));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [AllowAnonymous, HttpPost("admin-login")]
@@ -48,16 +80,34 @@ public sealed class AuthController(AuthenticationService service, IConfiguration
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public IActionResult AdminLogin(LoginRequest request)
     {
-        var result = service.LoginEmployee(new LoginCommandDto(request.UserNameOrEmail, request.Password));
-        return result.Succeeded ? Ok(CreateToken(result.Value!)) : Unauthorized(new { message = result.Message });
+        try
+        {
+            var account = service.LoginEmployee(new LoginCommandDto(request.UserNameOrEmail, request.Password));
+            return Ok(CreateToken(account));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [Authorize, HttpGet("me")]
     public IActionResult GetCurrentUser()
     {
         if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id)) return Unauthorized();
-        var result = service.GetCurrentUser(id);
-        return result.Succeeded ? Ok(result.Value) : Unauthorized();
+        try
+        {
+            var profile = service.GetCurrentUser(id);
+            return Ok(profile);
+        }
+        catch (Exception)
+        {
+            return Unauthorized();
+        }
     }
 
     private static RegisterAccountCommandDto ToCommand(RegisterRequest request) =>

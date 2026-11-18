@@ -30,24 +30,23 @@ namespace TrangSach.BUS
             }).ToList();
         }
 
-        public OperationResult<Unit> SetCartQuantity(string customerId, string bookId, int quantity)
+        public void SetCartQuantity(string customerId, string bookId, int quantity)
         {
             var book = dao.Catalog.GetBookForCart(bookId);
             if (book == null)
             {
-                return OperationResult<Unit>.NotFound("Không tìm thấy sách.");
+                throw new KeyNotFoundException("Không tìm thấy sách.");
             }
             if (quantity < 1 || quantity > 99)
             {
-                return OperationResult<Unit>.Invalid("Số lượng phải từ 1 đến 99.");
+                throw new ArgumentException("Số lượng phải từ 1 đến 99.");
             }
             if (quantity > book.Value.Stock)
             {
-                return OperationResult<Unit>.Conflict("Số lượng vượt quá tồn kho hiện tại.");
+                throw new InvalidOperationException("Số lượng vượt quá tồn kho hiện tại.");
             }
 
             dao.Users.SetCartItem(customerId, bookId, quantity);
-            return OperationResult<Unit>.Success(new Unit());
         }
 
         public void RemoveCartItem(string customerId, string bookId)
@@ -65,30 +64,30 @@ namespace TrangSach.BUS
             return dao.Orders.FindCustomerOrder(orderId, customerId);
         }
 
-        public OperationResult<StoreOrderDto> Checkout(string customerId, CheckoutDetailsDto command)
+        public StoreOrderDto Checkout(string customerId, CheckoutDetailsDto command)
         {
             var payment = command.PaymentMethod.Trim();
             if (payment != "CashOnDelivery" && payment != "BankTransfer")
             {
-                return OperationResult<StoreOrderDto>.Invalid("Phương thức thanh toán hiện hỗ trợ COD hoặc chuyển khoản mô phỏng.");
+                throw new ArgumentException("Phương thức thanh toán hiện hỗ trợ COD hoặc chuyển khoản mô phỏng.");
             }
             if (command.ShippingAddress.Trim().Length < 8 || command.ShippingAddress.Trim().Length > 500
                 || !new PhoneAttribute().IsValid(command.ReceiverPhone) || command.ReceiverPhone.Length > 30
                 || (command.VoucherCode != null && command.VoucherCode.Length > 40))
             {
-                return OperationResult<StoreOrderDto>.Invalid("Địa chỉ giao hàng hoặc số điện thoại không hợp lệ.");
+                throw new ArgumentException("Địa chỉ giao hàng hoặc số điện thoại không hợp lệ.");
             }
 
             var cart = dao.Users.GetCustomerCart(customerId);
             if (cart.Count == 0)
             {
-                return OperationResult<StoreOrderDto>.Invalid("Giỏ hàng đang trống.");
+                throw new InvalidOperationException("Giỏ hàng đang trống.");
             }
 
             var unavailable = cart.FirstOrDefault(x => x.AvailableStock < x.Quantity);
             if (unavailable.BookId != null)
             {
-                return OperationResult<StoreOrderDto>.Conflict($"Sách '{unavailable.Title}' không đủ tồn kho (còn {unavailable.AvailableStock}).");
+                throw new InvalidOperationException($"Sách '{unavailable.Title}' không đủ tồn kho (còn {unavailable.AvailableStock}).");
             }
 
             var now = DateTime.UtcNow;
@@ -112,12 +111,12 @@ namespace TrangSach.BUS
                 if (v == null || v.Status != "Active" || (v.ExpiresAt.HasValue && v.ExpiresAt.Value < now)
                     || (v.MaxUsageCount.HasValue && v.UsageCount >= v.MaxUsageCount.Value))
                 {
-                    return OperationResult<StoreOrderDto>.Invalid("Voucher không tồn tại, đã hết hạn hoặc đã hết lượt sử dụng.");
+                    throw new InvalidOperationException("Voucher không tồn tại, đã hết hạn hoặc đã hết lượt sử dụng.");
                 }
                 voucherRate = pricing.GetVoucherDiscount(voucherCode, now);
                 if (voucherRate <= 0)
                 {
-                    return OperationResult<StoreOrderDto>.Invalid("Voucher hiện không áp dụng được.");
+                    throw new InvalidOperationException("Voucher hiện không áp dụng được.");
                 }
             }
 
@@ -153,19 +152,19 @@ namespace TrangSach.BUS
                 command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(),
                 totalAmount, totalDiscount, storeLines);
 
-            return OperationResult<StoreOrderDto>.Created(orderDto);
+            return orderDto;
         }
 
-        public OperationResult<Unit> CancelOrder(string id, string customerId)
+        public void CancelOrder(string id, string customerId)
         {
             var order = dao.Orders.FindCustomerOrder(id, customerId);
             if (order == null)
             {
-                return OperationResult<Unit>.NotFound();
+                throw new KeyNotFoundException("Không tìm thấy đơn hàng.");
             }
             if (order.Status != "Pending" && order.Status != "Confirmed")
             {
-                return OperationResult<Unit>.Conflict("Chỉ có thể hủy đơn đang chờ xác nhận hoặc đã xác nhận, trước khi bắt đầu giao.");
+                throw new InvalidOperationException("Chỉ có thể hủy đơn đang chờ xác nhận hoặc đã xác nhận, trước khi bắt đầu giao.");
             }
 
             dao.Orders.RestoreStock(id);
@@ -173,8 +172,6 @@ namespace TrangSach.BUS
 
             var newPayStatus = order.PaymentStatus == "Paid" ? "RefundPending" : "Cancelled";
             dao.Orders.UpdateOrderStatus(id, "Cancelled", newPayStatus);
-
-            return OperationResult<Unit>.Success(new Unit());
         }
     }
 }

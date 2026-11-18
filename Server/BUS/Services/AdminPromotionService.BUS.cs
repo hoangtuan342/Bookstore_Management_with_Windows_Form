@@ -30,7 +30,7 @@ namespace TrangSach.BUS
             return _promotions;
         }
 
-        public OperationResult<string> Create(CreatePromotionDto command)
+        public string Create(CreatePromotionDto command)
         {
             if (string.IsNullOrWhiteSpace(command.Name) || command.Name.Trim().Length < 2 || command.Name.Trim().Length > 180
                 || (command.BookDiscountPercent != null && (command.BookDiscountPercent < 0 || command.BookDiscountPercent > 90))
@@ -40,10 +40,10 @@ namespace TrangSach.BUS
                 || (command.VoucherCode != null && command.VoucherCode.Length > 40)
                 || (command.VoucherMaxUses != null && (command.VoucherMaxUses < 1 || command.VoucherMaxUses > 1000000)))
             {
-                return OperationResult<string>.Invalid("Thông tin chương trình khuyến mãi không hợp lệ.");
+                throw new ArgumentException("Thông tin chương trình khuyến mãi không hợp lệ.");
             }
             if (command.EndsAt <= command.StartsAt)
-                return OperationResult<string>.Invalid("Thời điểm kết thúc phải sau thời điểm bắt đầu.");
+                throw new ArgumentException("Thời điểm kết thúc phải sau thời điểm bắt đầu.");
 
             var id = $"KM{DateTime.UtcNow:yyyyMMddHHmmss}{Convert.ToHexString(RandomNumberGenerator.GetBytes(2))}";
 
@@ -61,56 +61,53 @@ namespace TrangSach.BUS
 
             dao.Promotions.InsertPromotion(id, command.Name.Trim(), command.StartsAt, command.EndsAt, bookRule, orderRule, voucherRule);
             _promotions = dao.Promotions.GetAllPromotions();
-            return OperationResult<string>.Created(id);
+            return id;
         }
 
-        public OperationResult<Unit> UpdateDetails(string id, UpdatePromotionDetailsDto command)
+        public void UpdateDetails(string id, UpdatePromotionDetailsDto command)
         {
             if (string.IsNullOrWhiteSpace(command.Name) || command.Name.Trim().Length < 2 || command.Name.Trim().Length > 180)
-                return OperationResult<Unit>.Invalid("Tên chương trình khuyến mãi không hợp lệ.");
+                throw new ArgumentException("Tên chương trình khuyến mãi không hợp lệ.");
             if (command.EndsAt <= command.StartsAt)
-                return OperationResult<Unit>.Invalid("Thời điểm kết thúc phải sau thời điểm bắt đầu.");
+                throw new ArgumentException("Thời điểm kết thúc phải sau thời điểm bắt đầu.");
 
             if (_promotions.Count == 0) GetAllPromotionsList();
             var cached = _promotions.FirstOrDefault(x => x.Id == id);
-            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached == null) throw new KeyNotFoundException("Không tìm thấy chương trình khuyến mãi.");
 
             dao.Promotions.UpdatePromotionDetails(id, command.Name.Trim(), command.StartsAt, command.EndsAt);
             cached.Name = command.Name.Trim();
             cached.StartsAt = command.StartsAt;
             cached.EndsAt = command.EndsAt;
-            return OperationResult<Unit>.Success(new Unit());
         }
 
-        public OperationResult<Unit> Update(string id, UpdatePromotionDetailsDto command) => UpdateDetails(id, command);
+        public void Update(string id, UpdatePromotionDetailsDto command) => UpdateDetails(id, command);
 
-        public OperationResult<Unit> UpdateRules(string id, UpdatePromotionRulesDto command)
+        public void UpdateRules(string id, UpdatePromotionRulesDto command)
         {
             if (_promotions.Count == 0) GetAllPromotionsList();
             var cached = _promotions.FirstOrDefault(x => x.Id == id);
-            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached == null) throw new KeyNotFoundException("Không tìm thấy chương trình khuyến mãi.");
 
             if (command.Books.Any(x => string.IsNullOrWhiteSpace(x.BookId) || x.DiscountPercent <= 0 || x.DiscountPercent > 90)
                 || command.Orders.Any(x => x.MinimumOrderAmount <= 0 || x.DiscountPercent <= 0 || x.DiscountPercent > 90)
                 || command.Vouchers.Any(x => string.IsNullOrWhiteSpace(x.VoucherId) || x.DiscountPercent <= 0 || x.DiscountPercent > 90))
             {
-                return OperationResult<Unit>.Invalid("Quy tắc cần có mã hợp lệ, ngưỡng dương và mức giảm từ trên 0 đến 90%.");
+                throw new ArgumentException("Quy tắc cần có mã hợp lệ, ngưỡng dương và mức giảm từ trên 0 đến 90%.");
             }
 
             dao.Promotions.UpdatePromotionRules(id, command.Books, command.Orders, command.Vouchers);
             _promotions = dao.Promotions.GetAllPromotions();
-            return OperationResult<Unit>.Success(new Unit());
         }
 
-        public OperationResult<Unit> Delete(string id)
+        public void Delete(string id)
         {
             if (_promotions.Count == 0) GetAllPromotionsList();
             var cached = _promotions.FirstOrDefault(x => x.Id == id);
-            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached == null) throw new KeyNotFoundException("Không tìm thấy chương trình khuyến mãi.");
 
             dao.Promotions.DeletePromotion(id);
             _promotions.RemoveAll(x => x.Id == id);
-            return OperationResult<Unit>.Success(new Unit());
         }
     }
 }

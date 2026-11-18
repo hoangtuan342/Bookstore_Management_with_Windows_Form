@@ -48,39 +48,36 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
         EnsureAccess("books");
         var dao = BookStoreDao.Create();
         var result = new AdminBookService(dao).GetBookForEdit(id);
-        return RequireValue(result);
+        if (result == null) throw new InvalidOperationException("Không tìm thấy dữ liệu.");
+        return result;
     }
 
     public void CreateManagerBook(BookManagementCommandDto command)
     {
         EnsureAccess("books");
         var dao = BookStoreDao.Create();
-        var result = new AdminBookService(dao).CreateBook(command);
-        RequireSuccess(result);
+        new AdminBookService(dao).CreateBook(command);
     }
 
     public void UpdateManagerBook(string id, BookManagementCommandDto command)
     {
         EnsureAccess("books");
         var dao = BookStoreDao.Create();
-        var result = new AdminBookService(dao).UpdateBook(id, command);
-        RequireSuccess(result);
+        new AdminBookService(dao).UpdateBook(id, command);
     }
 
     public void HideManagerBook(string id)
     {
         EnsureAccess("books");
         var dao = BookStoreDao.Create();
-        var result = new AdminBookService(dao).HideBook(id);
-        RequireSuccess(result);
+        new AdminBookService(dao).HideBook(id);
     }
 
     public void SetManagerBookVisibility(string id, bool isActive)
     {
         EnsureAccess("books");
         var dao = BookStoreDao.Create();
-        var result = new AdminBookService(dao).SetVisibility(id, new BookVisibilityCommandDto(isActive));
-        RequireSuccess(result);
+        new AdminBookService(dao).SetVisibility(id, new BookVisibilityCommandDto(isActive));
     }
 
     public List<VoucherSummaryDto> GetVouchers()
@@ -94,16 +91,14 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
     {
         EnsureAccess("promotions");
         var dao = BookStoreDao.Create();
-        var result = new AdminVoucherService(dao).Update(id, command);
-        RequireSuccess(result);
+        new AdminVoucherService(dao).Update(id, command);
     }
 
     public void DeleteVoucher(string id)
     {
         EnsureAccess("promotions");
         var dao = BookStoreDao.Create();
-        var result = new AdminVoucherService(dao).Delete(id);
-        RequireSuccess(result);
+        new AdminVoucherService(dao).Delete(id);
     }
 
     public ManagerLookupsDto GetManagerLookups()
@@ -131,40 +126,35 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
     {
         EnsureAccess("inventory");
         var dao = BookStoreDao.Create();
-        var result = new AdminInventoryService(dao).CreateSupplier(command);
-        RequireSuccess(result);
+        new AdminInventoryService(dao).CreateSupplier(command);
     }
 
     public void UpdateManagerSupplier(string id, SupplierCommandDto command)
     {
         EnsureAccess("inventory");
         var dao = BookStoreDao.Create();
-        var result = new AdminInventoryService(dao).UpdateSupplier(id, command);
-        RequireSuccess(result);
+        new AdminInventoryService(dao).UpdateSupplier(id, command);
     }
 
     public void DeleteManagerSupplier(string id)
     {
         EnsureAccess("inventory");
         var dao = BookStoreDao.Create();
-        var result = new AdminInventoryService(dao).DeleteSupplier(id);
-        RequireSuccess(result);
+        new AdminInventoryService(dao).DeleteSupplier(id);
     }
 
     public void CreateManagerReceipt(ReceiptCommandDto command)
     {
         EnsureAccess("inventory");
         var dao = BookStoreDao.Create();
-        var result = new AdminInventoryService(dao).CreateReceipt(command, session.AccountId);
-        RequireSuccess(result);
+        new AdminInventoryService(dao).CreateReceipt(command, session.AccountId);
     }
 
     public void CancelManagerReceipt(string id)
     {
         EnsureAccess("inventory");
         var dao = BookStoreDao.Create();
-        var result = new AdminInventoryService(dao).CancelReceipt(id);
-        RequireSuccess(result);
+        new AdminInventoryService(dao).CancelReceipt(id);
     }
 
     public List<ManagerPromotionDto> GetManagerPromotions()
@@ -178,32 +168,28 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
     {
         EnsureAccess("promotions");
         var dao = BookStoreDao.Create();
-        var result = new AdminPromotionService(dao).Create(command);
-        RequireSuccess(result);
+        new AdminPromotionService(dao).Create(command);
     }
 
     public void UpdateManagerPromotion(string id, UpdatePromotionDetailsDto command)
     {
         EnsureAccess("promotions");
         var dao = BookStoreDao.Create();
-        var result = new AdminPromotionService(dao).UpdateDetails(id, command);
-        RequireSuccess(result);
+        new AdminPromotionService(dao).UpdateDetails(id, command);
     }
 
     public void UpdateManagerPromotionRules(string id, UpdatePromotionRulesDto command)
     {
         EnsureAccess("promotions");
         var dao = BookStoreDao.Create();
-        var result = new AdminPromotionService(dao).UpdateRules(id, command);
-        RequireSuccess(result);
+        new AdminPromotionService(dao).UpdateRules(id, command);
     }
 
     public void DeleteManagerPromotion(string id)
     {
         EnsureAccess("promotions");
         var dao = BookStoreDao.Create();
-        var result = new AdminPromotionService(dao).Delete(id);
-        RequireSuccess(result);
+        new AdminPromotionService(dao).Delete(id);
     }
 
     public List<ManagerOrderRowDto> GetManagerOrders(string? status = null)
@@ -217,48 +203,42 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
     {
         EnsureAccess("orders");
         var dao = BookStoreDao.Create();
-        var result = new AdminOrderService(dao, new BookPricingService(dao)).Create(command, session.AccountId);
-        RequireSuccess(result);
+        new AdminOrderService(dao, new BookPricingService(dao)).Create(command, session.AccountId);
     }
 
     public void UpdateManagerOrder(string id, UpdateAdminOrderDto command)
     {
         EnsureAccess("orders");
         var dao = BookStoreDao.Create();
-        var result = new AdminOrderService(dao, new BookPricingService(dao)).Update(id, command);
-        RequireSuccess(result);
+        new AdminOrderService(dao, new BookPricingService(dao)).Update(id, command);
     }
 
     public void CancelManagerOrder(string id)
     {
         EnsureAccess("orders");
         var dao = BookStoreDao.Create();
-        var result = new AdminOrderService(dao, new BookPricingService(dao)).UpdateStatus(id, "Cancelled", session.AccountId);
-        RequireSuccess(result);
+        new AdminOrderService(dao, new BookPricingService(dao)).UpdateStatus(id, "Cancelled", session.AccountId);
     }
 
     public void UpdateManagerOrderStatus(string id, string status)
     {
         EnsureAccess("orders");
         var dao = BookStoreDao.Create();
-        var result = new AdminOrderService(dao, new BookPricingService(dao)).UpdateStatus(id, status, session.AccountId);
-        RequireSuccess(result);
+        new AdminOrderService(dao, new BookPricingService(dao)).UpdateStatus(id, status, session.AccountId);
     }
 
     public void MarkManagerTransferPaid(string id)
     {
         EnsureAccess("orders");
         var dao = BookStoreDao.Create();
-        var result = new AdminOrderService(dao, new BookPricingService(dao)).MarkBankTransferPaid(id);
-        RequireSuccess(result);
+        new AdminOrderService(dao, new BookPricingService(dao)).MarkBankTransferPaid(id);
     }
 
     public void MarkManagerRefundCompleted(string id)
     {
         EnsureAccess("orders");
         var dao = BookStoreDao.Create();
-        var result = new AdminOrderService(dao, new BookPricingService(dao)).MarkRefundCompleted(id);
-        RequireSuccess(result);
+        new AdminOrderService(dao, new BookPricingService(dao)).MarkRefundCompleted(id);
     }
 
     public List<ManagerCategoryDto> GetManagerCategories()
@@ -307,134 +287,108 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
     {
         EnsureAccess("records");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).CreateCategory(command);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).CreateCategory(command);
     }
 
     public void UpdateManagerCategory(string id, SaveCategoryDto command)
     {
         EnsureAccess("records");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).UpdateCategory(id, command);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).UpdateCategory(id, command);
     }
 
     public void DeleteManagerCategory(string id)
     {
         EnsureAccess("records");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).DeleteCategory(id);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).DeleteCategory(id);
     }
 
     public void CreateManagerAuthor(SaveAuthorDto command)
     {
         EnsureAccess("records");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).CreateAuthor(command);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).CreateAuthor(command);
     }
 
     public void UpdateManagerAuthor(int id, SaveAuthorDto command)
     {
         EnsureAccess("records");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).UpdateAuthor(id, command);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).UpdateAuthor(id, command);
     }
 
     public void DeleteManagerAuthor(int id)
     {
         EnsureAccess("records");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).DeleteAuthor(id);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).DeleteAuthor(id);
     }
 
     public void CreateManagerPublisher(SavePublisherDto command)
     {
         EnsureAccess("records");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).CreatePublisher(command);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).CreatePublisher(command);
     }
 
     public void UpdateManagerPublisher(int id, SavePublisherDto command)
     {
         EnsureAccess("records");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).UpdatePublisher(id, command);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).UpdatePublisher(id, command);
     }
 
     public void DeleteManagerPublisher(int id)
     {
         EnsureAccess("records");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).DeletePublisher(id);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).DeletePublisher(id);
     }
 
     public void CreateManagerCustomer(SaveCustomerDto command)
     {
         EnsureAccess("customers");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).CreateCustomer(command);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).CreateCustomer(command);
     }
 
     public void UpdateManagerCustomer(string id, SaveCustomerDto command)
     {
         EnsureAccess("customers");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).UpdateCustomer(id, command);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).UpdateCustomer(id, command);
     }
 
     public void DeleteManagerCustomer(string id)
     {
         EnsureAccess("customers");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).DeleteCustomer(id);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).DeleteCustomer(id);
     }
 
     public void CreateManagerEmployee(SaveEmployeeDto command)
     {
         EnsureAccess("employees");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).CreateEmployee(command);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).CreateEmployee(command);
     }
 
     public void UpdateManagerEmployee(string id, SaveEmployeeDto command)
     {
         EnsureAccess("employees");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).UpdateEmployee(id, command, session.AccountId);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).UpdateEmployee(id, command, session.AccountId);
     }
 
     public void DeleteManagerEmployee(string id)
     {
         EnsureAccess("employees");
         var dao = BookStoreDao.Create();
-        var result = CreateAdminRecordsService(dao).DeleteEmployee(id, session.AccountId);
-        RequireSuccess(result);
+        CreateAdminRecordsService(dao).DeleteEmployee(id, session.AccountId);
     }
 
     private AdminRecordsService CreateAdminRecordsService(BookStoreDao dao) => new(dao, passwordHasher);
-
-    private static T RequireValue<T>(OperationResult<T> result)
-    {
-        if (!result.Succeeded || result.Value is null) throw new InvalidOperationException(result.Message ?? "Không tìm thấy dữ liệu.");
-        return result.Value;
-    }
-
-    private static void RequireSuccess<T>(TrangSach.BUS.OperationResult<T> result)
-    {
-        if (!result.Succeeded) throw new InvalidOperationException(result.Message ?? "Thao tác không thành công.");
-    }
 
     private void EnsureAccess(string area)
     {

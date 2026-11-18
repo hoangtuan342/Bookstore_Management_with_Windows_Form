@@ -3,6 +3,7 @@ using TrangSach.Shared.DTO;
 using TrangSach.Shared.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 namespace TrangSach.API.Controllers;
 
 [ApiController]
@@ -15,19 +16,11 @@ public sealed class AdminVouchersController(AdminVoucherService service) : Contr
 
     [HttpPut("{id}")]
     public IActionResult Update(string id, VoucherUpdateRequest request) =>
-        ToHttpResult(service.Update(id, new VoucherUpdateCommandDto(request.Status, request.ExpiresAt, request.MaxUsageCount)));
+        ControllerExceptionHelper.Execute(() => service.Update(id, new VoucherUpdateCommandDto(request.Status, request.ExpiresAt, request.MaxUsageCount)));
 
     [HttpDelete("{id}")]
-    public IActionResult Delete(string id) => ToHttpResult(service.Delete(id));
-
-    private IActionResult ToHttpResult(OperationResult<Unit> result) => result.Status switch
-    {
-        OperationStatus.Success => NoContent(),
-        OperationStatus.NotFound => NotFound(),
-        OperationStatus.Invalid => BadRequest(new { message = result.Message }),
-        OperationStatus.Conflict => Conflict(new { message = result.Message }),
-        _ => StatusCode(StatusCodes.Status500InternalServerError)
-    };
+    public IActionResult Delete(string id) =>
+        ControllerExceptionHelper.Execute(() => service.Delete(id));
 }
 
 public sealed class VoucherUpdateRequest

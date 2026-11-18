@@ -78,139 +78,133 @@ namespace TrangSach.BUS
             return _roles;
         }
 
-        public OperationResult<string> CreateCategory(SaveCategoryDto command)
+        public string CreateCategory(SaveCategoryDto command)
         {
             if (string.IsNullOrWhiteSpace(command.Id) || command.Id.Trim().Length > 20 || string.IsNullOrWhiteSpace(command.Name) || command.Name.Trim().Length < 2 || command.Name.Trim().Length > 120)
-                return OperationResult<string>.Invalid("Mã hoặc tên loại sách không hợp lệ.");
+                throw new ArgumentException("Mã hoặc tên loại sách không hợp lệ.");
 
             var id = command.Id.Trim();
             if (_categories.Any(x => x.Id == id) || dao.Catalog.CategoryExists(id))
-                return OperationResult<string>.Conflict("Mã loại sách đã tồn tại.");
+                throw new InvalidOperationException("Mã loại sách đã tồn tại.");
 
             dao.Catalog.InsertCategory(id, command.Name.Trim());
             _categories.Add(new ManagerCategoryDto(id, command.Name.Trim()));
-            return OperationResult<string>.Created(id);
+            return id;
         }
 
-        public OperationResult<Unit> UpdateCategory(string id, SaveCategoryDto command)
+        public void UpdateCategory(string id, SaveCategoryDto command)
         {
             if (string.IsNullOrWhiteSpace(command.Name) || command.Name.Trim().Length < 2 || command.Name.Trim().Length > 120)
-                return OperationResult<Unit>.Invalid("Tên loại sách không hợp lệ.");
+                throw new ArgumentException("Tên loại sách không hợp lệ.");
 
             if (_categories.Count == 0) GetAllCategoriesList();
             var cached = _categories.FirstOrDefault(x => x.Id == id);
-            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached == null) throw new KeyNotFoundException("Không tìm thấy loại sách.");
 
             dao.Catalog.UpdateCategory(id, command.Name.Trim());
             cached.Name = command.Name.Trim();
-            return OperationResult<Unit>.Success(new Unit());
         }
 
-        public OperationResult<Unit> DeleteCategory(string id)
+        public void DeleteCategory(string id)
         {
             if (_categories.Count == 0) GetAllCategoriesList();
             var cached = _categories.FirstOrDefault(x => x.Id == id);
-            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached == null) throw new KeyNotFoundException("Không tìm thấy loại sách.");
 
             if (dao.Catalog.CategoryHasBooks(id))
-                return OperationResult<Unit>.Conflict("Không thể xóa loại sách đang chứa các đầu sách.");
+                throw new InvalidOperationException("Không thể xóa loại sách đang chứa các đầu sách.");
 
             dao.Catalog.DeleteCategory(id);
             _categories.RemoveAll(x => x.Id == id);
-            return OperationResult<Unit>.Success(new Unit());
         }
 
-        public OperationResult<int> CreateAuthor(SaveAuthorDto command)
+        public int CreateAuthor(SaveAuthorDto command)
         {
             if (string.IsNullOrWhiteSpace(command.Name) || command.Name.Trim().Length < 2 || command.Name.Trim().Length > 150)
-                return OperationResult<int>.Invalid("Tên tác giả không hợp lệ.");
+                throw new ArgumentException("Tên tác giả không hợp lệ.");
 
             var newId = dao.Catalog.InsertAuthor(command.Name.Trim(), command.Biography?.Trim());
             _authors.Add(new ManagerAuthorDto(newId, command.Name.Trim(), command.Biography?.Trim()));
-            return OperationResult<int>.Created(newId);
+            return newId;
         }
 
-        public OperationResult<Unit> UpdateAuthor(int id, SaveAuthorDto command)
+        public void UpdateAuthor(int id, SaveAuthorDto command)
         {
             if (string.IsNullOrWhiteSpace(command.Name) || command.Name.Trim().Length < 2 || command.Name.Trim().Length > 150)
-                return OperationResult<Unit>.Invalid("Tên tác giả không hợp lệ.");
+                throw new ArgumentException("Tên tác giả không hợp lệ.");
 
             if (_authors.Count == 0) GetAllAuthorsList();
             var cached = _authors.FirstOrDefault(x => x.Id == id);
-            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached == null) throw new KeyNotFoundException("Không tìm thấy tác giả.");
 
             dao.Catalog.UpdateAuthor(id, command.Name.Trim(), command.Biography?.Trim());
             cached.Name = command.Name.Trim();
             cached.Biography = command.Biography?.Trim();
-            return OperationResult<Unit>.Success(new Unit());
         }
 
-        public OperationResult<Unit> DeleteAuthor(int id)
+        public void DeleteAuthor(int id)
         {
             if (_authors.Count == 0) GetAllAuthorsList();
             var cached = _authors.FirstOrDefault(x => x.Id == id);
-            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached == null) throw new KeyNotFoundException("Không tìm thấy tác giả.");
 
             if (dao.Catalog.AuthorHasBooks(id))
-                return OperationResult<Unit>.Conflict("Không thể xóa tác giả đang gắn với đầu sách.");
+                throw new InvalidOperationException("Không thể xóa tác giả đang gắn với đầu sách.");
 
             dao.Catalog.DeleteAuthor(id);
             _authors.RemoveAll(x => x.Id == id);
-            return OperationResult<Unit>.Success(new Unit());
         }
 
-        public OperationResult<int> CreatePublisher(SavePublisherDto command)
+        public int CreatePublisher(SavePublisherDto command)
         {
             if (string.IsNullOrWhiteSpace(command.Name) || command.Name.Trim().Length < 2 || command.Name.Trim().Length > 150)
-                return OperationResult<int>.Invalid("Tên nhà xuất bản không hợp lệ.");
+                throw new ArgumentException("Tên nhà xuất bản không hợp lệ.");
 
             var newId = dao.Catalog.InsertPublisher(command.Name.Trim(), command.Address?.Trim());
             _publishers.Add(new ManagerPublisherDto(newId, command.Name.Trim(), command.Address?.Trim()));
-            return OperationResult<int>.Created(newId);
+            return newId;
         }
 
-        public OperationResult<Unit> UpdatePublisher(int id, SavePublisherDto command)
+        public void UpdatePublisher(int id, SavePublisherDto command)
         {
             if (string.IsNullOrWhiteSpace(command.Name) || command.Name.Trim().Length < 2 || command.Name.Trim().Length > 150)
-                return OperationResult<Unit>.Invalid("Tên nhà xuất bản không hợp lệ.");
+                throw new ArgumentException("Tên nhà xuất bản không hợp lệ.");
 
             if (_publishers.Count == 0) GetAllPublishersList();
             var cached = _publishers.FirstOrDefault(x => x.Id == id);
-            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached == null) throw new KeyNotFoundException("Không tìm thấy nhà xuất bản.");
 
             dao.Catalog.UpdatePublisher(id, command.Name.Trim(), command.Address?.Trim());
             cached.Name = command.Name.Trim();
             cached.Address = command.Address?.Trim();
-            return OperationResult<Unit>.Success(new Unit());
         }
 
-        public OperationResult<Unit> DeletePublisher(int id)
+        public void DeletePublisher(int id)
         {
             if (_publishers.Count == 0) GetAllPublishersList();
             var cached = _publishers.FirstOrDefault(x => x.Id == id);
-            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached == null) throw new KeyNotFoundException("Không tìm thấy nhà xuất bản.");
 
             if (dao.Catalog.PublisherHasBooks(id))
-                return OperationResult<Unit>.Conflict("Không thể xóa nhà xuất bản đang gắn với đầu sách.");
+                throw new InvalidOperationException("Không thể xóa nhà xuất bản đang gắn với đầu sách.");
 
             dao.Catalog.DeletePublisher(id);
             _publishers.RemoveAll(x => x.Id == id);
-            return OperationResult<Unit>.Success(new Unit());
         }
 
-        public OperationResult<string> CreateCustomer(SaveCustomerDto command)
+        public string CreateCustomer(SaveCustomerDto command)
         {
             var validation = ValidateCustomer(command);
-            if (validation != null) return OperationResult<string>.Invalid(validation);
+            if (validation != null) throw new ArgumentException(validation);
 
             int? accountId = null;
             if (HasAccount(command.UserName, command.Email, command.Password))
             {
                 var accountError = ValidateNewAccount(command.UserName, command.Email, command.Password);
-                if (accountError != null) return OperationResult<string>.Conflict(accountError);
+                if (accountError != null) throw new InvalidOperationException(accountError);
 
                 var roleId = dao.Users.GetRoleIdByName("Customer");
-                if (!roleId.HasValue) return OperationResult<string>.Invalid("Không tìm thấy vai trò Khách hàng.");
+                if (!roleId.HasValue) throw new InvalidOperationException("Không tìm thấy vai trò Khách hàng.");
 
                 var hash = passwordHasher.Hash(command.UserName!.Trim(), command.Password!);
                 accountId = dao.Users.CreateAccount(command.UserName.Trim(), command.Email!.Trim(), hash, roleId.Value, command.AccountStatus ?? "Active");
@@ -223,23 +217,23 @@ namespace TrangSach.BUS
                 id, command.FullName.Trim(), command.PhoneNumber?.Trim() ?? "", command.Address?.Trim() ?? "",
                 accountId, command.UserName?.Trim() ?? "", command.Email?.Trim() ?? "", command.AccountStatus ?? "Active"));
 
-            return OperationResult<string>.Created(id);
+            return id;
         }
 
-        public OperationResult<Unit> UpdateCustomer(string id, SaveCustomerDto command)
+        public void UpdateCustomer(string id, SaveCustomerDto command)
         {
             var validation = ValidateCustomer(command);
-            if (validation != null) return OperationResult<Unit>.Invalid(validation);
+            if (validation != null) throw new ArgumentException(validation);
 
             if (_customers.Count == 0) GetAllCustomersList();
             var cached = _customers.FirstOrDefault(x => x.Id == id);
-            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached == null) throw new KeyNotFoundException("Không tìm thấy khách hàng.");
 
             int? accountId = cached.AccountId;
             if (accountId.HasValue)
             {
                 if (dao.Users.ExistsUserNameOrEmail(command.UserName ?? cached.UserName, command.Email ?? cached.Email, accountId.Value))
-                    return OperationResult<Unit>.Conflict("Tên đăng nhập hoặc email đã được sử dụng.");
+                    throw new InvalidOperationException("Tên đăng nhập hoặc email đã được sử dụng.");
 
                 string? newHash = !string.IsNullOrWhiteSpace(command.Password)
                     ? passwordHasher.Hash(command.UserName ?? cached.UserName, command.Password)
@@ -250,7 +244,7 @@ namespace TrangSach.BUS
             else if (HasAccount(command.UserName, command.Email, command.Password))
             {
                 var accountError = ValidateNewAccount(command.UserName, command.Email, command.Password);
-                if (accountError != null) return OperationResult<Unit>.Conflict(accountError);
+                if (accountError != null) throw new InvalidOperationException(accountError);
 
                 var roleId = dao.Users.GetRoleIdByName("Customer");
                 var hash = passwordHasher.Hash(command.UserName!.Trim(), command.Password!);
@@ -266,37 +260,34 @@ namespace TrangSach.BUS
             if (command.UserName != null) cached.UserName = command.UserName.Trim();
             if (command.Email != null) cached.Email = command.Email.Trim();
             if (command.AccountStatus != null) cached.AccountStatus = command.AccountStatus;
-
-            return OperationResult<Unit>.Success(new Unit());
         }
 
-        public OperationResult<Unit> DeleteCustomer(string id)
+        public void DeleteCustomer(string id)
         {
             if (_customers.Count == 0) GetAllCustomersList();
             var cached = _customers.FirstOrDefault(x => x.Id == id);
-            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached == null) throw new KeyNotFoundException("Không tìm thấy khách hàng.");
 
             if (dao.Users.CustomerHasOrders(id))
-                return OperationResult<Unit>.Conflict("Khách hàng đã có giao dịch mua sách; không thể xóa hồ sơ.");
+                throw new InvalidOperationException("Khách hàng đã có giao dịch mua sách; không thể xóa hồ sơ.");
 
             dao.Users.DeleteCustomer(id, cached.AccountId);
             _customers.RemoveAll(x => x.Id == id);
-            return OperationResult<Unit>.Success(new Unit());
         }
 
-        public OperationResult<string> CreateEmployee(SaveEmployeeDto command)
+        public string CreateEmployee(SaveEmployeeDto command)
         {
             var validation = ValidateEmployee(command);
-            if (validation != null) return OperationResult<string>.Invalid(validation);
+            if (validation != null) throw new ArgumentException(validation);
 
             int? accountId = null;
             if (HasAccount(command.UserName, command.Email, command.Password))
             {
                 var accountError = ValidateNewAccount(command.UserName, command.Email, command.Password);
-                if (accountError != null) return OperationResult<string>.Conflict(accountError);
+                if (accountError != null) throw new InvalidOperationException(accountError);
 
                 var roleId = dao.Users.GetRoleIdByName(command.RoleName);
-                if (!roleId.HasValue) return OperationResult<string>.Invalid("Vai trò nhân viên không hợp lệ.");
+                if (!roleId.HasValue) throw new ArgumentException("Vai trò nhân viên không hợp lệ.");
 
                 var hash = passwordHasher.Hash(command.UserName!.Trim(), command.Password!);
                 accountId = dao.Users.CreateAccount(command.UserName.Trim(), command.Email!.Trim(), hash, roleId.Value, command.AccountLoginStatus ?? "Active");
@@ -310,23 +301,23 @@ namespace TrangSach.BUS
                 command.Address?.Trim() ?? "", command.AccountStatus, command.BaseSalary, accountId,
                 command.UserName?.Trim() ?? "", command.Email?.Trim() ?? "", command.AccountLoginStatus ?? "Active", command.RoleName));
 
-            return OperationResult<string>.Created(id);
+            return id;
         }
 
-        public OperationResult<Unit> UpdateEmployee(string id, SaveEmployeeDto command, int? currentAccountId)
+        public void UpdateEmployee(string id, SaveEmployeeDto command, int? currentAccountId)
         {
             var validation = ValidateEmployee(command);
-            if (validation != null) return OperationResult<Unit>.Invalid(validation);
+            if (validation != null) throw new ArgumentException(validation);
 
             if (_employees.Count == 0) GetAllEmployeesList();
             var cached = _employees.FirstOrDefault(x => x.Id == id);
-            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached == null) throw new KeyNotFoundException("Không tìm thấy nhân viên.");
 
             int? accountId = cached.AccountId;
             if (accountId.HasValue)
             {
                 if (dao.Users.ExistsUserNameOrEmail(command.UserName ?? cached.UserName, command.Email ?? cached.Email, accountId.Value))
-                    return OperationResult<Unit>.Conflict("Tên đăng nhập hoặc email đã được sử dụng.");
+                    throw new InvalidOperationException("Tên đăng nhập hoặc email đã được sử dụng.");
 
                 var roleId = dao.Users.GetRoleIdByName(command.RoleName);
                 string? newHash = !string.IsNullOrWhiteSpace(command.Password)
@@ -338,7 +329,7 @@ namespace TrangSach.BUS
             else if (HasAccount(command.UserName, command.Email, command.Password))
             {
                 var accountError = ValidateNewAccount(command.UserName, command.Email, command.Password);
-                if (accountError != null) return OperationResult<Unit>.Conflict(accountError);
+                if (accountError != null) throw new InvalidOperationException(accountError);
 
                 var roleId = dao.Users.GetRoleIdByName(command.RoleName);
                 var hash = passwordHasher.Hash(command.UserName!.Trim(), command.Password!);
@@ -359,25 +350,22 @@ namespace TrangSach.BUS
             if (command.Email != null) cached.Email = command.Email.Trim();
             if (command.AccountLoginStatus != null) cached.AccountStatus = command.AccountLoginStatus;
             cached.RoleName = command.RoleName;
-
-            return OperationResult<Unit>.Success(new Unit());
         }
 
-        public OperationResult<Unit> DeleteEmployee(string id, int? currentAccountId)
+        public void DeleteEmployee(string id, int? currentAccountId)
         {
             if (_employees.Count == 0) GetAllEmployeesList();
             var cached = _employees.FirstOrDefault(x => x.Id == id);
-            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached == null) throw new KeyNotFoundException("Không tìm thấy nhân viên.");
 
             if (currentAccountId.HasValue && cached.AccountId == currentAccountId.Value)
-                return OperationResult<Unit>.Conflict("Không thể xóa tài khoản nhân viên đang đăng nhập.");
+                throw new InvalidOperationException("Không thể xóa tài khoản nhân viên đang đăng nhập.");
 
             if (dao.Users.EmployeeHasTransactions(id))
-                return OperationResult<Unit>.Conflict("Nhân viên đã được ghi nhận trong nghiệp vụ; hãy ngừng hoạt động để giữ lịch sử.");
+                throw new InvalidOperationException("Nhân viên đã được ghi nhận trong nghiệp vụ; hãy ngừng hoạt động để giữ lịch sử.");
 
             dao.Users.DeleteEmployee(id, cached.AccountId);
             _employees.RemoveAll(x => x.Id == id);
-            return OperationResult<Unit>.Success(new Unit());
         }
 
         private string? ValidateNewAccount(string? userName, string? email, string? password)

@@ -14,16 +14,30 @@ public sealed class ManagementSessionService(IPasswordHashingService passwordHas
     // Synchronous authentication methods
     public StoreApiResultDto Login(string userNameOrEmail, string password)
     {
-        var dao = BookStoreDao.Create();
-        var result = new AuthenticationService(dao, passwordHasher).LoginCustomer(new LoginCommandDto(userNameOrEmail, password));
-        return SetSession(result, "Tên đăng nhập hoặc mật khẩu không hợp lệ cho khu vực khách hàng.");
+        try
+        {
+            var dao = BookStoreDao.Create();
+            var acc = new AuthenticationService(dao, passwordHasher).LoginCustomer(new LoginCommandDto(userNameOrEmail, password));
+            return SetSession(acc);
+        }
+        catch (Exception ex)
+        {
+            return new(false, ex.Message);
+        }
     }
 
     public StoreApiResultDto AdminLogin(string userNameOrEmail, string password)
     {
-        var dao = BookStoreDao.Create();
-        var result = new AuthenticationService(dao, passwordHasher).LoginEmployee(new LoginCommandDto(userNameOrEmail, password));
-        return SetSession(result, "Thông tin đăng nhập không hợp lệ hoặc tài khoản không có quyền nhân viên.");
+        try
+        {
+            var dao = BookStoreDao.Create();
+            var acc = new AuthenticationService(dao, passwordHasher).LoginEmployee(new LoginCommandDto(userNameOrEmail, password));
+            return SetSession(acc);
+        }
+        catch (Exception ex)
+        {
+            return new(false, ex.Message);
+        }
     }
 
     public bool HasManagerAccount()
@@ -34,18 +48,24 @@ public sealed class ManagementSessionService(IPasswordHashingService passwordHas
 
     public StoreApiResultDto SetupFirstManager(RegisterAccountCommandDto command)
     {
-        var dao = BookStoreDao.Create();
-        var result = new AuthenticationService(dao, passwordHasher).SetupFirstManager(command);
-        return SetSession(result, "Không thể tạo tài khoản quản lý đầu tiên.");
+        try
+        {
+            var dao = BookStoreDao.Create();
+            var acc = new AuthenticationService(dao, passwordHasher).SetupFirstManager(command);
+            return SetSession(acc);
+        }
+        catch (Exception ex)
+        {
+            return new(false, ex.Message);
+        }
     }
 
-    private StoreApiResultDto SetSession(OperationResult<AuthenticatedAccountDto> result, string fallback)
+    private StoreApiResultDto SetSession(AuthenticatedAccountDto acc)
     {
-        if (!result.Succeeded || result.Value is null) return new(false, result.Message ?? fallback);
-        AccountId = result.Value.Id;
-        CustomerId = result.Value.CustomerId;
-        Role = result.Value.Role;
-        return new(true, $"Xin chào {result.Value.UserName}!", Role);
+        AccountId = acc.Id;
+        CustomerId = acc.CustomerId;
+        Role = acc.Role;
+        return new(true, $"Xin chào {acc.UserName}!", Role);
     }
 
     public void SignOut()

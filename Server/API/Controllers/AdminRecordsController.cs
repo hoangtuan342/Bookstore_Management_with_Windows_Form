@@ -4,6 +4,7 @@ using TrangSach.Shared.DTO;
 using TrangSach.Shared.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 namespace TrangSach.API.Controllers;
 
 [ApiController]
@@ -13,81 +14,103 @@ public sealed class AdminRecordsController(AdminRecordsService service) : Contro
 {
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpGet("categories")]
     public List<ManagerCategoryDto> Categories() => service.GetAllCategoriesList();
+
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPost("categories")]
-    public IActionResult CreateCategory(CategoryRequest r)
-    {
-        var result = service.CreateCategory(new(r.Id, r.Name));
-        return result.Status switch { OperationStatus.Created => Created($"api/admin/categories/{result.Value}", new { Id = result.Value, Name = r.Name.Trim() }),
-            OperationStatus.Conflict => Conflict(new { message = result.Message }), OperationStatus.Invalid => BadRequest(new { message = result.Message }), _ => StatusCode(500) };
-    }
+    public IActionResult CreateCategory(CategoryRequest r) =>
+        ControllerExceptionHelper.Execute(() =>
+        {
+            var id = service.CreateCategory(new(r.Id, r.Name));
+            return new { Id = id, Name = r.Name.Trim() };
+        }, StatusCodes.Status201Created, $"api/admin/categories/{r.Id.Trim()}");
+
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPut("categories/{id}")]
-    public IActionResult UpdateCategory(string id, CategoryRequest r) => Result(service.UpdateCategory(id, new(r.Id, r.Name)));
+    public IActionResult UpdateCategory(string id, CategoryRequest r) =>
+        ControllerExceptionHelper.Execute(() => service.UpdateCategory(id, new(r.Id, r.Name)));
+
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpDelete("categories/{id}")]
-    public IActionResult DeleteCategory(string id) => Result(service.DeleteCategory(id));
+    public IActionResult DeleteCategory(string id) =>
+        ControllerExceptionHelper.Execute(() => service.DeleteCategory(id));
 
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpGet("authors")]
     public List<ManagerAuthorDto> Authors() => service.GetAllAuthorsList();
+
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPost("authors")]
-    public IActionResult CreateAuthor(AuthorRequest r)
-    {
-        var result = service.CreateAuthor(new(r.Name, r.Biography));
-        return result.Status switch { OperationStatus.Created => Created($"api/admin/authors/{result.Value}", new { Id = result.Value, Name = r.Name.Trim(), Biography = r.Biography?.Trim() }),
-            OperationStatus.Invalid => BadRequest(new { message = result.Message }), _ => StatusCode(500) };
-    }
+    public IActionResult CreateAuthor(AuthorRequest r) =>
+        ControllerExceptionHelper.Execute(() =>
+        {
+            var id = service.CreateAuthor(new(r.Name, r.Biography));
+            return new { Id = id, Name = r.Name.Trim(), Biography = r.Biography?.Trim() };
+        }, StatusCodes.Status201Created, $"api/admin/authors");
+
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPut("authors/{id:int}")]
-    public IActionResult UpdateAuthor(int id, AuthorRequest r) => Result(service.UpdateAuthor(id, new(r.Name, r.Biography)));
+    public IActionResult UpdateAuthor(int id, AuthorRequest r) =>
+        ControllerExceptionHelper.Execute(() => service.UpdateAuthor(id, new(r.Name, r.Biography)));
+
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpDelete("authors/{id:int}")]
-    public IActionResult DeleteAuthor(int id) => Result(service.DeleteAuthor(id));
+    public IActionResult DeleteAuthor(int id) =>
+        ControllerExceptionHelper.Execute(() => service.DeleteAuthor(id));
 
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpGet("publishers")]
     public List<ManagerPublisherDto> Publishers() => service.GetAllPublishersList();
+
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPost("publishers")]
-    public IActionResult CreatePublisher(PublisherRequest r)
-    {
-        var result = service.CreatePublisher(new(r.Name, r.Address));
-        return result.Status switch { OperationStatus.Created => Created($"api/admin/publishers/{result.Value}", new { Id = result.Value, Name = r.Name.Trim(), Address = r.Address?.Trim() }),
-            OperationStatus.Invalid => BadRequest(new { message = result.Message }), _ => StatusCode(500) };
-    }
+    public IActionResult CreatePublisher(PublisherRequest r) =>
+        ControllerExceptionHelper.Execute(() =>
+        {
+            var id = service.CreatePublisher(new(r.Name, r.Address));
+            return new { Id = id, Name = r.Name.Trim(), Address = r.Address?.Trim() };
+        }, StatusCodes.Status201Created, $"api/admin/publishers");
+
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPut("publishers/{id:int}")]
-    public IActionResult UpdatePublisher(int id, PublisherRequest r) => Result(service.UpdatePublisher(id, new(r.Name, r.Address)));
+    public IActionResult UpdatePublisher(int id, PublisherRequest r) =>
+        ControllerExceptionHelper.Execute(() => service.UpdatePublisher(id, new(r.Name, r.Address)));
+
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpDelete("publishers/{id:int}")]
-    public IActionResult DeletePublisher(int id) => Result(service.DeletePublisher(id));
+    public IActionResult DeletePublisher(int id) =>
+        ControllerExceptionHelper.Execute(() => service.DeletePublisher(id));
 
     [Authorize(Roles = StaffRoles.ManagerOrSales), HttpGet("customers")]
     public List<ManagerCustomerDto> Customers() => service.GetAllCustomersList();
+
     [Authorize(Roles = StaffRoles.ManagerOrSales), HttpPost("customers")]
-    public IActionResult CreateCustomer(CustomerRequest r) => CreatedAtRouteResult(service.CreateCustomer(r.ToModel()), "api/admin/customers");
+    public IActionResult CreateCustomer(CustomerRequest r) =>
+        ControllerExceptionHelper.Execute(() =>
+        {
+            var id = service.CreateCustomer(r.ToModel());
+            return new { Id = id };
+        }, StatusCodes.Status201Created, $"api/admin/customers");
+
     [Authorize(Roles = StaffRoles.ManagerOrSales), HttpPut("customers/{id}")]
-    public IActionResult UpdateCustomer(string id, CustomerRequest r) => Result(service.UpdateCustomer(id, r.ToModel()));
+    public IActionResult UpdateCustomer(string id, CustomerRequest r) =>
+        ControllerExceptionHelper.Execute(() => service.UpdateCustomer(id, r.ToModel()));
+
     [Authorize(Roles = StaffRoles.ManagerOrSales), HttpDelete("customers/{id}")]
-    public IActionResult DeleteCustomer(string id) => Result(service.DeleteCustomer(id));
+    public IActionResult DeleteCustomer(string id) =>
+        ControllerExceptionHelper.Execute(() => service.DeleteCustomer(id));
 
     [Authorize(Roles = StaffRoles.Manager), HttpGet("employees")]
     public List<ManagerEmployeeDto> Employees() => service.GetAllEmployeesList();
+
     [Authorize(Roles = StaffRoles.Manager), HttpGet("employee-roles")]
     public List<StaffRoleOptionDto> EmployeeRoles() => service.GetAllEmployeeRolesList();
+
     [Authorize(Roles = StaffRoles.Manager), HttpPost("employees")]
-    public IActionResult CreateEmployee(EmployeeRequest r) => CreatedAtRouteResult(service.CreateEmployee(r.ToModel()), "api/admin/employees");
+    public IActionResult CreateEmployee(EmployeeRequest r) =>
+        ControllerExceptionHelper.Execute(() =>
+        {
+            var id = service.CreateEmployee(r.ToModel());
+            return new { Id = id };
+        }, StatusCodes.Status201Created, $"api/admin/employees");
+
     [Authorize(Roles = StaffRoles.Manager), HttpPut("employees/{id}")]
-    public IActionResult UpdateEmployee(string id, EmployeeRequest r) => Result(service.UpdateEmployee(id, r.ToModel(), GetAccountId()));
+    public IActionResult UpdateEmployee(string id, EmployeeRequest r) =>
+        ControllerExceptionHelper.Execute(() => service.UpdateEmployee(id, r.ToModel(), GetAccountId()));
+
     [Authorize(Roles = StaffRoles.Manager), HttpDelete("employees/{id}")]
-    public IActionResult DeleteEmployee(string id) => Result(service.DeleteEmployee(id, GetAccountId()));
+    public IActionResult DeleteEmployee(string id) =>
+        ControllerExceptionHelper.Execute(() => service.DeleteEmployee(id, GetAccountId()));
 
     private int? GetAccountId() => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var value) ? value : null;
-    private IActionResult CreatedAtRouteResult<T>(OperationResult<T> result, string route) => result.Status switch
-    {
-        OperationStatus.Created => Created($"{route}/{result.Value}", new { Id = result.Value }),
-        OperationStatus.Conflict => Conflict(new { message = result.Message }),
-        OperationStatus.Invalid => BadRequest(new { message = result.Message }),
-        _ => StatusCode(StatusCodes.Status500InternalServerError)
-    };
-    private IActionResult Result(OperationResult<Unit> result) => result.Status switch
-    {
-        OperationStatus.Success => NoContent(), OperationStatus.NotFound => NotFound(),
-        OperationStatus.Conflict => Conflict(new { message = result.Message }),
-        OperationStatus.Invalid => BadRequest(new { message = result.Message }),
-        _ => StatusCode(StatusCodes.Status500InternalServerError)
-    };
 }
 
 public sealed class CategoryRequest { [Required, StringLength(20, MinimumLength = 1)] public string Id { get; init; } = ""; [Required, StringLength(120, MinimumLength = 2)] public string Name { get; init; } = ""; }

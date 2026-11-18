@@ -172,7 +172,7 @@ Docs/       Tài liệu kiến trúc và ánh xạ dữ liệu
 | `Services/AdminRecordsService.BUS.cs` | Nghiệp vụ danh mục, tác giả, nhà xuất bản, khách hàng và nhân viên. |
 | `Services/AdminReportsService.BUS.cs` | Tổng hợp doanh thu, đơn hàng, sản phẩm và các số liệu báo cáo. |
 | `Services/AdminVoucherService.BUS.cs` | Đọc, cập nhật và xóa voucher theo quy tắc nghiệp vụ. |
-| `Services/OperationResult.BUS.cs` | Kiểu kết quả thống nhất cho thành công, lỗi, xung đột và dữ liệu trả về. |
+| `Controllers/ControllerExceptionHelper.cs` | Xử lý ngoại lệ chuẩn (ArgumentException, KeyNotFoundException, v.v.) và chuyển đổi mã HTTP tương ứng. |
 | `Services/PasswordHashingService.BUS.cs` | Giao diện và triển khai băm/xác minh mật khẩu. |
 | `TrangSach.BUS.csproj` | Cấu hình build thư viện nghiệp vụ server. |
 

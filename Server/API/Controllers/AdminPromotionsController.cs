@@ -3,6 +3,7 @@ using TrangSach.Shared.DTO;
 using TrangSach.Shared.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 namespace TrangSach.API.Controllers;
 
 [ApiController]
@@ -16,38 +17,29 @@ public sealed class AdminPromotionsController(AdminPromotionService service) : C
     [HttpPost]
     public IActionResult Create(CreatePromotionRequest request)
     {
-        var result = service.Create(new CreatePromotionDto(request.Name, request.StartsAt, request.EndsAt, request.BookId,
-            request.BookDiscountPercent, request.MinimumOrderAmount, request.OrderDiscountPercent, request.VoucherCode,
-            request.VoucherDiscountPercent, request.VoucherMaxUses));
-        return result.Status switch
+        return ControllerExceptionHelper.Execute(() =>
         {
-            OperationStatus.Created => StatusCode(StatusCodes.Status201Created, new { Id = result.Value }),
-            OperationStatus.Invalid => BadRequest(new { message = result.Message }),
-            _ => StatusCode(StatusCodes.Status500InternalServerError)
-        };
+            var id = service.Create(new CreatePromotionDto(request.Name, request.StartsAt, request.EndsAt, request.BookId,
+                request.BookDiscountPercent, request.MinimumOrderAmount, request.OrderDiscountPercent, request.VoucherCode,
+                request.VoucherDiscountPercent, request.VoucherMaxUses));
+            return new { Id = id };
+        }, StatusCodes.Status201Created);
     }
 
     [HttpPut("{id}")]
     public IActionResult Update(string id, PromotionDetailsRequest request) =>
-        ToHttpResult(service.Update(id, new UpdatePromotionDetailsDto(request.Name, request.StartsAt, request.EndsAt)));
+        ControllerExceptionHelper.Execute(() => service.Update(id, new UpdatePromotionDetailsDto(request.Name, request.StartsAt, request.EndsAt)));
 
     [HttpDelete("{id}")]
-    public IActionResult Delete(string id) => ToHttpResult(service.Delete(id));
+    public IActionResult Delete(string id) =>
+        ControllerExceptionHelper.Execute(() => service.Delete(id));
 
     [HttpPut("{id}/rules")]
     public IActionResult UpdateRules(string id, PromotionRulesRequest request) =>
-        ToHttpResult(service.UpdateRules(id, new UpdatePromotionRulesDto(
+        ControllerExceptionHelper.Execute(() => service.UpdateRules(id, new UpdatePromotionRulesDto(
             request.Books.Select(x => new PromotionBookRuleDto(x.BookId, x.DiscountPercent)).ToList(),
             request.Orders.Select(x => new PromotionOrderRuleDto(x.MinimumOrderAmount, x.DiscountPercent)).ToList(),
             request.Vouchers.Select(x => new PromotionVoucherRuleDto(x.VoucherId, x.DiscountPercent)).ToList())));
-
-    private IActionResult ToHttpResult(OperationResult<Unit> result) => result.Status switch
-    {
-        OperationStatus.Success => NoContent(),
-        OperationStatus.NotFound => NotFound(),
-        OperationStatus.Invalid => BadRequest(new { message = result.Message }),
-        _ => StatusCode(StatusCodes.Status500InternalServerError)
-    };
 }
 
 public sealed class CreatePromotionRequest

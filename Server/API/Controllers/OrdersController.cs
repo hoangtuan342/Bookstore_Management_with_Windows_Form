@@ -2,6 +2,7 @@ using System.Security.Claims;
 using TrangSach.API.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 namespace TrangSach.API.Controllers;
 
 [ApiController]
@@ -12,7 +13,8 @@ public sealed class OrdersController(CustomerCommerceService service) : Controll
     [HttpGet]
     public IActionResult GetMyOrders()
     {
-        var id = User.FindFirstValue("customer_id"); return id is null ? Forbid() : Ok(service.GetOrders(id));
+        var id = User.FindFirstValue("customer_id");
+        return id is null ? Forbid() : Ok(service.GetOrders(id));
     }
 
     [HttpGet("{id}")]
@@ -32,18 +34,16 @@ public sealed class OrdersController(CustomerCommerceService service) : Controll
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public IActionResult Checkout(CheckoutRequest request)
     {
-        var id = User.FindFirstValue("customer_id"); if (id is null) return Forbid();
-        var result = service.Checkout(id, new(request.ShippingAddress, request.ReceiverPhone, request.PaymentMethod, request.VoucherCode));
-        return result.Status switch { OperationStatus.Created => StatusCode(StatusCodes.Status201Created, result.Value),
-            OperationStatus.Invalid => BadRequest(new { message = result.Message }), OperationStatus.Conflict => Conflict(new { message = result.Message }),
-            _ => StatusCode(StatusCodes.Status500InternalServerError) };
+        var id = User.FindFirstValue("customer_id");
+        if (id is null) return Forbid();
+        return ControllerExceptionHelper.Execute(() => service.Checkout(id, new(request.ShippingAddress, request.ReceiverPhone, request.PaymentMethod, request.VoucherCode)), StatusCodes.Status201Created);
     }
+
     [HttpPut("{id}/cancel")]
     public IActionResult CancelMyOrder(string id)
     {
-        var customerId = User.FindFirstValue("customer_id"); if (customerId is null) return Forbid();
-        var result = service.CancelOrder(id, customerId);
-        return result.Status switch { OperationStatus.Success => NoContent(), OperationStatus.NotFound => NotFound(),
-            OperationStatus.Conflict => Conflict(new { message = result.Message }), _ => StatusCode(StatusCodes.Status500InternalServerError) };
+        var customerId = User.FindFirstValue("customer_id");
+        if (customerId is null) return Forbid();
+        return ControllerExceptionHelper.Execute(() => service.CancelOrder(id, customerId));
     }
 }
