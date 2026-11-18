@@ -1,4 +1,4 @@
-﻿using TrangSach.Shared.Security;
+using TrangSach.Shared.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 namespace TrangSach.API.Controllers;
@@ -9,8 +9,6 @@ namespace TrangSach.API.Controllers;
 public sealed class AdminDashboardController(AdminDashboardService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetSummary(CancellationToken cancellationToken) =>
-        Ok(await service.GetSummaryAsync(cancellationToken));
+    public IActionResult GetSummary() =>
+        Ok(service.GetSummary());
 }
-
-

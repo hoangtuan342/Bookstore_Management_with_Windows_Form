@@ -69,7 +69,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 var tokenRole = context.Principal?.FindFirstValue(ClaimTypes.Role);
                 var authentication = context.HttpContext.RequestServices.GetRequiredService<AuthenticationService>();
-                if (!await authentication.IsTokenValidAsync(accountId, tokenRole, context.HttpContext.RequestAborted))
+                if (!authentication.IsTokenValid(accountId, tokenRole))
                 {
                     context.Fail("Tài khoản đã bị khóa hoặc quyền truy cập đã thay đổi. Hãy đăng nhập lại.");
                 }
@@ -81,7 +81,7 @@ builder.Services.AddScoped<IPasswordHashingService, PasswordHashingService>();
 
 var app = builder.Build();
 
-await BookStoreDao.InitializeAsync();
+BookStoreDao.Initialize();
 
 if (app.Environment.IsDevelopment())
 {

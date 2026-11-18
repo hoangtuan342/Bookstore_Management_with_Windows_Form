@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using TrangSach.Shared.DTO;
 using TrangSach.Shared.Security;
@@ -12,66 +12,66 @@ namespace TrangSach.API.Controllers;
 public sealed class AdminRecordsController(AdminRecordsService service) : ControllerBase
 {
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpGet("categories")]
-    public Task<IReadOnlyList<ManagerCategoryDto>> Categories(CancellationToken ct) => service.GetCategoriesAsync(ct);
+    public IReadOnlyList<ManagerCategoryDto> Categories() => service.GetAllCategoriesList();
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPost("categories")]
-    public async Task<IActionResult> CreateCategory(CategoryRequest r, CancellationToken ct)
+    public IActionResult CreateCategory(CategoryRequest r)
     {
-        var result = await service.CreateCategoryAsync(new(r.Id, r.Name), ct);
+        var result = service.CreateCategory(new(r.Id, r.Name));
         return result.Status switch { OperationStatus.Created => Created($"api/admin/categories/{result.Value}", new { Id = result.Value, Name = r.Name.Trim() }),
             OperationStatus.Conflict => Conflict(new { message = result.Message }), OperationStatus.Invalid => BadRequest(new { message = result.Message }), _ => StatusCode(500) };
     }
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPut("categories/{id}")]
-    public async Task<IActionResult> UpdateCategory(string id, CategoryRequest r, CancellationToken ct) => Result(await service.UpdateCategoryAsync(id, new(r.Id, r.Name), ct));
+    public IActionResult UpdateCategory(string id, CategoryRequest r) => Result(service.UpdateCategory(id, new(r.Id, r.Name)));
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpDelete("categories/{id}")]
-    public async Task<IActionResult> DeleteCategory(string id, CancellationToken ct) => Result(await service.DeleteCategoryAsync(id, ct));
+    public IActionResult DeleteCategory(string id) => Result(service.DeleteCategory(id));
 
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpGet("authors")]
-    public Task<IReadOnlyList<ManagerAuthorDto>> Authors(CancellationToken ct) => service.GetAuthorsAsync(ct);
+    public IReadOnlyList<ManagerAuthorDto> Authors() => service.GetAllAuthorsList();
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPost("authors")]
-    public async Task<IActionResult> CreateAuthor(AuthorRequest r, CancellationToken ct)
+    public IActionResult CreateAuthor(AuthorRequest r)
     {
-        var result = await service.CreateAuthorAsync(new(r.Name, r.Biography), ct);
+        var result = service.CreateAuthor(new(r.Name, r.Biography));
         return result.Status switch { OperationStatus.Created => Created($"api/admin/authors/{result.Value}", new { Id = result.Value, Name = r.Name.Trim(), Biography = r.Biography?.Trim() }),
             OperationStatus.Invalid => BadRequest(new { message = result.Message }), _ => StatusCode(500) };
     }
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPut("authors/{id:int}")]
-    public async Task<IActionResult> UpdateAuthor(int id, AuthorRequest r, CancellationToken ct) => Result(await service.UpdateAuthorAsync(id, new(r.Name, r.Biography), ct));
+    public IActionResult UpdateAuthor(int id, AuthorRequest r) => Result(service.UpdateAuthor(id, new(r.Name, r.Biography)));
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpDelete("authors/{id:int}")]
-    public async Task<IActionResult> DeleteAuthor(int id, CancellationToken ct) => Result(await service.DeleteAuthorAsync(id, ct));
+    public IActionResult DeleteAuthor(int id) => Result(service.DeleteAuthor(id));
 
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpGet("publishers")]
-    public Task<IReadOnlyList<ManagerPublisherDto>> Publishers(CancellationToken ct) => service.GetPublishersAsync(ct);
+    public IReadOnlyList<ManagerPublisherDto> Publishers() => service.GetAllPublishersList();
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPost("publishers")]
-    public async Task<IActionResult> CreatePublisher(PublisherRequest r, CancellationToken ct)
+    public IActionResult CreatePublisher(PublisherRequest r)
     {
-        var result = await service.CreatePublisherAsync(new(r.Name, r.Address), ct);
+        var result = service.CreatePublisher(new(r.Name, r.Address));
         return result.Status switch { OperationStatus.Created => Created($"api/admin/publishers/{result.Value}", new { Id = result.Value, Name = r.Name.Trim(), Address = r.Address?.Trim() }),
             OperationStatus.Invalid => BadRequest(new { message = result.Message }), _ => StatusCode(500) };
     }
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPut("publishers/{id:int}")]
-    public async Task<IActionResult> UpdatePublisher(int id, PublisherRequest r, CancellationToken ct) => Result(await service.UpdatePublisherAsync(id, new(r.Name, r.Address), ct));
+    public IActionResult UpdatePublisher(int id, PublisherRequest r) => Result(service.UpdatePublisher(id, new(r.Name, r.Address)));
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpDelete("publishers/{id:int}")]
-    public async Task<IActionResult> DeletePublisher(int id, CancellationToken ct) => Result(await service.DeletePublisherAsync(id, ct));
+    public IActionResult DeletePublisher(int id) => Result(service.DeletePublisher(id));
 
     [Authorize(Roles = StaffRoles.ManagerOrSales), HttpGet("customers")]
-    public Task<IReadOnlyList<ManagerCustomerDto>> Customers(CancellationToken ct) => service.GetCustomersAsync(ct);
+    public IReadOnlyList<ManagerCustomerDto> Customers() => service.GetAllCustomersList();
     [Authorize(Roles = StaffRoles.ManagerOrSales), HttpPost("customers")]
-    public async Task<IActionResult> CreateCustomer(CustomerRequest r, CancellationToken ct) => CreatedAtRouteResult(await service.CreateCustomerAsync(r.ToModel(), ct), "api/admin/customers");
+    public IActionResult CreateCustomer(CustomerRequest r) => CreatedAtRouteResult(service.CreateCustomer(r.ToModel()), "api/admin/customers");
     [Authorize(Roles = StaffRoles.ManagerOrSales), HttpPut("customers/{id}")]
-    public async Task<IActionResult> UpdateCustomer(string id, CustomerRequest r, CancellationToken ct) => Result(await service.UpdateCustomerAsync(id, r.ToModel(), ct));
+    public IActionResult UpdateCustomer(string id, CustomerRequest r) => Result(service.UpdateCustomer(id, r.ToModel()));
     [Authorize(Roles = StaffRoles.ManagerOrSales), HttpDelete("customers/{id}")]
-    public async Task<IActionResult> DeleteCustomer(string id, CancellationToken ct) => Result(await service.DeleteCustomerAsync(id, ct));
+    public IActionResult DeleteCustomer(string id) => Result(service.DeleteCustomer(id));
 
     [Authorize(Roles = StaffRoles.Manager), HttpGet("employees")]
-    public Task<IReadOnlyList<ManagerEmployeeDto>> Employees(CancellationToken ct) => service.GetEmployeesAsync(ct);
+    public IReadOnlyList<ManagerEmployeeDto> Employees() => service.GetAllEmployeesList();
     [Authorize(Roles = StaffRoles.Manager), HttpGet("employee-roles")]
-    public Task<IReadOnlyList<StaffRoleOptionDto>> EmployeeRoles(CancellationToken ct) => service.GetEmployeeRolesAsync(ct);
+    public IReadOnlyList<StaffRoleOptionDto> EmployeeRoles() => service.GetAllEmployeeRolesList();
     [Authorize(Roles = StaffRoles.Manager), HttpPost("employees")]
-    public async Task<IActionResult> CreateEmployee(EmployeeRequest r, CancellationToken ct) => CreatedAtRouteResult(await service.CreateEmployeeAsync(r.ToModel(), ct), "api/admin/employees");
+    public IActionResult CreateEmployee(EmployeeRequest r) => CreatedAtRouteResult(service.CreateEmployee(r.ToModel()), "api/admin/employees");
     [Authorize(Roles = StaffRoles.Manager), HttpPut("employees/{id}")]
-    public async Task<IActionResult> UpdateEmployee(string id, EmployeeRequest r, CancellationToken ct) => Result(await service.UpdateEmployeeAsync(id, r.ToModel(), GetAccountId(), ct));
+    public IActionResult UpdateEmployee(string id, EmployeeRequest r) => Result(service.UpdateEmployee(id, r.ToModel(), GetAccountId()));
     [Authorize(Roles = StaffRoles.Manager), HttpDelete("employees/{id}")]
-    public async Task<IActionResult> DeleteEmployee(string id, CancellationToken ct) => Result(await service.DeleteEmployeeAsync(id, GetAccountId(), ct));
+    public IActionResult DeleteEmployee(string id) => Result(service.DeleteEmployee(id, GetAccountId()));
 
     private int? GetAccountId() => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var value) ? value : null;
     private IActionResult CreatedAtRouteResult<T>(OperationResult<T> result, string route) => result.Status switch
@@ -122,5 +122,3 @@ public sealed class EmployeeRequest
     [StringLength(60)] public string RoleName { get; init; } = StaffRoles.Sales;
     public SaveEmployeeDto ToModel() => new(Id, LastName, FirstName, BirthDate, AvatarPath, Address, AccountStatus, BaseSalary, UserName, Email, Password, AccountLoginStatus, RoleName);
 }
-
-

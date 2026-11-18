@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using TrangSach.Shared.DTO;
 
 namespace TrangSach.BUS
@@ -20,25 +18,9 @@ namespace TrangSach.BUS
             _dao = dao;
         }
 
-        private async Task EnsureLoadedAsync(CancellationToken ct = default)
-        {
-            if (_promotions.Count == 0)
-                _promotions = await _dao.Promotions.GetAllPromotionsAsync(ct).ConfigureAwait(false);
-        }
-
-        public async Task<IReadOnlyDictionary<string, decimal>> GetActiveDiscountsAsync(
-            IReadOnlyCollection<string> bookIds,
-            DateTime nowUtc,
-            CancellationToken cancellationToken = default)
-        {
-            await EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
-            return GetActiveDiscounts(bookIds, nowUtc, cancellationToken);
-        }
-
         public IReadOnlyDictionary<string, decimal> GetActiveDiscounts(
             IReadOnlyCollection<string> bookIds,
-            DateTime nowUtc,
-            CancellationToken cancellationToken = default)
+            DateTime nowUtc)
         {
             if (_promotions.Count == 0)
                 _promotions = _dao.Promotions.GetAllPromotions();

@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using TrangSach.Shared.DTO;
 
 namespace TrangSach.BUS
@@ -22,19 +20,18 @@ namespace TrangSach.BUS
             _pricing = pricing;
         }
 
-        private async Task EnsureLoadedAsync(CancellationToken ct)
+        private void EnsureLoaded()
         {
             if (_activeBooks.Count == 0)
             {
-                var all = await _dao.Catalog.GetAllBooksAsync(ct).ConfigureAwait(false);
+                var all = _dao.Catalog.GetAllBooks();
                 _activeBooks = all.Where(b => b.Label == "ĐANG BÁN").ToList();
             }
         }
 
-        public async Task<IReadOnlyList<BookItemDto>> GetBooksAsync(
-            string? search = null, string? category = null, CancellationToken cancellationToken = default)
+        public IReadOnlyList<BookItemDto> GetBooks(string? search = null, string? category = null)
         {
-            await EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
+            EnsureLoaded();
 
             var books = _activeBooks.AsEnumerable();
             if (!string.IsNullOrWhiteSpace(search))
@@ -44,18 +41,18 @@ namespace TrangSach.BUS
                 books = books.Where(b => b.Category == category);
 
             var result = books.ToList();
-            await ApplyDiscountsAsync(result, System.DateTime.UtcNow, cancellationToken).ConfigureAwait(false);
+            ApplyDiscounts(result, System.DateTime.UtcNow);
             return result;
         }
 
-        public async Task<BookItemDto?> GetBookAsync(string id, CancellationToken cancellationToken = default)
+        public BookItemDto? GetBook(string id)
         {
-            await EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
+            EnsureLoaded();
 
             var book = _activeBooks.FirstOrDefault(b => b.Id == id);
             if (book == null) return null;
 
-            var discounts = await _pricing.GetActiveDiscountsAsync(new[] { id }, System.DateTime.UtcNow, cancellationToken).ConfigureAwait(false);
+            var discounts = _pricing.GetActiveDiscounts(new[] { id }, System.DateTime.UtcNow);
             if (discounts.TryGetValue(id, out var pct) && pct > 0)
             {
                 var finalPrice = BookPricingService.ApplyDiscount(book.Price, pct);
@@ -65,11 +62,11 @@ namespace TrangSach.BUS
             return book;
         }
 
-        private async Task ApplyDiscountsAsync(List<BookItemDto> books, System.DateTime nowUtc, CancellationToken ct)
+        private void ApplyDiscounts(List<BookItemDto> books, System.DateTime nowUtc)
         {
             if (books.Count == 0) return;
             var ids = books.Select(b => b.Id).ToArray();
-            var discounts = await _pricing.GetActiveDiscountsAsync(ids, nowUtc, ct).ConfigureAwait(false);
+            var discounts = _pricing.GetActiveDiscounts(ids, nowUtc);
             for (int i = 0; i < books.Count; i++)
             {
                 var b = books[i];

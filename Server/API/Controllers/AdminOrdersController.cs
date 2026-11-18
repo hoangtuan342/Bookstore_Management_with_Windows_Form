@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using TrangSach.API.Contracts;
 using TrangSach.Shared.DTO;
 using TrangSach.Shared.Security;
@@ -12,11 +12,11 @@ namespace TrangSach.API.Controllers;
 public sealed class AdminOrdersController(AdminOrderService service) : ControllerBase
 {
     [HttpPost]
-    public async Task<IActionResult> CreateOrder(AdminCreateOrderRequest request, CancellationToken ct)
+    public IActionResult CreateOrder(AdminCreateOrderRequest request)
     {
         var command = new CreateAdminOrderDto(request.CustomerId, request.ShippingAddress, request.ReceiverPhone, request.PaymentMethod,
             request.Lines.Select(x => new CreateAdminOrderLineDto(x.BookId, x.Quantity)).ToArray());
-        var result = await service.CreateAsync(command, GetAccountId(), ct);
+        var result = service.Create(command, GetAccountId());
         return result.Status switch
         {
             OperationStatus.Created => StatusCode(StatusCodes.Status201Created, result.Value),
@@ -27,24 +27,24 @@ public sealed class AdminOrdersController(AdminOrderService service) : Controlle
     }
 
     [HttpGet]
-    public Task<IReadOnlyList<ManagerOrderRowDto>> GetOrders([FromQuery] string? status, CancellationToken ct) => service.GetAsync(status, ct);
+    public IReadOnlyList<ManagerOrderRowDto> GetOrders([FromQuery] string? status) => service.GetOrdersList(status);
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateOrder(string id, UpdateAdminOrderRequest request, CancellationToken ct) =>
-        ToHttpResult(await service.UpdateAsync(id, new UpdateAdminOrderDto(request.ShippingAddress, request.ReceiverPhone, request.PaymentMethod), ct));
+    public IActionResult UpdateOrder(string id, UpdateAdminOrderRequest request) =>
+        ToHttpResult(service.Update(id, new UpdateAdminOrderDto(request.ShippingAddress, request.ReceiverPhone, request.PaymentMethod)));
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteAsCancelled(string id, CancellationToken ct) => ToHttpResult(await service.UpdateStatusAsync(id, "Cancelled", GetAccountId(), ct));
+    public IActionResult DeleteAsCancelled(string id) => ToHttpResult(service.UpdateStatus(id, "Cancelled", GetAccountId()));
 
     [HttpPut("{id}/status")]
-    public async Task<IActionResult> UpdateStatus(string id, UpdateOrderStatusRequest request, CancellationToken ct) =>
-        ToHttpResult(await service.UpdateStatusAsync(id, request.Status, GetAccountId(), ct));
+    public IActionResult UpdateStatus(string id, UpdateOrderStatusRequest request) =>
+        ToHttpResult(service.UpdateStatus(id, request.Status, GetAccountId()));
 
     [HttpPut("{id}/payment")]
-    public async Task<IActionResult> MarkBankTransferPaid(string id, CancellationToken ct) => ToHttpResult(await service.MarkBankTransferPaidAsync(id, ct));
+    public IActionResult MarkBankTransferPaid(string id) => ToHttpResult(service.MarkBankTransferPaid(id));
 
     [HttpPut("{id}/refund")]
-    public async Task<IActionResult> MarkRefundCompleted(string id, CancellationToken ct) => ToHttpResult(await service.MarkRefundCompletedAsync(id, ct));
+    public IActionResult MarkRefundCompleted(string id) => ToHttpResult(service.MarkRefundCompleted(id));
 
     private int? GetAccountId() => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
     private IActionResult ToHttpResult(OperationResult<Unit> result) => result.Status switch
@@ -55,5 +55,3 @@ public sealed class AdminOrdersController(AdminOrderService service) : Controlle
         _ => StatusCode(StatusCodes.Status500InternalServerError)
     };
 }
-
-

@@ -1,4 +1,4 @@
-﻿using TrangSach.Shared.DTO;
+using TrangSach.Shared.DTO;
 using Microsoft.AspNetCore.Mvc;
 namespace TrangSach.API.Controllers;
 
@@ -8,20 +8,17 @@ public sealed class BooksController(BookCatalogService catalog) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<BookItemDto>>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<BookItemDto>>> GetBooks(
+    public ActionResult<IReadOnlyList<BookItemDto>> GetBooks(
         [FromQuery] string? search = null,
-        [FromQuery] string? category = null,
-        CancellationToken cancellationToken = default) =>
-        Ok(await catalog.GetBooksAsync(search, category, cancellationToken));
+        [FromQuery] string? category = null) =>
+        Ok(catalog.GetBooks(search, category));
 
     [HttpGet("{id}")]
     [ProducesResponseType<BookItemDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<BookItemDto>> GetBook(string id, CancellationToken cancellationToken)
+    public ActionResult<BookItemDto> GetBook(string id)
     {
-        var book = await catalog.GetBookAsync(id, cancellationToken);
+        var book = catalog.GetBook(id);
         return book is null ? NotFound() : Ok(book);
     }
 }
-
-

@@ -1,8 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using TrangSach.Shared.DTO;
 using TrangSach.Shared.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TrangSach.Shared.DTO;
 namespace TrangSach.API.Controllers;
 
 [ApiController]
@@ -11,14 +11,14 @@ namespace TrangSach.API.Controllers;
 public sealed class AdminVouchersController(AdminVoucherService service) : ControllerBase
 {
     [HttpGet]
-    public Task<IReadOnlyList<VoucherSummaryDto>> Get(CancellationToken ct) => service.GetAsync(ct);
+    public IReadOnlyList<VoucherSummaryDto> Get() => service.GetAllVouchersList();
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(string id, VoucherUpdateRequest request, CancellationToken ct) =>
-        ToHttpResult(await service.UpdateAsync(id, new VoucherUpdateCommandDto(request.Status, request.ExpiresAt, request.MaxUsageCount), ct));
+    public IActionResult Update(string id, VoucherUpdateRequest request) =>
+        ToHttpResult(service.Update(id, new VoucherUpdateCommandDto(request.Status, request.ExpiresAt, request.MaxUsageCount)));
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(string id, CancellationToken ct) => ToHttpResult(await service.DeleteAsync(id, ct));
+    public IActionResult Delete(string id) => ToHttpResult(service.Delete(id));
 
     private IActionResult ToHttpResult(OperationResult<Unit> result) => result.Status switch
     {
@@ -36,5 +36,3 @@ public sealed class VoucherUpdateRequest
     public DateTime? ExpiresAt { get; init; }
     [Range(1, 1000000)] public int? MaxUsageCount { get; init; }
 }
-
-

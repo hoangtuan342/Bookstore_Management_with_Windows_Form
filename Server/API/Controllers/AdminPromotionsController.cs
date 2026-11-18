@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using TrangSach.Shared.DTO;
 using TrangSach.Shared.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -11,14 +11,14 @@ namespace TrangSach.API.Controllers;
 public sealed class AdminPromotionsController(AdminPromotionService service) : ControllerBase
 {
     [HttpGet]
-    public Task<IReadOnlyList<ManagerPromotionDto>> Get(CancellationToken ct) => service.GetAsync(ct);
+    public IReadOnlyList<ManagerPromotionDto> Get() => service.GetPromotions();
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreatePromotionRequest request, CancellationToken ct)
+    public IActionResult Create(CreatePromotionRequest request)
     {
-        var result = await service.CreateAsync(new CreatePromotionDto(request.Name, request.StartsAt, request.EndsAt, request.BookId,
+        var result = service.Create(new CreatePromotionDto(request.Name, request.StartsAt, request.EndsAt, request.BookId,
             request.BookDiscountPercent, request.MinimumOrderAmount, request.OrderDiscountPercent, request.VoucherCode,
-            request.VoucherDiscountPercent, request.VoucherMaxUses), ct);
+            request.VoucherDiscountPercent, request.VoucherMaxUses));
         return result.Status switch
         {
             OperationStatus.Created => StatusCode(StatusCodes.Status201Created, new { Id = result.Value }),
@@ -28,18 +28,18 @@ public sealed class AdminPromotionsController(AdminPromotionService service) : C
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(string id, PromotionDetailsRequest request, CancellationToken ct) =>
-        ToHttpResult(await service.UpdateAsync(id, new UpdatePromotionDetailsDto(request.Name, request.StartsAt, request.EndsAt), ct));
+    public IActionResult Update(string id, PromotionDetailsRequest request) =>
+        ToHttpResult(service.Update(id, new UpdatePromotionDetailsDto(request.Name, request.StartsAt, request.EndsAt)));
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(string id, CancellationToken ct) => ToHttpResult(await service.DeleteAsync(id, ct));
+    public IActionResult Delete(string id) => ToHttpResult(service.Delete(id));
 
     [HttpPut("{id}/rules")]
-    public async Task<IActionResult> UpdateRules(string id, PromotionRulesRequest request, CancellationToken ct) =>
-        ToHttpResult(await service.UpdateRulesAsync(id, new UpdatePromotionRulesDto(
+    public IActionResult UpdateRules(string id, PromotionRulesRequest request) =>
+        ToHttpResult(service.UpdateRules(id, new UpdatePromotionRulesDto(
             request.Books.Select(x => new PromotionBookRuleDto(x.BookId, x.DiscountPercent)).ToArray(),
             request.Orders.Select(x => new PromotionOrderRuleDto(x.MinimumOrderAmount, x.DiscountPercent)).ToArray(),
-            request.Vouchers.Select(x => new PromotionVoucherRuleDto(x.VoucherId, x.DiscountPercent)).ToArray()), ct));
+            request.Vouchers.Select(x => new PromotionVoucherRuleDto(x.VoucherId, x.DiscountPercent)).ToArray())));
 
     private IActionResult ToHttpResult(OperationResult<Unit> result) => result.Status switch
     {
@@ -80,5 +80,3 @@ public sealed class PromotionRulesRequest
 public sealed class PromotionBookRuleRequest { public string BookId { get; init; } = string.Empty; public decimal DiscountPercent { get; init; } }
 public sealed class PromotionOrderRuleRequest { public decimal MinimumOrderAmount { get; init; } public decimal DiscountPercent { get; init; } }
 public sealed class PromotionVoucherRuleRequest { public string VoucherId { get; init; } = string.Empty; public decimal DiscountPercent { get; init; } }
-
-

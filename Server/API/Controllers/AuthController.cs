@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using TrangSach.API.Contracts;
@@ -15,9 +15,9 @@ public sealed class AuthController(AuthenticationService service, IConfiguration
     [AllowAnonymous, HttpPost("register")]
     [ProducesResponseType<AuthResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> Register(RegisterRequest request, CancellationToken ct)
+    public IActionResult Register(RegisterRequest request)
     {
-        var result = await service.RegisterAsync(ToCommand(request), ct);
+        var result = service.Register(ToCommand(request));
         return result.Status switch { OperationStatus.Created => StatusCode(StatusCodes.Status201Created, CreateToken(result.Value!)),
             OperationStatus.Conflict => Conflict(new { message = result.Message }), OperationStatus.Invalid => BadRequest(new { message = result.Message }), _ => StatusCode(500) };
     }
@@ -26,10 +26,10 @@ public sealed class AuthController(AuthenticationService service, IConfiguration
     [ProducesResponseType<AuthResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> SetupFirstManager(RegisterRequest request, CancellationToken ct)
+    public IActionResult SetupFirstManager(RegisterRequest request)
     {
         if (!environment.IsDevelopment()) return NotFound();
-        var result = await service.SetupFirstManagerAsync(ToCommand(request), ct);
+        var result = service.SetupFirstManager(ToCommand(request));
         return result.Status switch { OperationStatus.Created => StatusCode(StatusCodes.Status201Created, CreateToken(result.Value!)),
             OperationStatus.Conflict => Conflict(new { message = result.Message }), _ => StatusCode(500) };
     }
@@ -37,26 +37,26 @@ public sealed class AuthController(AuthenticationService service, IConfiguration
     [AllowAnonymous, HttpPost("login")]
     [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Login(LoginRequest request, CancellationToken ct)
+    public IActionResult Login(LoginRequest request)
     {
-        var result = await service.LoginCustomerAsync(new LoginCommandDto(request.UserNameOrEmail, request.Password), ct);
+        var result = service.LoginCustomer(new LoginCommandDto(request.UserNameOrEmail, request.Password));
         return result.Succeeded ? Ok(CreateToken(result.Value!)) : Unauthorized(new { message = result.Message });
     }
 
     [AllowAnonymous, HttpPost("admin-login")]
     [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> AdminLogin(LoginRequest request, CancellationToken ct)
+    public IActionResult AdminLogin(LoginRequest request)
     {
-        var result = await service.LoginEmployeeAsync(new LoginCommandDto(request.UserNameOrEmail, request.Password), ct);
+        var result = service.LoginEmployee(new LoginCommandDto(request.UserNameOrEmail, request.Password));
         return result.Succeeded ? Ok(CreateToken(result.Value!)) : Unauthorized(new { message = result.Message });
     }
 
     [Authorize, HttpGet("me")]
-    public async Task<IActionResult> GetCurrentUser(CancellationToken ct)
+    public IActionResult GetCurrentUser()
     {
         if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id)) return Unauthorized();
-        var result = await service.GetCurrentUserAsync(id, ct);
+        var result = service.GetCurrentUser(id);
         return result.Succeeded ? Ok(result.Value) : Unauthorized();
     }
 
@@ -78,5 +78,3 @@ public sealed class AuthController(AuthenticationService service, IConfiguration
         return new AuthResponse(new JwtSecurityTokenHandler().WriteToken(token), expires, account.UserName, account.Role, account.CustomerId);
     }
 }
-
-

@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using TrangSach.API.Contracts;
 using TrangSach.Shared.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -13,44 +13,44 @@ public sealed class AdminInventoryController(AdminInventoryService service) : Co
 {
     [Authorize(Roles = StaffRoles.ManagerCatalogInventory)]
     [HttpGet("lookups")]
-    public Task<TrangSach.Shared.DTO.ManagerLookupsDto> GetLookups(CancellationToken ct) => service.GetLookupsAsync(ct);
+    public TrangSach.Shared.DTO.ManagerLookupsDto GetLookups() => service.GetLookups();
 
     [Authorize(Roles = StaffRoles.ManagerOrInventory)]
     [HttpGet("suppliers")]
-    public Task<IReadOnlyList<TrangSach.Shared.DTO.SupplierOptionDto>> GetSuppliers(CancellationToken ct) => service.GetSuppliersAsync(ct);
+    public IReadOnlyList<TrangSach.Shared.DTO.SupplierOptionDto> GetSuppliers() => service.GetSuppliers();
 
     [Authorize(Roles = StaffRoles.ManagerOrInventory)]
     [HttpPost("suppliers")]
-    public async Task<IActionResult> CreateSupplierDto(SupplierRequest request, CancellationToken ct) =>
-        ToHttpResult(await service.CreateSupplierAsync(new SupplierCommandDto(request.Name, request.PhoneNumber), ct));
+    public IActionResult CreateSupplierDto(SupplierRequest request) =>
+        ToHttpResult(service.CreateSupplier(new SupplierCommandDto(request.Name, request.PhoneNumber)));
 
     [Authorize(Roles = StaffRoles.ManagerOrInventory)]
     [HttpPut("suppliers/{id}")]
-    public async Task<IActionResult> UpdateSupplier(string id, SupplierRequest request, CancellationToken ct) =>
-        ToHttpResult(await service.UpdateSupplierAsync(id, new SupplierCommandDto(request.Name, request.PhoneNumber), ct));
+    public IActionResult UpdateSupplier(string id, SupplierRequest request) =>
+        ToHttpResult(service.UpdateSupplier(id, new SupplierCommandDto(request.Name, request.PhoneNumber)));
 
     [Authorize(Roles = StaffRoles.ManagerOrInventory)]
     [HttpDelete("suppliers/{id}")]
-    public async Task<IActionResult> DeleteSupplier(string id, CancellationToken ct) => ToHttpResult(await service.DeleteSupplierAsync(id, ct));
+    public IActionResult DeleteSupplier(string id) => ToHttpResult(service.DeleteSupplier(id));
 
     [Authorize(Roles = StaffRoles.ManagerOrInventory)]
     [HttpGet("receipts")]
-    public Task<IReadOnlyList<TrangSach.Shared.DTO.ManagerReceiptDto>> GetReceipts(CancellationToken ct) => service.GetReceiptsAsync(ct);
+    public IReadOnlyList<TrangSach.Shared.DTO.ManagerReceiptDto> GetReceipts() => service.GetReceipts();
 
     [Authorize(Roles = StaffRoles.ManagerOrInventory)]
     [HttpPost("receipts")]
-    public async Task<IActionResult> CreateReceiptDto(PurchaseReceiptRequest request, CancellationToken ct) =>
-        ToHttpResult(await service.CreateReceiptAsync(ToCommand(request), int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null, ct));
+    public IActionResult CreateReceiptDto(PurchaseReceiptRequest request) =>
+        ToHttpResult(service.CreateReceipt(ToCommand(request), int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null));
 
     [Authorize(Roles = StaffRoles.ManagerOrInventory)]
     [HttpPut("receipts/{id}")]
-    public async Task<IActionResult> UpdateReceipt(string id, PurchaseReceiptRequest request, CancellationToken ct) =>
-        ToHttpResult(await service.UpdateReceiptAsync(id, ToCommand(request), ct));
+    public IActionResult UpdateReceipt(string id, PurchaseReceiptRequest request) =>
+        ToHttpResult(service.UpdateReceipt(id, ToCommand(request)));
 
     [Authorize(Roles = StaffRoles.ManagerOrInventory)]
     [HttpDelete("receipts/{id}")]
     [HttpPut("receipts/{id}/cancel")]
-    public async Task<IActionResult> CancelReceipt(string id, CancellationToken ct) => ToHttpResult(await service.CancelReceiptAsync(id, ct));
+    public IActionResult CancelReceipt(string id) => ToHttpResult(service.CancelReceipt(id));
 
     private static ReceiptCommandDto ToCommand(PurchaseReceiptRequest request) => new(request.SupplierId,
         request.Lines.Select(x => new ReceiptLineCommandDto(x.BookId, x.Quantity, x.UnitCost)).ToArray());
@@ -66,5 +66,3 @@ public sealed class AdminInventoryController(AdminInventoryService service) : Co
         _ => StatusCode(StatusCodes.Status500InternalServerError)
     };
 }
-
-

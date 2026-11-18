@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using TrangSach.API.Contracts;
 using TrangSach.Shared.DTO;
 using Microsoft.AspNetCore.Authorization;
@@ -11,25 +11,23 @@ namespace TrangSach.API.Controllers;
 public sealed class CartController(CustomerCommerceService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetCart(CancellationToken ct)
+    public IActionResult GetCart()
     {
         var id = User.FindFirstValue("customer_id");
-        return id is null ? Forbid() : Ok(await service.GetCartAsync(id, ct));
+        return id is null ? Forbid() : Ok(service.GetCart(id));
     }
     [HttpPut("items/{bookId}")]
-    public async Task<IActionResult> SetQuantity(string bookId, SetCartQuantityRequest request, CancellationToken ct)
+    public IActionResult SetQuantity(string bookId, SetCartQuantityRequest request)
     {
         var id = User.FindFirstValue("customer_id"); if (id is null) return Forbid();
-        var result = await service.SetCartQuantityAsync(id, bookId, request.Quantity, ct);
+        var result = service.SetCartQuantity(id, bookId, request.Quantity);
         return result.Status switch { OperationStatus.Success => NoContent(), OperationStatus.NotFound => NotFound(new { message = result.Message }),
             OperationStatus.Conflict => Conflict(new { message = result.Message }), _ => BadRequest(new { message = result.Message }) };
     }
     [HttpDelete("items/{bookId}")]
-    public async Task<IActionResult> RemoveItem(string bookId, CancellationToken ct)
+    public IActionResult RemoveItem(string bookId)
     {
         var id = User.FindFirstValue("customer_id"); if (id is null) return Forbid();
-        await service.RemoveCartItemAsync(id, bookId, ct); return NoContent();
+        service.RemoveCartItem(id, bookId); return NoContent();
     }
 }
-
-

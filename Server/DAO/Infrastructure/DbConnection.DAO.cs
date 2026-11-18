@@ -28,50 +28,38 @@ public static class DbConnection
         return conn;
     }
 
-    public static async Task<SqlConnection> OpenAsync(CancellationToken ct = default)
-    {
-        var conn = Create();
-        await conn.OpenAsync(ct).ConfigureAwait(false);
-        return conn;
-    }
-
     public static void TestConnection()
     {
         using var conn = Open();
     }
 
-    public static async Task TestConnectionAsync(CancellationToken ct = default)
-    {
-        await using var conn = await OpenAsync(ct).ConfigureAwait(false);
-    }
-
-    public static async Task<int> ExecuteNonQueryAsync(string sql, SqlParameter[]? parameters = null, SqlTransaction? tx = null, CancellationToken ct = default)
+    public static int ExecuteNonQuery(string sql, SqlParameter[]? parameters = null, SqlTransaction? tx = null)
     {
         if (tx != null)
         {
-            await using var cmd = new SqlCommand(sql, tx.Connection, tx);
+            using var cmd = new SqlCommand(sql, tx.Connection, tx);
             if (parameters != null) cmd.Parameters.AddRange(parameters);
-            return await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            return cmd.ExecuteNonQuery();
         }
 
-        await using var conn = await OpenAsync(ct).ConfigureAwait(false);
-        await using var cmd2 = new SqlCommand(sql, conn);
+        using var conn = Open();
+        using var cmd2 = new SqlCommand(sql, conn);
         if (parameters != null) cmd2.Parameters.AddRange(parameters);
-        return await cmd2.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        return cmd2.ExecuteNonQuery();
     }
 
-    public static async Task<object?> ExecuteScalarAsync(string sql, SqlParameter[]? parameters = null, SqlTransaction? tx = null, CancellationToken ct = default)
+    public static object? ExecuteScalar(string sql, SqlParameter[]? parameters = null, SqlTransaction? tx = null)
     {
         if (tx != null)
         {
-            await using var cmd = new SqlCommand(sql, tx.Connection, tx);
+            using var cmd = new SqlCommand(sql, tx.Connection, tx);
             if (parameters != null) cmd.Parameters.AddRange(parameters);
-            return await cmd.ExecuteScalarAsync(ct).ConfigureAwait(false);
+            return cmd.ExecuteScalar();
         }
 
-        await using var conn = await OpenAsync(ct).ConfigureAwait(false);
-        await using var cmd2 = new SqlCommand(sql, conn);
+        using var conn = Open();
+        using var cmd2 = new SqlCommand(sql, conn);
         if (parameters != null) cmd2.Parameters.AddRange(parameters);
-        return await cmd2.ExecuteScalarAsync(ct).ConfigureAwait(false);
+        return cmd2.ExecuteScalar();
     }
 }

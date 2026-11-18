@@ -89,8 +89,7 @@ public sealed class AuditLogMiddleware(RequestDelegate next, ILogger<AuditLogMid
             var command = new AuditLogCommandDto(accountId, loginIdentifier,
                 principal.FindFirstValue(ClaimTypes.Role), action, GetArea(context), path,
                 statusCode, context.Connection.RemoteIpAddress?.ToString());
-            await context.RequestServices.GetRequiredService<AdminLogsService>()
-                .WriteRequestAuditAsync(command, CancellationToken.None);
+            context.RequestServices.GetRequiredService<BookStoreDao>().Users.InsertAuditLog(command);
         }
         catch (Exception exception)
         {

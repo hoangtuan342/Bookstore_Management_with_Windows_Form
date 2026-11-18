@@ -1,4 +1,4 @@
-﻿using TrangSach.API.Contracts;
+using TrangSach.API.Contracts;
 using TrangSach.Shared.DTO;
 using TrangSach.Shared.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -12,34 +12,34 @@ public sealed class AdminBooksController(AdminBookService service) : ControllerB
 {
     [Authorize(Roles = StaffRoles.ManagerOrCatalog)]
     [HttpGet("{id}/edit")]
-    public async Task<IActionResult> GetBookForEdit(string id, CancellationToken cancellationToken) =>
-        ToHttpResult(await service.GetBookForEditAsync(id, cancellationToken));
+    public IActionResult GetBookForEdit(string id) =>
+        ToHttpResult(service.GetBookForEdit(id));
 
     [Authorize(Roles = StaffRoles.ProductReaders)]
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<BookItemDto>>> GetBooks(CancellationToken cancellationToken) =>
-        Ok(await service.GetBooksAsync(cancellationToken));
+    public ActionResult<IReadOnlyList<BookItemDto>> GetBooks() =>
+        Ok(service.GetBooks());
 
     [Authorize(Roles = StaffRoles.ManagerOrCatalog)]
     [HttpPost]
     [ProducesResponseType<BookItemDto>(StatusCodes.Status201Created)]
-    public async Task<IActionResult> CreateBook(BookManagementRequest request, CancellationToken cancellationToken) =>
-        ToHttpResult(await service.CreateBookAsync(ToCommand(request), cancellationToken));
+    public IActionResult CreateBook(BookManagementRequest request) =>
+        ToHttpResult(service.CreateBook(ToCommand(request)));
 
     [Authorize(Roles = StaffRoles.ManagerOrCatalog)]
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateBook(string id, BookManagementRequest request, CancellationToken cancellationToken) =>
-        ToHttpResult(await service.UpdateBookAsync(id, ToCommand(request), cancellationToken));
+    public IActionResult UpdateBook(string id, BookManagementRequest request) =>
+        ToHttpResult(service.UpdateBook(id, ToCommand(request)));
 
     [Authorize(Roles = StaffRoles.ManagerOrCatalog)]
     [HttpDelete("{id}")]
-    public async Task<IActionResult> HideBook(string id, CancellationToken cancellationToken) =>
-        ToHttpResult(await service.HideBookAsync(id, cancellationToken));
+    public IActionResult HideBook(string id) =>
+        ToHttpResult(service.HideBook(id));
 
     [Authorize(Roles = StaffRoles.ManagerOrCatalog)]
     [HttpPut("{id}/visibility")]
-    public async Task<IActionResult> SetVisibility(string id, BookVisibilityRequest request, CancellationToken cancellationToken) =>
-        ToHttpResult(await service.SetVisibilityAsync(id, new BookVisibilityCommandDto(request.IsActive), cancellationToken));
+    public IActionResult SetVisibility(string id, BookVisibilityRequest request) =>
+        ToHttpResult(service.SetVisibility(id, new BookVisibilityCommandDto(request.IsActive)));
 
     private static BookManagementCommandDto ToCommand(BookManagementRequest request) =>
         new(request.Title, request.SalePrice, request.Unit, request.CategoryId, request.PublisherId, request.AuthorIds, request.Description);
@@ -57,5 +57,3 @@ public sealed class AdminBooksController(AdminBookService service) : ControllerB
         _ => StatusCode(StatusCodes.Status500InternalServerError)
     };
 }
-
-

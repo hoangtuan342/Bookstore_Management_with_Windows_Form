@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
 using TrangSach.Shared.DTO;
 
 namespace TrangSach.BUS
@@ -20,10 +18,10 @@ namespace TrangSach.BUS
             this.pricing = pricing;
         }
 
-        public async Task<IReadOnlyList<StoreCartLineDto>> GetCartAsync(string customerId, CancellationToken ct = default)
+        public IReadOnlyList<StoreCartLineDto> GetCart(string customerId)
         {
-            var cart = await dao.Users.GetCustomerCartAsync(customerId, ct);
-            var discounts = pricing.GetActiveDiscounts(cart.Select(x => x.BookId).ToArray(), DateTime.UtcNow, ct);
+            var cart = dao.Users.GetCustomerCart(customerId);
+            var discounts = pricing.GetActiveDiscounts(cart.Select(x => x.BookId).ToArray(), DateTime.UtcNow);
             return cart.Select(x =>
             {
                 decimal discount = discounts.ContainsKey(x.BookId) ? discounts[x.BookId] : 0;
@@ -32,9 +30,9 @@ namespace TrangSach.BUS
             }).ToArray();
         }
 
-        public async Task<OperationResult<Unit>> SetCartQuantityAsync(string customerId, string bookId, int quantity, CancellationToken ct = default)
+        public OperationResult<Unit> SetCartQuantity(string customerId, string bookId, int quantity)
         {
-            var book = await dao.Catalog.GetBookForCartAsync(bookId, ct);
+            var book = dao.Catalog.GetBookForCart(bookId);
             if (book == null)
             {
                 return OperationResult<Unit>.NotFound("Không tìm thấy sách.");
@@ -48,31 +46,26 @@ namespace TrangSach.BUS
                 return OperationResult<Unit>.Conflict("Số lượng vượt quá tồn kho hiện tại.");
             }
 
-            await dao.Users.SetCartItemAsync(customerId, bookId, quantity, ct);
+            dao.Users.SetCartItem(customerId, bookId, quantity);
             return OperationResult<Unit>.Success(new Unit());
         }
 
-        public async Task RemoveCartItemAsync(string customerId, string bookId, CancellationToken ct = default)
+        public void RemoveCartItem(string customerId, string bookId)
         {
-            await dao.Users.RemoveCartItemAsync(customerId, bookId, ct);
+            dao.Users.RemoveCartItem(customerId, bookId);
         }
 
-        public async Task<IReadOnlyList<StoreOrderDto>> GetOrdersAsync(string customerId, CancellationToken ct = default)
+        public IReadOnlyList<StoreOrderDto> GetOrders(string customerId)
         {
-            return await dao.Orders.GetCustomerOrdersAsync(customerId, ct);
+            return dao.Orders.GetCustomerOrders(customerId);
         }
 
-        public async Task<StoreOrderDto?> GetOrderAsync(string orderId, string customerId, CancellationToken ct = default)
+        public StoreOrderDto? GetOrder(string orderId, string customerId)
         {
-            return await dao.Orders.FindCustomerOrderAsync(orderId, customerId, ct);
+            return dao.Orders.FindCustomerOrder(orderId, customerId);
         }
 
-        public StoreOrderDto? GetOrder(string orderId, string customerId, CancellationToken ct = default)
-        {
-            return dao.Orders.FindCustomerOrderAsync(orderId, customerId, ct).GetAwaiter().GetResult();
-        }
-
-        public async Task<OperationResult<StoreOrderDto>> CheckoutAsync(string customerId, CheckoutDetailsDto command, CancellationToken ct = default)
+        public OperationResult<StoreOrderDto> Checkout(string customerId, CheckoutDetailsDto command)
         {
             var payment = command.PaymentMethod.Trim();
             if (payment != "CashOnDelivery" && payment != "BankTransfer")
@@ -86,7 +79,7 @@ namespace TrangSach.BUS
                 return OperationResult<StoreOrderDto>.Invalid("Địa chỉ giao hàng hoặc số điện thoại không hợp lệ.");
             }
 
-            var cart = await dao.Users.GetCustomerCartAsync(customerId, ct);
+            var cart = dao.Users.GetCustomerCart(customerId);
             if (cart.Count == 0)
             {
                 return OperationResult<StoreOrderDto>.Invalid("Giỏ hàng đang trống.");
@@ -99,7 +92,7 @@ namespace TrangSach.BUS
             }
 
             var now = DateTime.UtcNow;
-            var discounts = pricing.GetActiveDiscounts(cart.Select(x => x.BookId).ToArray(), now, ct);
+            var discounts = pricing.GetActiveDiscounts(cart.Select(x => x.BookId).ToArray(), now);
 
             var lines = cart.Select(x =>
             {
@@ -115,7 +108,7 @@ namespace TrangSach.BUS
             string? voucherCode = command.VoucherCode?.Trim();
             if (!string.IsNullOrWhiteSpace(voucherCode))
             {
-                var v = await dao.Promotions.FindVoucherAsync(voucherCode, ct);
+                var v = dao.Promotions.FindVoucher(voucherCode);
                 if (v == null || v.Status != "Active" || (v.ExpiresAt.HasValue && v.ExpiresAt.Value < now)
                     || (v.MaxUsageCount.HasValue && v.UsageCount >= v.MaxUsageCount.Value))
                 {
@@ -142,11 +135,11 @@ namespace TrangSach.BUS
             var totalDiscount = itemDiscount + orderDiscount;
             var payStatus = payment == "CashOnDelivery" ? "Unpaid" : "AwaitingPayment";
 
-            await dao.Orders.InsertOrderAsync(orderId, now, customerId, null, finalVoucherId,
+            dao.Orders.InsertOrder(orderId, now, customerId, null, finalVoucherId,
                 totalAmount, totalDiscount, "Pending", payStatus, payment,
-                command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(), lines, ct);
+                command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(), lines);
 
-            await dao.Users.ClearCartAsync(customerId, ct);
+            dao.Users.ClearCart(customerId);
 
             var storeLines = cart.Select(x =>
             {
@@ -163,9 +156,9 @@ namespace TrangSach.BUS
             return OperationResult<StoreOrderDto>.Created(orderDto);
         }
 
-        public async Task<OperationResult<Unit>> CancelOrderAsync(string id, string customerId, CancellationToken ct = default)
+        public OperationResult<Unit> CancelOrder(string id, string customerId)
         {
-            var order = await dao.Orders.FindCustomerOrderAsync(id, customerId, ct);
+            var order = dao.Orders.FindCustomerOrder(id, customerId);
             if (order == null)
             {
                 return OperationResult<Unit>.NotFound();
@@ -175,11 +168,11 @@ namespace TrangSach.BUS
                 return OperationResult<Unit>.Conflict("Chỉ có thể hủy đơn đang chờ xác nhận hoặc đã xác nhận, trước khi bắt đầu giao.");
             }
 
-            await dao.Orders.RestoreStockAsync(id, ct);
-            await dao.Orders.DecrementVoucherUsageAsync(id, ct);
+            dao.Orders.RestoreStock(id);
+            dao.Orders.DecrementVoucherUsage(id);
 
             var newPayStatus = order.PaymentStatus == "Paid" ? "RefundPending" : "Cancelled";
-            await dao.Orders.UpdateOrderStatusAsync(id, "Cancelled", newPayStatus, ct);
+            dao.Orders.UpdateOrderStatus(id, "Cancelled", newPayStatus);
 
             return OperationResult<Unit>.Success(new Unit());
         }
