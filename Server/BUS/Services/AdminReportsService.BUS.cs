@@ -57,22 +57,22 @@ namespace TrangSach.BUS
                     orders.Where(order => order.CreatedAt.ToLocalTime().Date == localDay).Sum(order => order.Total),
                     0m,
                     allOrders.Count(order => order.CreatedAt.ToLocalTime().Date == localDay));
-            }).ToArray();
+            }).ToList();
 
             var bestSellers = orderLines.GroupBy(row => new { row.BookId, row.BookTitle })
                 .Select(group => new BestSellerDto(group.Key.BookId, group.Key.BookTitle,
                     group.Sum(row => row.Qty), group.Sum(row => row.LineTotal)))
-                .OrderByDescending(item => item.Quantity).Take(10).ToArray();
+                .OrderByDescending(item => item.Quantity).Take(10).ToList();
 
             var revenueByCategory = orderLines.GroupBy(row => row.CategoryName ?? "Chưa phân loại")
                 .Select(group => new CategorySalesDto(group.Key, group.Sum(row => row.Qty), group.Sum(row => row.LineTotal)))
-                .OrderByDescending(item => item.Revenue).ToArray();
+                .OrderByDescending(item => item.Revenue).ToList();
 
             var topCustomers = orders.GroupBy(order => new { order.CustomerId, order.CustomerName })
                 .Select(group => new CustomerSalesDto(group.Key.CustomerId, group.Key.CustomerName, group.Count(),
                     orderLines.Where(l => orders.Any(o => o.OrderId == l.OrderId && o.CustomerId == group.Key.CustomerId)).Sum(l => l.Qty),
                     group.Sum(order => order.Total)))
-                .OrderByDescending(item => item.Revenue).Take(8).ToArray();
+                .OrderByDescending(item => item.Revenue).Take(8).ToList();
 
             var monthlySales = orders.GroupBy(order =>
                     (Year: order.CreatedAt.ToLocalTime().Year, Month: order.CreatedAt.ToLocalTime().Month))
@@ -82,7 +82,7 @@ namespace TrangSach.BUS
             {
                 var stats = monthlySales.GetValueOrDefault(slot);
                 return new MonthlyRevenueDto(slot.Year, slot.Month, stats.Revenue, stats.Orders, 0m, stats.Revenue);
-            }).ToArray();
+            }).ToList();
 
             var quarterlySales = orders.GroupBy(order =>
                     (Year: order.CreatedAt.ToLocalTime().Year, Quarter: (order.CreatedAt.ToLocalTime().Month - 1) / 3 + 1))
@@ -92,7 +92,7 @@ namespace TrangSach.BUS
             {
                 var stats = quarterlySales.GetValueOrDefault(slot);
                 return new QuarterlyRevenueDto(slot.Year, slot.Quarter, stats.Revenue, stats.Orders, 0m, stats.Revenue);
-            }).ToArray();
+            }).ToList();
 
             var revenueByYear = orders.GroupBy(order => order.CreatedAt.ToLocalTime().Year)
                 .OrderBy(group => group.Key)
@@ -100,7 +100,7 @@ namespace TrangSach.BUS
                 {
                     var rev = group.Sum(order => order.Total);
                     return new YearlyRevenueDto(group.Key, rev, group.Count(), 0m, rev);
-                }).ToArray();
+                }).ToList();
 
             var revenueByEmployeeYear = orders.Where(o => !string.IsNullOrEmpty(o.EmployeeId))
                 .GroupBy(order => new
@@ -111,7 +111,7 @@ namespace TrangSach.BUS
                 })
                 .OrderBy(group => group.Key.Year).ThenBy(group => group.Key.EmployeeName)
                 .Select(group => new EmployeeYearSalesDto(group.Key.EmployeeId, group.Key.EmployeeName,
-                    group.Key.Year, group.Count(), group.Sum(order => order.Total))).ToArray();
+                    group.Key.Year, group.Count(), group.Sum(order => order.Total))).ToList();
 
             var productSalesByQuarter = orderLines.GroupBy(row =>
                 {
@@ -127,13 +127,13 @@ namespace TrangSach.BUS
                 })
                 .OrderBy(group => group.Key.Year).ThenBy(group => group.Key.Quarter).ThenByDescending(group => group.Sum(row => row.LineTotal))
                 .Select(group => new ProductQuarterSalesDto(group.Key.BookId, group.Key.BookTitle, group.Key.Year,
-                    group.Key.Quarter, group.Sum(row => row.Qty), group.Sum(row => row.LineTotal))).ToArray();
+                    group.Key.Quarter, group.Sum(row => row.Qty), group.Sum(row => row.LineTotal))).ToList();
 
             var inventory = dao.Reports.GetActiveInventory();
             var stockSummary = inventory.GroupBy(book => book.CategoryName ?? "Chưa phân loại")
                 .Select(group => new CategoryInventorySummaryDto(group.Key, group.Count(), group.Sum(book => book.Stock),
                     group.Count(book => book.Stock <= 5), group.Sum(book => book.Stock * book.SalePrice)))
-                .OrderBy(item => item.StockQuantity).ToArray();
+                .OrderBy(item => item.StockQuantity).ToList();
 
             var revenue = orders.Sum(order => order.Total);
 

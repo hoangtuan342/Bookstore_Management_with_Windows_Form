@@ -33,7 +33,7 @@ internal sealed class AuditLogsPageForm : ManagementGridPageForm
             && (!_to.Checked || date <= _to.Value.Date);
     }
 
-    protected override void OnDataSourceRefreshed(IReadOnlyList<object> rows) =>
+    protected override void OnDataSourceRefreshed(List<object> rows) =>
         ManagementGridPageForm.SetValues(_area, rows.OfType<TrangSach.Shared.DTO.ManagerAuditLogDto>().Select(log => log.Area), "Mọi chức năng");
 }
 

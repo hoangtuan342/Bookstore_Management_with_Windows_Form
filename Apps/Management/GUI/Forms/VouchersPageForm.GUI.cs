@@ -37,7 +37,7 @@ internal sealed class VouchersPageForm : ManagementGridPageForm
         ? voucher.Promotions
         : [];
 
-    protected override void OnDataSourceRefreshed(IReadOnlyList<object> rows) =>
+    protected override void OnDataSourceRefreshed(List<object> rows) =>
         ManagementGridPageForm.SetValues(_status, rows.OfType<TrangSach.Shared.DTO.ManagerVoucherDto>().Select(voucher => voucher.Status),
             "Mọi trạng thái", ManagementGridPageForm.StatusCaption);
 }

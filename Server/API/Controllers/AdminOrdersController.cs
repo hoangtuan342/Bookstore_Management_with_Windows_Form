@@ -15,7 +15,7 @@ public sealed class AdminOrdersController(AdminOrderService service) : Controlle
     public IActionResult CreateOrder(AdminCreateOrderRequest request)
     {
         var command = new CreateAdminOrderDto(request.CustomerId, request.ShippingAddress, request.ReceiverPhone, request.PaymentMethod,
-            request.Lines.Select(x => new CreateAdminOrderLineDto(x.BookId, x.Quantity)).ToArray());
+            request.Lines.Select(x => new CreateAdminOrderLineDto(x.BookId, x.Quantity)).ToList());
         var result = service.Create(command, GetAccountId());
         return result.Status switch
         {
@@ -27,7 +27,7 @@ public sealed class AdminOrdersController(AdminOrderService service) : Controlle
     }
 
     [HttpGet]
-    public IReadOnlyList<ManagerOrderRowDto> GetOrders([FromQuery] string? status) => service.GetOrdersList(status);
+    public List<ManagerOrderRowDto> GetOrders([FromQuery] string? status) => service.GetOrdersList(status);
 
     [HttpPut("{id}")]
     public IActionResult UpdateOrder(string id, UpdateAdminOrderRequest request) =>

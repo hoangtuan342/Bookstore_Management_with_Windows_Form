@@ -10,7 +10,7 @@ namespace TrangSach.Customer.Web.Pages.Checkout;
 public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
 {
     [BindProperty] public CheckoutInput Input { get; set; } = new();
-    public IReadOnlyList<StoreCartLineDto> Lines { get; private set; } = [];
+    public List<StoreCartLineDto> Lines { get; private set; } = [];
     public decimal Subtotal => Lines.Sum(line => line.LineTotal);
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)

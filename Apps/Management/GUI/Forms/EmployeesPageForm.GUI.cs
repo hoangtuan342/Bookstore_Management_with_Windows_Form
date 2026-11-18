@@ -36,7 +36,7 @@ internal sealed class EmployeesPageForm : ManagementGridPageForm
             && (login is null || employee.LoginStatus == login);
     }
 
-    protected override void OnDataSourceRefreshed(IReadOnlyList<object> rows)
+    protected override void OnDataSourceRefreshed(List<object> rows)
     {
         var employees = rows.OfType<TrangSach.Shared.DTO.ManagerEmployeeDto>().ToArray();
         ManagementGridPageForm.SetValues(_employment, employees.Select(employee => employee.AccountStatus), "Mọi tình trạng", ManagementGridPageForm.StatusCaption);

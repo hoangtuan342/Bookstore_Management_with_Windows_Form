@@ -5,11 +5,11 @@ using NPOI.XSSF.UserModel;
 
 namespace TrangSach.Management.BUS;
 
-public sealed record ExcelSheetData(string Name, IReadOnlyList<object?[]> Rows);
+public sealed record ExcelSheetData(string Name, List<object?[]> Rows);
 
 public sealed class ExcelWorkbookService
 {
-    public void Write(string path, IReadOnlyList<ExcelSheetData> sheets)
+    public void Write(string path, List<ExcelSheetData> sheets)
     {
         if (sheets.Count == 0) throw new ArgumentException("Workbook cần ít nhất một trang tính.", nameof(sheets));
         IWorkbook workbook = Path.GetExtension(path).Equals(".xls", StringComparison.OrdinalIgnoreCase)
@@ -47,7 +47,7 @@ public sealed class ExcelWorkbookService
         }
     }
 
-    public IReadOnlyList<string[]> ReadFirstSheet(string path)
+    public List<string[]> ReadFirstSheet(string path)
     {
         using var stream = File.OpenRead(path);
         using var workbook = WorkbookFactory.Create(stream);

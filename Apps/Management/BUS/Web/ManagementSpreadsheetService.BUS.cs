@@ -12,7 +12,7 @@ public sealed class ManagementSpreadsheetService
 {
     static ManagementSpreadsheetService() => QuestPDF.Settings.License = LicenseType.Community;
 
-    public byte[] CreateWorkbook(IReadOnlyList<(string Name, IReadOnlyList<object?[]> Rows)> sheets)
+    public byte[] CreateWorkbook(List<(string Name, List<object?[]> Rows)> sheets)
     {
         if (sheets.Count == 0) throw new ArgumentException("Workbook cần ít nhất một trang tính.", nameof(sheets));
         using IWorkbook workbook = new XSSFWorkbook();
@@ -44,7 +44,7 @@ public sealed class ManagementSpreadsheetService
         return output.ToArray();
     }
 
-    public IReadOnlyList<string[]> ReadFirstSheet(Stream stream)
+    public List<string[]> ReadFirstSheet(Stream stream)
     {
         using var workbook = WorkbookFactory.Create(stream);
         if (workbook.NumberOfSheets == 0) throw new InvalidDataException("Tệp Excel không có trang tính.");
@@ -66,7 +66,7 @@ public sealed class ManagementSpreadsheetService
 
     public byte[] CreateReportWorkbook(ManagerReportDto report)
     {
-        var sheets = new List<(string Name, IReadOnlyList<object?[]> Rows)>
+        var sheets = new List<(string Name, List<object?[]> Rows)>
         {
             ("Tong quan", [ ["Chỉ tiêu", "Giá trị"], ["Từ ngày", report.FromDate], ["Đến ngày", report.ToDate], ["Doanh thu", report.Revenue], ["Tổng đơn", report.TotalOrders], ["Đơn hoàn tất", report.CompletedOrders], ["Giảm giá", report.Discounts], ["Chi nhập hàng", report.PurchaseSpend], ["Lãi gộp ước tính", report.EstimatedGrossProfit] ]),
             ("Theo ngay", [ ["Ngày", "Đơn", "Doanh thu", "Tiền nhập"], .. report.RevenueByDayDto.Select(x => new object?[] { x.Date, x.Orders, x.Revenue, x.PurchaseSpend }) ]),

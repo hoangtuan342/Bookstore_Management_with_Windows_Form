@@ -58,7 +58,7 @@ public sealed class RevenueTrendDetailForm : Form
         if (grid.Columns[name] is { } column) column.HeaderText = title;
     }
 
-    private sealed class RevenueHistoryChart(IReadOnlyList<RevenueByDayDto> rows) : Panel
+    private sealed class RevenueHistoryChart(List<RevenueByDayDto> rows) : Panel
     {
         protected override void OnPaint(PaintEventArgs e)
         {

@@ -29,7 +29,7 @@ namespace TrangSach.BUS
             }
         }
 
-        public IReadOnlyList<BookItemDto> GetBooks(string? search = null, string? category = null)
+        public List<BookItemDto> GetBooks(string? search = null, string? category = null)
         {
             EnsureLoaded();
 
@@ -52,7 +52,7 @@ namespace TrangSach.BUS
             var book = _activeBooks.FirstOrDefault(b => b.Id == id);
             if (book == null) return null;
 
-            var discounts = _pricing.GetActiveDiscounts(new[] { id }, System.DateTime.UtcNow);
+            var discounts = _pricing.GetActiveDiscounts(new List<string> { id }, System.DateTime.UtcNow);
             if (discounts.TryGetValue(id, out var pct) && pct > 0)
             {
                 var finalPrice = BookPricingService.ApplyDiscount(book.Price, pct);
@@ -65,7 +65,7 @@ namespace TrangSach.BUS
         private void ApplyDiscounts(List<BookItemDto> books, System.DateTime nowUtc)
         {
             if (books.Count == 0) return;
-            var ids = books.Select(b => b.Id).ToArray();
+            var ids = books.Select(b => b.Id).ToList();
             var discounts = _pricing.GetActiveDiscounts(ids, nowUtc);
             for (int i = 0; i < books.Count; i++)
             {

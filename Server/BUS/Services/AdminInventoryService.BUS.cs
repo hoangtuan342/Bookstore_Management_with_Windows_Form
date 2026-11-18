@@ -22,11 +22,11 @@ namespace TrangSach.BUS
             _dao = dao;
         }
 
-        public IReadOnlyList<SupplierOptionDto> GetSuppliers() => _suppliers;
-        public IReadOnlyList<CategoryOptionDto> GetCategories() => _categories;
-        public IReadOnlyList<IdNameOptionDto> GetAuthors() => _authors;
-        public IReadOnlyList<IdNameOptionDto> GetPublishers() => _publishers;
-        public IReadOnlyList<ManagerReceiptDto> GetReceipts() => _receipts;
+        public List<SupplierOptionDto> GetSuppliers() => _suppliers;
+        public List<CategoryOptionDto> GetCategories() => _categories;
+        public List<IdNameOptionDto> GetAuthors() => _authors;
+        public List<IdNameOptionDto> GetPublishers() => _publishers;
+        public List<ManagerReceiptDto> GetReceipts() => _receipts;
 
         public ManagerLookupsDto GetLookups()
         {
@@ -35,16 +35,16 @@ namespace TrangSach.BUS
             if (_publishers.Count == 0) _publishers = _dao.Catalog.GetAllPublishers();
             if (_suppliers.Count == 0) _suppliers = _dao.Inventory.GetAllSuppliers();
 
-            return new ManagerLookupsDto(_categories.ToArray(), _authors.ToArray(), _publishers.ToArray(), _suppliers.ToArray());
+            return new ManagerLookupsDto(_categories, _authors, _publishers, _suppliers);
         }
 
-        public IReadOnlyList<SupplierOptionDto> GetAllSuppliersList()
+        public List<SupplierOptionDto> GetAllSuppliersList()
         {
             if (_suppliers.Count == 0) _suppliers = _dao.Inventory.GetAllSuppliers();
             return _suppliers;
         }
 
-        public IReadOnlyList<ManagerReceiptDto> GetAllReceiptsList()
+        public List<ManagerReceiptDto> GetAllReceiptsList()
         {
             if (_receipts.Count == 0) _receipts = _dao.Inventory.GetRecentReceipts(100);
             return _receipts;
@@ -109,7 +109,7 @@ namespace TrangSach.BUS
             _dao.Inventory.InsertReceipt(receiptId, now, null, command.SupplierId, total, lines);
 
             var linesDtos = command.Lines.Select(l =>
-                new ManagerReceiptLineDto(l.BookId, l.BookId, l.Quantity, l.UnitCost, l.UnitCost * l.Quantity)).ToArray();
+                new ManagerReceiptLineDto(l.BookId, l.BookId, l.Quantity, l.UnitCost, l.UnitCost * l.Quantity)).ToList();
             var dto = new ManagerReceiptDto(receiptId, now, "Completed", command.SupplierId, supplier.Name, total, linesDtos);
             _receipts.Insert(0, dto);
 

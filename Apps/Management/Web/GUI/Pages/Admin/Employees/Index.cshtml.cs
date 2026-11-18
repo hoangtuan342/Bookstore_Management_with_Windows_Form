@@ -11,8 +11,8 @@ namespace TrangSach.Management.Web.GUI.Pages.Admin.Employees;
 [Authorize(Roles = StaffRoles.Manager)]
 public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
 {
-    public IReadOnlyList<ManagerEmployeeDto> Employees { get; private set; } = [];
-    public IReadOnlyList<StaffRoleOptionDto> Roles { get; private set; } = [];
+    public List<ManagerEmployeeDto> Employees { get; private set; } = [];
+    public List<StaffRoleOptionDto> Roles { get; private set; } = [];
     [BindProperty(SupportsGet = true)] public string? Search { get; set; }
     [BindProperty] public EmployeeInput Input { get; set; } = new();
     public async Task OnGetAsync(string? id, CancellationToken ct)
@@ -43,7 +43,7 @@ public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
     private async Task LoadAsync(CancellationToken ct)
     {
         var rows = await api.GetEmployeesAsync(Token, ct);
-        Employees = rows.Where(x => string.IsNullOrWhiteSpace(Search) || string.Join(' ', x.Id, x.LastName, x.FirstName, x.Email, x.RoleName).Contains(Search, StringComparison.CurrentCultureIgnoreCase)).ToArray();
+        Employees = rows.Where(x => string.IsNullOrWhiteSpace(Search) || string.Join(' ', x.Id, x.LastName, x.FirstName, x.Email, x.RoleName).Contains(Search, StringComparison.CurrentCultureIgnoreCase)).ToList();
         Roles = await api.GetEmployeeRolesAsync(Token, ct);
     }
     private static string? Empty(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();

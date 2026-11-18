@@ -10,6 +10,6 @@ namespace TrangSach.API.Controllers;
 public sealed class AdminLogsController(AdminLogsService service) : ControllerBase
 {
     [HttpGet]
-    public ActionResult<IReadOnlyList<ManagerAuditLogDto>> GetLogs() =>
+    public ActionResult<List<ManagerAuditLogDto>> GetLogs() =>
         Ok(service.GetLogs());
 }

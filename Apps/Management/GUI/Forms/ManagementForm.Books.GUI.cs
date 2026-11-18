@@ -18,7 +18,7 @@ public partial class ManagementForm
             ("AvailableStock", "Số lượng tồn kho", old?.AvailableStock.ToString() ?? "0")]);
         if (values is null) return;
         if (!decimal.TryParse(values["price"], NumberStyles.Number, CultureInfo.InvariantCulture, out var price)) throw new InvalidOperationException("Giá bán phải là số, nhập theo dạng 85000.");
-        var authorIds = values["authors"].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(int.Parse).ToArray();
+        var authorIds = values["authors"].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(int.Parse).ToList();
         int? publisherId = int.TryParse(values["publisher"], out var pub) ? pub : null;
         var book = new CreateManagerBookDto(values["title"], price, values["unit"], values["category"], publisherId, authorIds, values["description"]);
         if (id is null) _services.Manager.CreateBook(book); else _services.Manager.UpdateBook(id, book);

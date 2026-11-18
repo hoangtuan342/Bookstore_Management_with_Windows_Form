@@ -13,7 +13,7 @@ namespace TrangSach.BUS
             this.dao = dao;
         }
 
-        public IReadOnlyList<ManagerAuditLogDto> GetLogs()
+        public List<ManagerAuditLogDto> GetLogs()
         {
             return dao.Users.GetAuditLogs(500);
         }

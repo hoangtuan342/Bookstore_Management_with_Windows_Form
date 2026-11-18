@@ -84,13 +84,13 @@ public class InventoryDao
             while (rLines.Read()) lines.Add(new ManagerReceiptLineDto(rLines.GetString(0), rLines.GetString(1), rLines.GetInt32(2), rLines.GetDecimal(3), rLines.GetDecimal(4)));
             rLines.Close();
 
-            list.Add(new ManagerReceiptDto(rec.Id, rec.CreatedAt, rec.Status, rec.SupplierId, rec.SupplierName, rec.Total, lines.ToArray()));
+            list.Add(new ManagerReceiptDto(rec.Id, rec.CreatedAt, rec.Status, rec.SupplierId, rec.SupplierName, rec.Total, lines));
         }
 
         return list;
     }
 
-    public void InsertReceipt(string receiptId, DateTime createdAt, string? employeeId, string supplierId, decimal total, IReadOnlyList<(string BookId, int Qty, decimal Cost, decimal LineTotal)> lines)
+    public void InsertReceipt(string receiptId, DateTime createdAt, string? employeeId, string supplierId, decimal total, List<(string BookId, int Qty, decimal Cost, decimal LineTotal)> lines)
     {
         using var conn = DbConnection.Open();
         using var tx = conn.BeginTransaction();

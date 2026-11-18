@@ -15,7 +15,7 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
         return new AdminDashboardService(dao).GetSummary();
     }
 
-    public IReadOnlyList<ManagerAuditLogDto> GetAuditLogs()
+    public List<ManagerAuditLogDto> GetAuditLogs()
     {
         EnsureAccess("logs");
         var dao = BookStoreDao.Create();
@@ -36,7 +36,7 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
         return new AdminReportsService(dao).Get(fromDate, toDate);
     }
 
-    public IReadOnlyList<BookItemDto> GetManagerBooks()
+    public List<BookItemDto> GetManagerBooks()
     {
         EnsureAccess("productReaders");
         var dao = BookStoreDao.Create();
@@ -83,7 +83,7 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
         RequireSuccess(result);
     }
 
-    public IReadOnlyList<VoucherSummaryDto> GetVouchers()
+    public List<VoucherSummaryDto> GetVouchers()
     {
         EnsureAccess("promotions");
         var dao = BookStoreDao.Create();
@@ -113,14 +113,14 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
         return new AdminInventoryService(dao).GetLookups();
     }
 
-    public IReadOnlyList<SupplierOptionDto> GetManagerSuppliers()
+    public List<SupplierOptionDto> GetManagerSuppliers()
     {
         EnsureAccess("inventory");
         var dao = BookStoreDao.Create();
         return new AdminInventoryService(dao).GetAllSuppliersList();
     }
 
-    public IReadOnlyList<ManagerReceiptDto> GetManagerReceipts()
+    public List<ManagerReceiptDto> GetManagerReceipts()
     {
         EnsureAccess("inventory");
         var dao = BookStoreDao.Create();
@@ -167,7 +167,7 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
         RequireSuccess(result);
     }
 
-    public IReadOnlyList<ManagerPromotionDto> GetManagerPromotions()
+    public List<ManagerPromotionDto> GetManagerPromotions()
     {
         EnsureAccess("promotions");
         var dao = BookStoreDao.Create();
@@ -206,7 +206,7 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
         RequireSuccess(result);
     }
 
-    public IReadOnlyList<ManagerOrderRowDto> GetManagerOrders(string? status = null)
+    public List<ManagerOrderRowDto> GetManagerOrders(string? status = null)
     {
         EnsureAccess("orders");
         var dao = BookStoreDao.Create();
@@ -261,42 +261,42 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
         RequireSuccess(result);
     }
 
-    public IReadOnlyList<ManagerCategoryDto> GetManagerCategories()
+    public List<ManagerCategoryDto> GetManagerCategories()
     {
         EnsureAccess("records");
         var dao = BookStoreDao.Create();
         return CreateAdminRecordsService(dao).GetAllCategoriesList();
     }
 
-    public IReadOnlyList<ManagerAuthorDto> GetManagerAuthors()
+    public List<ManagerAuthorDto> GetManagerAuthors()
     {
         EnsureAccess("records");
         var dao = BookStoreDao.Create();
         return CreateAdminRecordsService(dao).GetAllAuthorsList();
     }
 
-    public IReadOnlyList<ManagerPublisherDto> GetManagerPublishers()
+    public List<ManagerPublisherDto> GetManagerPublishers()
     {
         EnsureAccess("records");
         var dao = BookStoreDao.Create();
         return CreateAdminRecordsService(dao).GetAllPublishersList();
     }
 
-    public IReadOnlyList<ManagerCustomerDto> GetManagerCustomers()
+    public List<ManagerCustomerDto> GetManagerCustomers()
     {
         EnsureAccess("customers");
         var dao = BookStoreDao.Create();
         return CreateAdminRecordsService(dao).GetAllCustomersList();
     }
 
-    public IReadOnlyList<ManagerEmployeeDto> GetManagerEmployees()
+    public List<ManagerEmployeeDto> GetManagerEmployees()
     {
         EnsureAccess("employees");
         var dao = BookStoreDao.Create();
         return CreateAdminRecordsService(dao).GetAllEmployeesList();
     }
 
-    public IReadOnlyList<StaffRoleOptionDto> GetManagerEmployeeRoles()
+    public List<StaffRoleOptionDto> GetManagerEmployeeRoles()
     {
         EnsureAccess("employees");
         var dao = BookStoreDao.Create();

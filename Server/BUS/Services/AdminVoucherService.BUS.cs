@@ -18,12 +18,12 @@ namespace TrangSach.BUS
         }
 
         // ---- READ ----
-        public IReadOnlyList<VoucherSummaryDto> GetVouchers() => _vouchers;
+        public List<VoucherSummaryDto> GetVouchers() => _vouchers;
 
         // ----------------------------------------------------------------
         // Synchronous Methods (Phong cách thiết kế 3 lớp truyền thống)
         // ----------------------------------------------------------------
-        public IReadOnlyList<VoucherSummaryDto> GetAllVouchersList()
+        public List<VoucherSummaryDto> GetAllVouchersList()
         {
             if (_vouchers.Count == 0) _vouchers = dao.Promotions.GetAllVouchers();
             return _vouchers;

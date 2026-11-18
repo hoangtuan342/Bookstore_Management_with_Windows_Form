@@ -91,7 +91,7 @@ public partial class ManagementForm
 
     private void ExportExcel(ManagerReportDto report, string path)
     {
-        var sheets = new[]
+        var sheets = new List<ExcelSheetData>
         {
             new ExcelSheetData("Tong quan", BuildSummary(report)),
             new ExcelSheetData("Theo thang", [ ["Năm", "Tháng", "Số đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], .. report.RevenueByMonth.Select(row => new object?[] { row.Year, row.Month, row.Orders, row.Revenue, row.PurchaseSpend, row.EstimatedGrossProfit }) ]),

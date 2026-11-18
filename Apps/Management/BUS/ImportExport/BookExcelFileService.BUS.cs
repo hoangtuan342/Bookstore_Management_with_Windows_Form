@@ -7,7 +7,7 @@ public sealed class BookExcelFileService(ExcelWorkbookService excel)
 {
     public BookExcelFileService() : this(new ExcelWorkbookService()) { }
 
-    public void Export(IReadOnlyList<(BookItemDto Book, ManagerBookDetailsDto Details)> books, string path)
+    public void Export(List<(BookItemDto Book, ManagerBookDetailsDto Details)> books, string path)
     {
         var rows = new List<object?[]> { new object?[] { "Title", "SalePrice", "Unit", "CategoryId", "PublisherId", "AuthorIds" } };
         rows.AddRange(books.Select(row => new object?[]
@@ -18,7 +18,7 @@ public sealed class BookExcelFileService(ExcelWorkbookService excel)
         excel.Write(path, [new ExcelSheetData("Books", rows)]);
     }
 
-    public IReadOnlyList<BookCsvRow> Read(string path)
+    public List<BookCsvRow> Read(string path)
     {
         var rows = excel.ReadFirstSheet(path);
         if (rows.Count < 2) return [];
@@ -45,13 +45,13 @@ public sealed class BookExcelFileService(ExcelWorkbookService excel)
             int? publisherId = int.TryParse(At(publisher), out var parsedPublisher) ? parsedPublisher : null;
             var authorIds = At(authors).Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Select(value => int.TryParse(value, out var id) ? id : throw new InvalidDataException("AuthorIds phải là danh sách mã số, cách nhau bằng dấu phẩy."))
-                .ToArray();
+                .ToList();
             result.Add(new BookCsvRow(bookTitle, salePrice, bookUnit, bookCategory, publisherId, authorIds));
         }
         return result;
     }
 
-    private static int Column(IReadOnlyDictionary<string, int> columns, string name) =>
+    private static int Column(Dictionary<string, int> columns, string name) =>
         columns.TryGetValue(name, out var index) ? index : throw new InvalidDataException($"Thiếu cột '{name}' trong Excel.");
 }
 

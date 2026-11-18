@@ -11,7 +11,7 @@ namespace TrangSach.Management.Web.GUI.Pages.Admin.Vouchers;
 [Authorize(Roles = StaffRoles.ManagerOrMarketing)]
 public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
 {
-    public IReadOnlyList<VoucherSummaryDto> Vouchers { get; private set; } = [];
+    public List<VoucherSummaryDto> Vouchers { get; private set; } = [];
     public async Task OnGetAsync(CancellationToken ct) { Vouchers = await api.GetVouchersAsync(Token, ct); ViewData["Title"] = "Voucher"; }
     public async Task<IActionResult> OnPostUpdateAsync(string id, string status, string? expiresAt, string? maxUsageCount, CancellationToken ct)
     {

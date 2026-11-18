@@ -11,7 +11,7 @@ namespace TrangSach.Management.Web.GUI.Pages.Admin.Promotions;
 [Authorize(Roles = StaffRoles.ManagerOrMarketing)]
 public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
 {
-    public IReadOnlyList<ManagerPromotionDto> Promotions { get; private set; } = [];
+    public List<ManagerPromotionDto> Promotions { get; private set; } = [];
     [BindProperty] public PromotionInput Input { get; set; } = new();
     public async Task OnGetAsync(CancellationToken ct) { Promotions = await api.GetPromotionsAsync(Token, ct); ViewData["Title"] = "Khuyến mãi"; }
     public async Task<IActionResult> OnPostCreateAsync(CancellationToken ct)
@@ -50,12 +50,12 @@ public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
         catch (Exception ex) { TempData["Notice"] = ex.Message; }
         return RedirectToPage();
     }
-    private static T[] ParseRules<T>(string? text, int fieldCount, Func<string[], T> factory) => (text ?? "").Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries).Select(line =>
+    private static List<T> ParseRules<T>(string? text, int fieldCount, Func<string[], T> factory) => (text ?? "").Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries).Select(line =>
     {
         var fields = line.Split(';', StringSplitOptions.TrimEntries);
         if (fields.Length != fieldCount) throw new InvalidOperationException("Mỗi quy tắc cần đúng 2 trường, phân cách bằng dấu chấm phẩy.");
         return factory(fields);
-    }).ToArray();
+    }).ToList();
     private static string? Empty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     public sealed class PromotionInput
     {

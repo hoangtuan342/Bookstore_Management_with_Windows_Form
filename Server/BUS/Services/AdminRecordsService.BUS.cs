@@ -28,47 +28,47 @@ namespace TrangSach.BUS
         }
 
         // ---- READ ----
-        public IReadOnlyList<ManagerCategoryDto> GetCategories() => _categories;
-        public IReadOnlyList<ManagerAuthorDto> GetAuthors() => _authors;
-        public IReadOnlyList<ManagerPublisherDto> GetPublishers() => _publishers;
-        public IReadOnlyList<ManagerCustomerDto> GetCustomers() => _customers;
-        public IReadOnlyList<ManagerEmployeeDto> GetEmployees() => _employees;
-        public IReadOnlyList<StaffRoleOptionDto> GetEmployeeRoles() => _roles;
+        public List<ManagerCategoryDto> GetCategories() => _categories;
+        public List<ManagerAuthorDto> GetAuthors() => _authors;
+        public List<ManagerPublisherDto> GetPublishers() => _publishers;
+        public List<ManagerCustomerDto> GetCustomers() => _customers;
+        public List<ManagerEmployeeDto> GetEmployees() => _employees;
+        public List<StaffRoleOptionDto> GetEmployeeRoles() => _roles;
 
         // ----------------------------------------------------------------
         // Synchronous Methods (Phong cách thiết kế 3 lớp truyền thống)
         // ----------------------------------------------------------------
-        public IReadOnlyList<ManagerCategoryDto> GetAllCategoriesList()
+        public List<ManagerCategoryDto> GetAllCategoriesList()
         {
             if (_categories.Count == 0) _categories = dao.Catalog.GetAllCategoryDetails();
             return _categories;
         }
 
-        public IReadOnlyList<ManagerAuthorDto> GetAllAuthorsList()
+        public List<ManagerAuthorDto> GetAllAuthorsList()
         {
             if (_authors.Count == 0) _authors = dao.Catalog.GetAllAuthorDetails();
             return _authors;
         }
 
-        public IReadOnlyList<ManagerPublisherDto> GetAllPublishersList()
+        public List<ManagerPublisherDto> GetAllPublishersList()
         {
             if (_publishers.Count == 0) _publishers = dao.Catalog.GetAllPublisherDetails();
             return _publishers;
         }
 
-        public IReadOnlyList<ManagerCustomerDto> GetAllCustomersList()
+        public List<ManagerCustomerDto> GetAllCustomersList()
         {
             if (_customers.Count == 0) _customers = dao.Users.GetAllCustomers();
             return _customers;
         }
 
-        public IReadOnlyList<ManagerEmployeeDto> GetAllEmployeesList()
+        public List<ManagerEmployeeDto> GetAllEmployeesList()
         {
             if (_employees.Count == 0) _employees = dao.Users.GetAllEmployees();
             return _employees;
         }
 
-        public IReadOnlyList<StaffRoleOptionDto> GetAllEmployeeRolesList()
+        public List<StaffRoleOptionDto> GetAllEmployeeRolesList()
         {
             if (_roles.Count == 0)
             {

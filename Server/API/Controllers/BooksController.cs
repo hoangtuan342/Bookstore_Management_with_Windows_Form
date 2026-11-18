@@ -7,8 +7,8 @@ namespace TrangSach.API.Controllers;
 public sealed class BooksController(BookCatalogService catalog) : ControllerBase
 {
     [HttpGet]
-    [ProducesResponseType<IReadOnlyList<BookItemDto>>(StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyList<BookItemDto>> GetBooks(
+    [ProducesResponseType<List<BookItemDto>>(StatusCodes.Status200OK)]
+    public ActionResult<List<BookItemDto>> GetBooks(
         [FromQuery] string? search = null,
         [FromQuery] string? category = null) =>
         Ok(catalog.GetBooks(search, category));

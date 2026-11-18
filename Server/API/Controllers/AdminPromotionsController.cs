@@ -11,7 +11,7 @@ namespace TrangSach.API.Controllers;
 public sealed class AdminPromotionsController(AdminPromotionService service) : ControllerBase
 {
     [HttpGet]
-    public IReadOnlyList<ManagerPromotionDto> Get() => service.GetPromotions();
+    public List<ManagerPromotionDto> Get() => service.GetPromotions();
 
     [HttpPost]
     public IActionResult Create(CreatePromotionRequest request)
@@ -37,9 +37,9 @@ public sealed class AdminPromotionsController(AdminPromotionService service) : C
     [HttpPut("{id}/rules")]
     public IActionResult UpdateRules(string id, PromotionRulesRequest request) =>
         ToHttpResult(service.UpdateRules(id, new UpdatePromotionRulesDto(
-            request.Books.Select(x => new PromotionBookRuleDto(x.BookId, x.DiscountPercent)).ToArray(),
-            request.Orders.Select(x => new PromotionOrderRuleDto(x.MinimumOrderAmount, x.DiscountPercent)).ToArray(),
-            request.Vouchers.Select(x => new PromotionVoucherRuleDto(x.VoucherId, x.DiscountPercent)).ToArray())));
+            request.Books.Select(x => new PromotionBookRuleDto(x.BookId, x.DiscountPercent)).ToList(),
+            request.Orders.Select(x => new PromotionOrderRuleDto(x.MinimumOrderAmount, x.DiscountPercent)).ToList(),
+            request.Vouchers.Select(x => new PromotionVoucherRuleDto(x.VoucherId, x.DiscountPercent)).ToList())));
 
     private IActionResult ToHttpResult(OperationResult<Unit> result) => result.Status switch
     {
@@ -73,9 +73,9 @@ public sealed class PromotionDetailsRequest
 
 public sealed class PromotionRulesRequest
 {
-    public IReadOnlyList<PromotionBookRuleRequest> Books { get; init; } = [];
-    public IReadOnlyList<PromotionOrderRuleRequest> Orders { get; init; } = [];
-    public IReadOnlyList<PromotionVoucherRuleRequest> Vouchers { get; init; } = [];
+    public List<PromotionBookRuleRequest> Books { get; init; } = [];
+    public List<PromotionOrderRuleRequest> Orders { get; init; } = [];
+    public List<PromotionVoucherRuleRequest> Vouchers { get; init; } = [];
 }
 public sealed class PromotionBookRuleRequest { public string BookId { get; init; } = string.Empty; public decimal DiscountPercent { get; init; } }
 public sealed class PromotionOrderRuleRequest { public decimal MinimumOrderAmount { get; init; } public decimal DiscountPercent { get; init; } }

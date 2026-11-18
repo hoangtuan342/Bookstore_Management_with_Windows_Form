@@ -191,7 +191,7 @@ internal class ManagementGridPageForm : Form
         {
             if (_applyingFilter) return;
             _unfilteredDataSource = Grid.DataSource;
-            var rows = (Grid.DataSource as System.Collections.IEnumerable)?.Cast<object>().ToArray() ?? [];
+            var rows = (Grid.DataSource as System.Collections.IEnumerable)?.Cast<object>().ToList() ?? [];
             OnDataSourceRefreshed(rows);
         };
         Grid.DataBindingComplete += (_, _) => ApplyQuickFilter();
@@ -250,7 +250,7 @@ internal class ManagementGridPageForm : Form
     protected virtual bool HasAdditionalFilters => false;
     protected virtual bool MatchesAdditionalFilters(object item) => true;
     protected virtual IEnumerable<string?> GetAdditionalSearchValues(object item) => [];
-    protected virtual void OnDataSourceRefreshed(IReadOnlyList<object> rows) { }
+    protected virtual void OnDataSourceRefreshed(List<object> rows) { }
 
     protected void SetDetailsView(Control details, string initialMessage)
     {

@@ -10,9 +10,9 @@ namespace TrangSach.Management.Web.GUI.Pages.Admin.Inventory;
 [Authorize(Roles = StaffRoles.ManagerOrInventory)]
 public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
 {
-    public IReadOnlyList<ManagerReceiptDto> Receipts { get; private set; } = [];
-    public IReadOnlyList<SupplierOptionDto> Suppliers { get; private set; } = [];
-    public IReadOnlyList<BookItemDto> Books { get; private set; } = [];
+    public List<ManagerReceiptDto> Receipts { get; private set; } = [];
+    public List<SupplierOptionDto> Suppliers { get; private set; } = [];
+    public List<BookItemDto> Books { get; private set; } = [];
     [BindProperty] public ReceiptInput Input { get; set; } = new();
     public async Task OnGetAsync(string? id, CancellationToken ct)
     {
@@ -33,7 +33,7 @@ public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
             var lines = Input.Lines.Where(line => !string.IsNullOrWhiteSpace(line.BookId)).ToArray();
             if (lines.Length == 0) throw new InvalidOperationException("Phiếu nhập cần ít nhất một mặt hàng.");
             if (lines.Any(line => line.Quantity <= 0 || line.UnitCost <= 0)) throw new InvalidOperationException("Số lượng và giá nhập mỗi dòng phải lớn hơn 0.");
-            var command = new CreateReceiptDto(Input.SupplierId, lines.Select(line => new CreateReceiptLineDto(line.BookId, line.Quantity, line.UnitCost)).ToArray());
+            var command = new CreateReceiptDto(Input.SupplierId, lines.Select(line => new CreateReceiptLineDto(line.BookId, line.Quantity, line.UnitCost)).ToList());
             if (string.IsNullOrWhiteSpace(Input.Id)) await api.CreateReceiptAsync(Token, command, ct);
             else await api.UpdateReceiptAsync(Token, Input.Id, command, ct);
             TempData["Notice"] = string.IsNullOrWhiteSpace(Input.Id) ? "Đã tạo phiếu nhập và cập nhật tồn kho." : "Đã cập nhật phiếu nhập và điều chỉnh tồn kho.";

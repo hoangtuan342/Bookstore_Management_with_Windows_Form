@@ -18,8 +18,8 @@ namespace TrangSach.BUS
             _dao = dao;
         }
 
-        public IReadOnlyDictionary<string, decimal> GetActiveDiscounts(
-            IReadOnlyCollection<string> bookIds,
+        public Dictionary<string, decimal> GetActiveDiscounts(
+            List<string> bookIds,
             DateTime nowUtc)
         {
             if (_promotions.Count == 0)

@@ -12,13 +12,13 @@ namespace TrangSach.Shared.DTO
         public string ReceiverPhone { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
         public decimal DiscountAmount { get; set; }
-        public IReadOnlyList<StoreOrderLineDto> Lines { get; set; } = new List<StoreOrderLineDto>();
+        public List<StoreOrderLineDto> Lines { get; set; } = new List<StoreOrderLineDto>();
 
         public StoreOrderDto()
         {
         }
 
-        public StoreOrderDto(string id, DateTime createdAt, string status, string paymentStatus, string paymentMethod, string shippingAddress, string receiverPhone, decimal totalAmount, decimal discountAmount, IReadOnlyList<StoreOrderLineDto> lines)
+        public StoreOrderDto(string id, DateTime createdAt, string status, string paymentStatus, string paymentMethod, string shippingAddress, string receiverPhone, decimal totalAmount, decimal discountAmount, List<StoreOrderLineDto> lines)
         {
             this.Id = id;
             this.CreatedAt = createdAt;

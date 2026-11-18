@@ -153,9 +153,9 @@ public class PromotionDao
     }
 
     public void UpdatePromotionRules(string id,
-        IReadOnlyList<PromotionBookRuleDto> books,
-        IReadOnlyList<PromotionOrderRuleDto> orders,
-        IReadOnlyList<PromotionVoucherRuleDto> vouchers)
+        List<PromotionBookRuleDto> books,
+        List<PromotionOrderRuleDto> orders,
+        List<PromotionVoucherRuleDto> vouchers)
     {
         using var conn = DbConnection.Open();
         using var tx = conn.BeginTransaction();

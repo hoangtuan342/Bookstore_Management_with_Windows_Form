@@ -99,15 +99,15 @@ internal sealed class DashboardPageForm : Form
         _values[3].Text = summary.CustomerCount.ToString("N0");
         _notes[3].Text = "Tổng khách trong hệ thống";
         Grid.DataSource = summary.RecentOrders.ToList();
-        _trend.SetItems(trend.RevenueByDayDto.OrderBy(x => x.Date).TakeLast(7).ToArray());
+        _trend.SetItems(trend.RevenueByDayDto.OrderBy(x => x.Date).TakeLast(7).ToList());
     }
 
     private sealed class RevenueWeekChart : Panel
     {
-        private IReadOnlyList<RevenueByDayDto> _items = [];
+        private List<RevenueByDayDto> _items = [];
         private static readonly Color Bar = Color.FromArgb(68, 137, 112);
         public RevenueWeekChart() { BackColor = Color.White; SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.UserPaint, true); }
-        public void SetItems(IReadOnlyList<RevenueByDayDto> items) { _items = items; Invalidate(); }
+        public void SetItems(List<RevenueByDayDto> items) { _items = items; Invalidate(); }
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);

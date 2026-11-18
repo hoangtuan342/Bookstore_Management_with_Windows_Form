@@ -32,7 +32,7 @@ internal sealed class CustomersPageForm : ManagementGridPageForm
             && (account is null || (account == "yes" ? customer.AccountId is not null : customer.AccountId is null));
     }
 
-    protected override void OnDataSourceRefreshed(IReadOnlyList<object> rows) =>
+    protected override void OnDataSourceRefreshed(List<object> rows) =>
         ManagementGridPageForm.SetValues(_accountStatus, rows.OfType<TrangSach.Shared.DTO.ManagerCustomerDto>().Select(customer => customer.AccountStatus),
             "Mọi trạng thái tài khoản", ManagementGridPageForm.StatusCaption);
 }

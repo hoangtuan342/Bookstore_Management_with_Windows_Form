@@ -4,11 +4,11 @@ using System.Text;
 
 namespace TrangSach.Management.BUS;
 
-public sealed record BookCsvRow(string Title, decimal SalePrice, string Unit, string CategoryId, int? PublisherId, IReadOnlyList<int> AuthorIds);
+public sealed record BookCsvRow(string Title, decimal SalePrice, string Unit, string CategoryId, int? PublisherId, List<int> AuthorIds);
 
 public sealed class BookCsvFileService
 {
-    public void Export(IReadOnlyList<(BookItemDto Book, ManagerBookDetailsDto Details)> books, string path)
+    public void Export(List<(BookItemDto Book, ManagerBookDetailsDto Details)> books, string path)
     {
         var rows = new List<string> { "Title;Price;Unit;CategoryId;PublisherId;AuthorIds" };
         rows.AddRange(books.Select(row => string.Join(';',
@@ -17,7 +17,7 @@ public sealed class BookCsvFileService
         File.WriteAllLines(path, rows, new UTF8Encoding(true));
     }
 
-    public IReadOnlyList<BookCsvRow> ReadForImport(string path)
+    public List<BookCsvRow> ReadForImport(string path)
     {
         var lines = File.ReadAllLines(path, Encoding.UTF8).Skip(1).Where(line => !string.IsNullOrWhiteSpace(line));
         var result = new List<BookCsvRow>();
@@ -29,7 +29,7 @@ public sealed class BookCsvFileService
             int? publisherId = int.TryParse(fields[4], out var publisher) ? publisher : null;
             var authorIds = fields[5].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Select(value => int.TryParse(value, out var id) ? id : throw new InvalidDataException("AuthorIds phải là danh sách mã số, cách nhau bằng dấu phẩy."))
-                .ToArray();
+                .ToList();
             result.Add(new BookCsvRow(fields[0].Trim(), price, fields[2].Trim(), fields[3].Trim(), publisherId, authorIds));
         }
         return result;

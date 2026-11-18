@@ -45,7 +45,7 @@ internal sealed class BooksPageForm : ManagementGridPageForm
             && (_maximumPrice.Value == 0 || book.Price <= _maximumPrice.Value);
     }
 
-    protected override void OnDataSourceRefreshed(IReadOnlyList<object> rows) =>
+    protected override void OnDataSourceRefreshed(List<object> rows) =>
         ManagementGridPageForm.SetValues(_category, rows.OfType<TrangSach.Shared.DTO.BookItemDto>().Select(book => book.Category), "Mọi thể loại");
 
     private static NumericUpDown CreatePriceFilter() => new()

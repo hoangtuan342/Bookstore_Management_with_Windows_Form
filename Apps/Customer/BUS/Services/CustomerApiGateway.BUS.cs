@@ -28,7 +28,7 @@ public sealed class CustomerApiGateway : IDisposable
         _httpClient.Timeout = TimeSpan.FromSeconds(30);
     }
 
-    public async Task<IReadOnlyList<BookItemDto>> GetBooksAsync(CancellationToken cancellationToken = default) =>
+    public async Task<List<BookItemDto>> GetBooksAsync(CancellationToken cancellationToken = default) =>
         await GetAsync<List<BookItemDto>>("api/books", cancellationToken) ?? [];
 
     public async Task<BookItemDto?> GetBookAsync(string bookId, CancellationToken cancellationToken = default) =>
@@ -40,13 +40,13 @@ public sealed class CustomerApiGateway : IDisposable
     public Task<StoreApiResultDto> RegisterAsync(string userName, string email, string password, string fullName, string? phoneNumber, CancellationToken cancellationToken = default) =>
         AuthenticateAsync("api/auth/register", new { userName, email, password, fullName, phoneNumber }, cancellationToken, "Tạo tài khoản thành công.");
 
-    public async Task<IReadOnlyList<StoreCartLineDto>> GetCartAsync(CancellationToken cancellationToken = default) =>
+    public async Task<List<StoreCartLineDto>> GetCartAsync(CancellationToken cancellationToken = default) =>
         await SendAuthorizedAsync<List<StoreCartLineDto>>(HttpMethod.Get, "api/cart", null, cancellationToken) ?? [];
 
     public Task SetCartQuantityAsync(string bookId, int quantity, CancellationToken cancellationToken = default) =>
         SendAuthorizedAsync(HttpMethod.Put, $"api/cart/items/{Uri.EscapeDataString(bookId)}", new { quantity }, cancellationToken);
 
-    public async Task<IReadOnlyList<StoreOrderDto>> GetMyOrdersAsync(CancellationToken cancellationToken = default) =>
+    public async Task<List<StoreOrderDto>> GetMyOrdersAsync(CancellationToken cancellationToken = default) =>
         await SendAuthorizedAsync<List<StoreOrderDto>>(HttpMethod.Get, "api/orders", null, cancellationToken) ?? [];
 
     public Task<AccountProfileDto?> GetProfileAsync(CancellationToken cancellationToken = default) =>

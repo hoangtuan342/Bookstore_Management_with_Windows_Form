@@ -9,9 +9,9 @@ namespace TrangSach.Management.Web.GUI.Pages.Admin.References;
 [Authorize(Roles = StaffRoles.ManagerOrCatalog)]
 public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
 {
-    public IReadOnlyList<ManagerCategoryDto> Categories { get; private set; } = [];
-    public IReadOnlyList<ManagerAuthorDto> Authors { get; private set; } = [];
-    public IReadOnlyList<ManagerPublisherDto> Publishers { get; private set; } = [];
+    public List<ManagerCategoryDto> Categories { get; private set; } = [];
+    public List<ManagerAuthorDto> Authors { get; private set; } = [];
+    public List<ManagerPublisherDto> Publishers { get; private set; } = [];
     public async Task OnGetAsync(CancellationToken ct) { await LoadAsync(ct); ViewData["Title"] = "Danh mục tham chiếu"; }
 
     public async Task<IActionResult> OnPostCategoryAsync(string? id, string name, CancellationToken ct)

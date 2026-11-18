@@ -97,7 +97,7 @@ public class CatalogDao
         using var rAuthors = cmdAuthors.ExecuteReader();
         while (rAuthors.Read()) authorIds.Add(rAuthors.GetInt32(0));
 
-        return new BookEditDetailsDto(bookId, title, price, unit, categoryId, publisherId, authorIds.ToArray(), isActive, desc);
+        return new BookEditDetailsDto(bookId, title, price, unit, categoryId, publisherId, authorIds, isActive, desc);
     }
 
     public void InsertBook(string id, BookManagementCommandDto cmdDto)

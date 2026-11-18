@@ -10,7 +10,7 @@ namespace TrangSach.Management.Web.GUI.Pages.Admin.Customers;
 [Authorize(Roles = StaffRoles.ManagerOrSales)]
 public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
 {
-    public IReadOnlyList<ManagerCustomerDto> Customers { get; private set; } = [];
+    public List<ManagerCustomerDto> Customers { get; private set; } = [];
     [BindProperty(SupportsGet = true)] public string? Search { get; set; }
     [BindProperty] public CustomerInput Input { get; set; } = new();
     public async Task OnGetAsync(string? id, CancellationToken ct)
@@ -40,7 +40,7 @@ public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
     private async Task LoadAsync(CancellationToken ct)
     {
         var rows = await api.GetCustomersAsync(Token, ct);
-        Customers = rows.Where(x => string.IsNullOrWhiteSpace(Search) || string.Join(' ', x.Id, x.FullName, x.PhoneNumber, x.Email, x.Address).Contains(Search, StringComparison.CurrentCultureIgnoreCase)).ToArray();
+        Customers = rows.Where(x => string.IsNullOrWhiteSpace(Search) || string.Join(' ', x.Id, x.FullName, x.PhoneNumber, x.Email, x.Address).Contains(Search, StringComparison.CurrentCultureIgnoreCase)).ToList();
     }
     private static string? Empty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     public sealed class CustomerInput

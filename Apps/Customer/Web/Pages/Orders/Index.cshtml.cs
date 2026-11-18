@@ -8,7 +8,7 @@ namespace TrangSach.Customer.Web.Pages.Orders;
 [Authorize(Roles = "Customer")]
 public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
 {
-    public IReadOnlyList<StoreOrderDto> Orders { get; private set; } = [];
+    public List<StoreOrderDto> Orders { get; private set; } = [];
 
     public async Task<IActionResult> OnPostCancelAsync(string id, CancellationToken ct)
     {

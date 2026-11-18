@@ -95,11 +95,11 @@ namespace TrangSach.Shared.Security
             }
         }
 
-        public static IReadOnlyList<(string Name, string Label)> EmployeeRoles
+        public static List<(string Name, string Label)> EmployeeRoles
         {
             get
             {
-                return new (string Name, string Label)[]
+                return new List<(string Name, string Label)>
                 {
                     (StaffRoles.Manager, DisplayName(StaffRoles.Manager)),
                     (StaffRoles.Sales, DisplayName(StaffRoles.Sales)),

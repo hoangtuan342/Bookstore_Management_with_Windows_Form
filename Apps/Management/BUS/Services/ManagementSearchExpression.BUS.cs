@@ -48,7 +48,7 @@ public static class ManagementSearchExpression
         || match.Value.Equals("NOT", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>Applies the user's search and business filters to the BUS-owned in-memory result set.</summary>
-    public static IReadOnlyList<T> FilterRows<T>(IEnumerable<T> source, string query,
+    public static List<T> FilterRows<T>(IEnumerable<T> source, string query,
         Func<T, IEnumerable<string?>> quickSearchValues, Func<T, bool> additionalFilters,
         out string? syntaxError)
     {
@@ -68,7 +68,7 @@ public static class ManagementSearchExpression
                     !string.IsNullOrWhiteSpace(value)
                     && value.Contains(term, StringComparison.CurrentCultureIgnoreCase))));
             return matchesText && additionalFilters(item);
-        }).ToArray();
+        }).ToList();
     }
 
     private sealed class Parser(string[] tokens, object? sample)

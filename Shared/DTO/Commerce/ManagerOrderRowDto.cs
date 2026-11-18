@@ -14,13 +14,13 @@ namespace TrangSach.Shared.DTO
         public string ReceiverPhone { get; set; } = string.Empty;
         public string ShippingAddress { get; set; } = string.Empty;
         public int ItemCount { get; set; }
-        public IReadOnlyList<ManagerOrderLineDto> Lines { get; set; } = new List<ManagerOrderLineDto>();
+        public List<ManagerOrderLineDto> Lines { get; set; } = new List<ManagerOrderLineDto>();
 
         public ManagerOrderRowDto()
         {
         }
 
-        public ManagerOrderRowDto(string id, DateTime createdAt, string orderStatus, string paymentStatus, string paymentMethod, decimal totalAmount, string customerName, string employeeName, string receiverPhone, string shippingAddress, int itemCount, IReadOnlyList<ManagerOrderLineDto> lines)
+        public ManagerOrderRowDto(string id, DateTime createdAt, string orderStatus, string paymentStatus, string paymentMethod, decimal totalAmount, string customerName, string employeeName, string receiverPhone, string shippingAddress, int itemCount, List<ManagerOrderLineDto> lines)
         {
             this.Id = id;
             this.CreatedAt = createdAt;

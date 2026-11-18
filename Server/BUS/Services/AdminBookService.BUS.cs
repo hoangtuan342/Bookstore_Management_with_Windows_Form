@@ -20,12 +20,12 @@ namespace TrangSach.BUS
             _dao = dao;
         }
 
-        public IReadOnlyList<BookItemDto> Books => _books;
+        public List<BookItemDto> Books => _books;
 
         // ----------------------------------------------------------------
         // Synchronous Methods (Phong cách thiết kế 3 lớp truyền thống)
         // ----------------------------------------------------------------
-        public IReadOnlyList<BookItemDto> GetBooks()
+        public List<BookItemDto> GetBooks()
         {
             if (_books.Count == 0) _books = _dao.Catalog.GetAllBooks();
             return _books;

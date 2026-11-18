@@ -17,10 +17,10 @@ internal sealed class CustomerCheckoutForm : Form
     private readonly TextBox _phone = new();
     private readonly TextBox _voucher = new();
     private readonly ComboBox _payment = new();
-    private readonly IReadOnlyList<StoreCartLineDto> _cart;
+    private readonly List<StoreCartLineDto> _cart;
     public CheckoutDetailsDto? Details { get; private set; }
 
-    public CustomerCheckoutForm(IReadOnlyList<StoreCartLineDto> cart, string? address = null, string? phone = null)
+    public CustomerCheckoutForm(List<StoreCartLineDto> cart, string? address = null, string? phone = null)
     {
         _cart = cart;
         Text = "Thanh toán | Trang Sách";

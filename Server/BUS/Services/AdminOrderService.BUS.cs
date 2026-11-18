@@ -21,19 +21,19 @@ namespace TrangSach.BUS
         }
 
         // ---- READ ----
-        public IReadOnlyList<ManagerOrderRowDto> GetOrders() => _orders;
+        public List<ManagerOrderRowDto> GetOrders() => _orders;
 
         // ----------------------------------------------------------------
         // Synchronous Methods (Phong cách thiết kế 3 lớp truyền thống)
         // ----------------------------------------------------------------
-        public IReadOnlyList<ManagerOrderRowDto> GetOrdersList(string? status = null)
+        public List<ManagerOrderRowDto> GetOrdersList(string? status = null)
         {
             if (_orders.Count == 0) _orders = _dao.Orders.GetAllOrders();
             if (string.IsNullOrWhiteSpace(status)) return _orders;
             return _orders.Where(x => x.OrderStatus == status).ToList();
         }
 
-        public IReadOnlyList<ManagerOrderLineDto> GetLines(string orderId)
+        public List<ManagerOrderLineDto> GetLines(string orderId)
             => _dao.Orders.GetOrderLines(orderId);
 
         public OperationResult<AdminOrderCreated> Create(CreateAdminOrderDto command, int? accountId)
@@ -67,7 +67,7 @@ namespace TrangSach.BUS
             }
 
             var now = DateTime.UtcNow;
-            var discounts = _pricing.GetActiveDiscounts(command.Lines.Select(x => x.BookId).ToArray(), now);
+            var discounts = _pricing.GetActiveDiscounts(command.Lines.Select(x => x.BookId).ToList(), now);
 
             var orderLines = command.Lines.Select(x =>
             {
@@ -104,7 +104,7 @@ namespace TrangSach.BUS
                 {
                     var book = books.First(b => b.BookId == l.BookId);
                     return new ManagerOrderLineDto(l.BookId, book.Title, l.Quantity, l.UnitPrice, l.LineTotal);
-                }).ToArray());
+                }).ToList());
             _orders.Insert(0, newRow);
 
             return OperationResult<AdminOrderCreated>.Created(new AdminOrderCreated(orderId, total, now));

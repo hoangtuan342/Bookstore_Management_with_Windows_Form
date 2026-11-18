@@ -19,12 +19,12 @@ namespace TrangSach.BUS
         }
 
         // ---- READ ----
-        public IReadOnlyList<ManagerPromotionDto> GetPromotions() => _promotions;
+        public List<ManagerPromotionDto> GetPromotions() => _promotions;
 
         // ----------------------------------------------------------------
         // Synchronous Methods (Phong cách thiết kế 3 lớp truyền thống)
         // ----------------------------------------------------------------
-        public IReadOnlyList<ManagerPromotionDto> GetAllPromotionsList()
+        public List<ManagerPromotionDto> GetAllPromotionsList()
         {
             if (_promotions.Count == 0) _promotions = dao.Promotions.GetAllPromotions();
             return _promotions;

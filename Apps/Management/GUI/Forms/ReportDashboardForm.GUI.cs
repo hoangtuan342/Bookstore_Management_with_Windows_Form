@@ -88,7 +88,7 @@ public sealed class ReportDashboardForm : Form
         SetMetric(4,Money(report.PurchaseSpend),"Phiếu nhập trong kỳ");
         SetMetric(5,Money(report.EstimatedGrossProfit),$"Độ phủ giá vốn {report.CostCoveragePercent:N1}%");
         _chart.SetReport(report); ResizeChart();
-        _best.SetRows(report.BestSellers.Select(x=>new BarItem(x.Title,$"{x.BookId} · {x.Quantity:N0} cuốn",Money(x.Revenue),x.Quantity)).ToArray(),"Chưa có đơn hoàn tất trong kỳ.");
+        _best.SetRows(report.BestSellers.Select(x=>new BarItem(x.Title,$"{x.BookId} · {x.Quantity:N0} cuốn",Money(x.Revenue),x.Quantity)).ToList(),"Chưa có đơn hoàn tất trong kỳ.");
         _orders.SetItems([
             ("Hoàn tất",report.CompletedOrders),
             ("Đang xử lý",report.ProcessingOrders),
@@ -96,7 +96,7 @@ public sealed class ReportDashboardForm : Form
             ("Đã hủy",report.CancelledOrders)
         ]);
         _categories.SetItems(report.RevenueByCategory.OrderByDescending(x=>x.Revenue).Select(x=>(x.Category,x.Revenue)));
-        _customers.SetRows(report.TopCustomers.Select(x=>new BarItem(x.CustomerName,$"{x.Orders:N0} đơn · {x.Quantity:N0} cuốn",Money(x.Revenue),x.Revenue)).ToArray(),"Chưa có đơn hoàn tất trong kỳ.");
+        _customers.SetRows(report.TopCustomers.Select(x=>new BarItem(x.CustomerName,$"{x.Orders:N0} đơn · {x.Quantity:N0} cuốn",Money(x.Revenue),x.Revenue)).ToList(),"Chưa có đơn hoàn tất trong kỳ.");
         Change(_revChange,report.RevenueChangePercent); _revNote.Text=$"Kỳ trước: {Money(report.PreviousPeriodRevenue)}";
         Change(_orderChange,report.CompletedOrdersChangePercent); _orderNote.Text=$"Kỳ trước: {report.PreviousPeriodCompletedOrders:N0} đơn";
         _monthlyChart.SetItems(
@@ -457,7 +457,7 @@ public sealed class ReportDashboardForm : Form
             Controls.Add(_rows);Controls.Add(Kicker(kicker,new Point(13,9)));Controls.Add(Title(title,new Point(13,25)));
             Resize+=(_,_)=>{foreach(Control r in _rows.Controls)r.Width=Math.Max(110,_rows.ClientSize.Width-8);};
         }
-        public void SetRows(IReadOnlyList<BarItem> rows,string empty){_rows.SuspendLayout();_rows.Controls.Clear();decimal max=rows.Select(x=>x.Value).DefaultIfEmpty(0).Max();if(rows.Count==0)_rows.Controls.Add(new Label{Text=empty,AutoSize=true,ForeColor=Muted,Font=new Font("Segoe UI",8.5f),Margin=new Padding(0,18,0,0)});foreach(var item in rows)_rows.Controls.Add(MakeRow(item,max));_rows.ResumeLayout();}
+        public void SetRows(List<BarItem> rows,string empty){_rows.SuspendLayout();_rows.Controls.Clear();decimal max=rows.Select(x=>x.Value).DefaultIfEmpty(0).Max();if(rows.Count==0)_rows.Controls.Add(new Label{Text=empty,AutoSize=true,ForeColor=Muted,Font=new Font("Segoe UI",8.5f),Margin=new Padding(0,18,0,0)});foreach(var item in rows)_rows.Controls.Add(MakeRow(item,max));_rows.ResumeLayout();}
         private Control MakeRow(BarItem item,decimal max){var row=new Panel{Height=43,Width=Math.Max(110,_rows.ClientSize.Width-8),Margin=new Padding(0,0,0,2),BackColor=Color.White};
             var name=new Label{Text=item.Name,Left=0,Top=0,Width=row.Width-130,Height=17,AutoEllipsis=true,ForeColor=Color.FromArgb(70,80,68),Font=new Font("Segoe UI",8f,FontStyle.Bold)};
             var amount=new Label{Text=item.Amount,Left=row.Width-126,Top=0,Width=124,Height=17,AutoEllipsis=true,TextAlign=ContentAlignment.TopRight,ForeColor=Ink,Font=new Font("Segoe UI",8f,FontStyle.Bold)};

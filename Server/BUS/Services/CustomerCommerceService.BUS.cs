@@ -18,16 +18,16 @@ namespace TrangSach.BUS
             this.pricing = pricing;
         }
 
-        public IReadOnlyList<StoreCartLineDto> GetCart(string customerId)
+        public List<StoreCartLineDto> GetCart(string customerId)
         {
             var cart = dao.Users.GetCustomerCart(customerId);
-            var discounts = pricing.GetActiveDiscounts(cart.Select(x => x.BookId).ToArray(), DateTime.UtcNow);
+            var discounts = pricing.GetActiveDiscounts(cart.Select(x => x.BookId).ToList(), DateTime.UtcNow);
             return cart.Select(x =>
             {
                 decimal discount = discounts.ContainsKey(x.BookId) ? discounts[x.BookId] : 0;
                 var unit = BookPricingService.ApplyDiscount(x.SalePrice, discount);
                 return new StoreCartLineDto(x.BookId, x.Title, x.Author, unit, x.Quantity, x.AvailableStock, unit * x.Quantity);
-            }).ToArray();
+            }).ToList();
         }
 
         public OperationResult<Unit> SetCartQuantity(string customerId, string bookId, int quantity)
@@ -55,7 +55,7 @@ namespace TrangSach.BUS
             dao.Users.RemoveCartItem(customerId, bookId);
         }
 
-        public IReadOnlyList<StoreOrderDto> GetOrders(string customerId)
+        public List<StoreOrderDto> GetOrders(string customerId)
         {
             return dao.Orders.GetCustomerOrders(customerId);
         }
@@ -92,7 +92,7 @@ namespace TrangSach.BUS
             }
 
             var now = DateTime.UtcNow;
-            var discounts = pricing.GetActiveDiscounts(cart.Select(x => x.BookId).ToArray(), now);
+            var discounts = pricing.GetActiveDiscounts(cart.Select(x => x.BookId).ToList(), now);
 
             var lines = cart.Select(x =>
             {
@@ -146,7 +146,7 @@ namespace TrangSach.BUS
                 decimal discount = discounts.ContainsKey(x.BookId) ? discounts[x.BookId] : 0;
                 var unit = BookPricingService.ApplyDiscount(x.SalePrice, discount);
                 return new StoreOrderLineDto(x.BookId, x.Title, x.Quantity, unit, unit * x.Quantity);
-            }).ToArray();
+            }).ToList();
 
             var orderDto = new StoreOrderDto(
                 orderId, now, "Pending", payStatus, payment,

@@ -67,7 +67,7 @@ public class OrderDao
 
     public void InsertOrder(string orderId, DateTime createdAt, string? customerId, string? employeeId, string? voucherId,
         decimal total, decimal discount, string orderStatus, string paymentStatus, string paymentMethod, string shippingAddress, string receiverPhone,
-        IReadOnlyList<(string BookId, int Qty, decimal Price, decimal LineTotal)> lines)
+        List<(string BookId, int Qty, decimal Price, decimal LineTotal)> lines)
     {
         using var conn = DbConnection.Open();
         using var tx = conn.BeginTransaction();

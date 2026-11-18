@@ -12,10 +12,10 @@ namespace TrangSach.Management.Web.GUI.Pages.Admin.Books;
 [Authorize(Roles = StaffRoles.ManagerOrCatalog)]
 public sealed class IndexModel(ManagementWebApiClient api, ManagementSpreadsheetService spreadsheets) : AdminPageModel
 {
-    public IReadOnlyList<BookItemDto> Books { get; private set; } = [];
-    public IReadOnlyList<CategoryOptionDto> Categories { get; private set; } = [];
-    public IReadOnlyList<IdNameOptionDto> Authors { get; private set; } = [];
-    public IReadOnlyList<IdNameOptionDto> Publishers { get; private set; } = [];
+    public List<BookItemDto> Books { get; private set; } = [];
+    public List<CategoryOptionDto> Categories { get; private set; } = [];
+    public List<IdNameOptionDto> Authors { get; private set; } = [];
+    public List<IdNameOptionDto> Publishers { get; private set; } = [];
     [BindProperty(SupportsGet = true)] public string? Search { get; set; }
     [BindProperty(SupportsGet = true)] public string? AuthorFilter { get; set; }
     [BindProperty(SupportsGet = true)] public string? CategoryFilter { get; set; }
@@ -42,7 +42,7 @@ public sealed class IndexModel(ManagementWebApiClient api, ManagementSpreadsheet
         if (!ModelState.IsValid) { await LoadAsync(ct); ViewData["Title"] = "Quản lý sách"; return Page(); }
         try
         {
-            var authors = Input.AuthorIds.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(value => int.TryParse(value, out var id) ? id : throw new InvalidOperationException("Mã tác giả phải là số, cách nhau bằng dấu phẩy.")).ToArray();
+            var authors = Input.AuthorIds.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(value => int.TryParse(value, out var id) ? id : throw new InvalidOperationException("Mã tác giả phải là số, cách nhau bằng dấu phẩy.")).ToList();
             int? publisher = int.TryParse(Input.PublisherId, out var publisherId) ? publisherId : null;
             var command = new BookManagementCommandDto(Input.Title.Trim(), Input.SalePrice, Input.Unit.Trim(), Input.CategoryId.Trim(), publisher, authors, Input.Description.Trim());
             if (string.IsNullOrWhiteSpace(Input.Id))
@@ -117,14 +117,14 @@ public sealed class IndexModel(ManagementWebApiClient api, ManagementSpreadsheet
                 if (row.Authors.Any(id => !authorIdsAvailable.Contains(id))) throw new InvalidDataException("Một mã tác giả trong tệp chưa có trong danh mục.");
             }
             foreach (var row in imported)
-                await api.CreateBookAsync(Token, new BookManagementCommandDto(row.Title, row.Price, row.Unit, row.Category, row.Publisher, row.Authors, row.Description), ct);
+                await api.CreateBookAsync(Token, new BookManagementCommandDto(row.Title, row.Price, row.Unit, row.Category, row.Publisher, row.Authors.ToList(), row.Description), ct);
             TempData["Notice"] = $"Đã nhập {imported.Count} sách.";
         }
         catch (Exception ex) { TempData["Notice"] = "Nhập sách chưa hoàn tất: " + ex.Message; }
         return RedirectToPage();
     }
 
-    public IActionResult OnGetTemplate() => File(spreadsheets.CreateWorkbook([("Books", (IReadOnlyList<object?[]>)[
+    public IActionResult OnGetTemplate() => File(spreadsheets.CreateWorkbook([("Books", (List<object?[]>)[
         ["Title", "SalePrice", "Unit", "CategoryId", "PublisherId", "AuthorIds", "Description"]])]), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "mau-nhap-sach.xlsx");
 
     public async Task<IActionResult> OnGetExportAsync(CancellationToken ct)
@@ -149,7 +149,7 @@ public sealed class IndexModel(ManagementWebApiClient api, ManagementSpreadsheet
             var details = await api.GetBookForEditAsync(Token, book.Id, ct);
             if (details is not null) rows.Add([details.Title, details.SalePrice, details.Unit, details.CategoryId, details.PublisherId, string.Join(',', details.AuthorIds), details.Description, details.IsActive]);
         }
-        var data = spreadsheets.CreateWorkbook([("Books", (IReadOnlyList<object?[]>)rows)]);
+        var data = spreadsheets.CreateWorkbook([("Books", (List<object?[]>)rows)]);
         return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "trang-sach.xlsx");
     }
 
@@ -165,7 +165,7 @@ public sealed class IndexModel(ManagementWebApiClient api, ManagementSpreadsheet
             && (!MinStock.HasValue || book.AvailableStock >= MinStock.Value) && (!MaxStock.HasValue || book.AvailableStock <= MaxStock.Value)
             && (string.IsNullOrWhiteSpace(Visibility) || (Visibility == "active"
                 ? !book.Label.Contains("ẨN", StringComparison.CurrentCultureIgnoreCase)
-                : book.Label.Contains("ẨN", StringComparison.CurrentCultureIgnoreCase)))).ToArray();
+                : book.Label.Contains("ẨN", StringComparison.CurrentCultureIgnoreCase)))).ToList();
         var lookups = await api.GetLookupsAsync(Token, ct);
         Categories = lookups?.Categories ?? [];
         Authors = lookups?.Authors ?? [];

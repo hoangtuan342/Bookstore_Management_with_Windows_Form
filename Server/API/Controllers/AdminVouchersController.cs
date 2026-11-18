@@ -11,7 +11,7 @@ namespace TrangSach.API.Controllers;
 public sealed class AdminVouchersController(AdminVoucherService service) : ControllerBase
 {
     [HttpGet]
-    public IReadOnlyList<VoucherSummaryDto> Get() => service.GetAllVouchersList();
+    public List<VoucherSummaryDto> Get() => service.GetAllVouchersList();
 
     [HttpPut("{id}")]
     public IActionResult Update(string id, VoucherUpdateRequest request) =>

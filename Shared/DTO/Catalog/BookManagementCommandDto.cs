@@ -8,14 +8,14 @@ namespace TrangSach.Shared.DTO
         public string Unit { get; set; } = string.Empty;
         public string CategoryId { get; set; } = string.Empty;
         public int? PublisherId { get; set; }
-        public IReadOnlyList<int> AuthorIds { get; set; } = new List<int>();
+        public List<int> AuthorIds { get; set; } = new List<int>();
         public string Description { get; set; } = "";
 
         public BookManagementCommandDto()
         {
         }
 
-        public BookManagementCommandDto(string title, decimal salePrice, string unit, string categoryId, int? publisherId, IReadOnlyList<int> authorIds, string description = "")
+        public BookManagementCommandDto(string title, decimal salePrice, string unit, string categoryId, int? publisherId, List<int> authorIds, string description = "")
         {
             this.Title = title;
             this.SalePrice = salePrice;

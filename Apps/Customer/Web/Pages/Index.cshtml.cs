@@ -5,8 +5,8 @@ namespace TrangSach.Customer.Web.Pages;
 
 public sealed class IndexModel(CustomerWebApiClient api) : PageModel
 {
-    public IReadOnlyList<TrangSach.Shared.DTO.BookItemDto> Books { get; private set; } = [];
-    public IReadOnlyList<string> Categories { get; private set; } = [];
+    public List<TrangSach.Shared.DTO.BookItemDto> Books { get; private set; } = [];
+    public List<string> Categories { get; private set; } = [];
     [BindProperty(SupportsGet = true)] public string? Search { get; set; }
     [BindProperty(SupportsGet = true)] public string? Category { get; set; }
 
@@ -14,11 +14,11 @@ public sealed class IndexModel(CustomerWebApiClient api) : PageModel
     {
         var allBooks = await api.GetBooksAsync(null, null, ct);
         Categories = allBooks.Select(book => book.Category).Where(item => !string.IsNullOrWhiteSpace(item))
-            .Distinct(StringComparer.CurrentCultureIgnoreCase).OrderBy(item => item).ToArray();
+            .Distinct(StringComparer.CurrentCultureIgnoreCase).OrderBy(item => item).ToList();
         Books = allBooks.Where(book => (string.IsNullOrWhiteSpace(Category) || book.Category.Equals(Category, StringComparison.CurrentCultureIgnoreCase))
             && (string.IsNullOrWhiteSpace(Search) || book.Title.Contains(Search, StringComparison.CurrentCultureIgnoreCase)
                 || book.Author.Contains(Search, StringComparison.CurrentCultureIgnoreCase)
-                || book.Description.Contains(Search, StringComparison.CurrentCultureIgnoreCase))).ToArray();
+                || book.Description.Contains(Search, StringComparison.CurrentCultureIgnoreCase))).ToList();
         ViewData["Title"] = "Cửa hàng";
     }
 

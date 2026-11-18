@@ -5,7 +5,7 @@ public sealed class EditDialog : Form
 {
     private readonly Dictionary<string, TextBox> _inputs = new(StringComparer.Ordinal);
 
-    private EditDialog(string title, IReadOnlyList<(string Key, string Label, string Value)> fields)
+    private EditDialog(string title, List<(string Key, string Label, string Value)> fields)
     {
         Text = title;
         StartPosition = FormStartPosition.CenterParent;
@@ -61,7 +61,7 @@ public sealed class EditDialog : Form
         string title,
         params (string Key, string Label, string Value)[] fields)
     {
-        using var dialog = new EditDialog(title, fields);
+        using var dialog = new EditDialog(title, fields.ToList());
         if (dialog.ShowDialog(owner) != DialogResult.OK) return null;
         return dialog._inputs.ToDictionary(input => input.Key, input => input.Value.Text.Trim(), StringComparer.Ordinal);
     }

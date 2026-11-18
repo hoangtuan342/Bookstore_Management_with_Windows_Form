@@ -62,7 +62,7 @@ internal sealed class ReceiptsPageForm : ManagementGridPageForm
         ? receipt.Lines.SelectMany(line => new[] { line.BookId, line.BookTitle })
         : [];
 
-    protected override void OnDataSourceRefreshed(IReadOnlyList<object> rows)
+    protected override void OnDataSourceRefreshed(List<object> rows)
     {
         var receipts = rows.OfType<ManagerReceiptDto>().ToArray();
         ManagementGridPageForm.SetValues(_status, receipts.Select(receipt => receipt.Status), "Mọi trạng thái", ManagementGridPageForm.StatusCaption);

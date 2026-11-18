@@ -17,7 +17,7 @@ public sealed class AdminInventoryController(AdminInventoryService service) : Co
 
     [Authorize(Roles = StaffRoles.ManagerOrInventory)]
     [HttpGet("suppliers")]
-    public IReadOnlyList<TrangSach.Shared.DTO.SupplierOptionDto> GetSuppliers() => service.GetSuppliers();
+    public List<TrangSach.Shared.DTO.SupplierOptionDto> GetSuppliers() => service.GetSuppliers();
 
     [Authorize(Roles = StaffRoles.ManagerOrInventory)]
     [HttpPost("suppliers")]
@@ -35,7 +35,7 @@ public sealed class AdminInventoryController(AdminInventoryService service) : Co
 
     [Authorize(Roles = StaffRoles.ManagerOrInventory)]
     [HttpGet("receipts")]
-    public IReadOnlyList<TrangSach.Shared.DTO.ManagerReceiptDto> GetReceipts() => service.GetReceipts();
+    public List<TrangSach.Shared.DTO.ManagerReceiptDto> GetReceipts() => service.GetReceipts();
 
     [Authorize(Roles = StaffRoles.ManagerOrInventory)]
     [HttpPost("receipts")]
@@ -53,7 +53,7 @@ public sealed class AdminInventoryController(AdminInventoryService service) : Co
     public IActionResult CancelReceipt(string id) => ToHttpResult(service.CancelReceipt(id));
 
     private static ReceiptCommandDto ToCommand(PurchaseReceiptRequest request) => new(request.SupplierId,
-        request.Lines.Select(x => new ReceiptLineCommandDto(x.BookId, x.Quantity, x.UnitCost)).ToArray());
+        request.Lines.Select(x => new ReceiptLineCommandDto(x.BookId, x.Quantity, x.UnitCost)).ToList());
 
     private IActionResult ToHttpResult<T>(OperationResult<T> result) => result.Status switch
     {

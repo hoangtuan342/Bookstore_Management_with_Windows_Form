@@ -49,7 +49,7 @@ public sealed record OrderResponse(
     string ReceiverPhone,
     decimal TotalAmount,
     decimal DiscountAmount,
-    IReadOnlyList<OrderLineResponse> Lines);
+    List<OrderLineResponse> Lines);
 
 public sealed class BookManagementRequest
 {
@@ -67,7 +67,7 @@ public sealed class BookManagementRequest
 
     public int? PublisherId { get; init; }
 
-    public IReadOnlyList<int> AuthorIds { get; init; } = [];
+    public List<int> AuthorIds { get; init; } = [];
 
     [StringLength(4000)]
     public string Description { get; init; } = string.Empty;
@@ -106,7 +106,7 @@ public sealed class AdminCreateOrderRequest
     public string PaymentMethod { get; init; } = "CashOnDelivery";
 
     [MinLength(1)]
-    public IReadOnlyList<AdminCreateOrderLineRequest> Lines { get; init; } = [];
+    public List<AdminCreateOrderLineRequest> Lines { get; init; } = [];
 }
 
 public sealed class AdminCreateOrderLineRequest
@@ -124,7 +124,7 @@ public sealed class PurchaseReceiptRequest
     public string SupplierId { get; init; } = string.Empty;
 
     [MinLength(1)]
-    public IReadOnlyList<PurchaseReceiptLineRequest> Lines { get; init; } = [];
+    public List<PurchaseReceiptLineRequest> Lines { get; init; } = [];
 }
 
 public sealed class PurchaseReceiptLineRequest

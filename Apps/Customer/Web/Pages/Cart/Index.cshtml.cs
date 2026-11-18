@@ -8,7 +8,7 @@ namespace TrangSach.Customer.Web.Pages.Cart;
 [Authorize(Roles = "Customer")]
 public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
 {
-    public IReadOnlyList<StoreCartLineDto> Lines { get; private set; } = [];
+    public List<StoreCartLineDto> Lines { get; private set; } = [];
     public decimal Subtotal => Lines.Sum(line => line.LineTotal);
 
     public async Task OnGetAsync(CancellationToken ct) { await LoadAsync(ct); ViewData["Title"] = "Giỏ hàng"; }

@@ -8,14 +8,14 @@ namespace TrangSach.Shared.DTO
         public DateTime? ExpiresAt { get; set; }
         public int? MaxUsageCount { get; set; }
         public int UsageCount { get; set; }
-        public IReadOnlyList<string> Promotions { get; set; } = new List<string>();
+        public List<string> Promotions { get; set; } = new List<string>();
         public int OrderCount { get; set; }
 
         public ManagerVoucherDto()
         {
         }
 
-        public ManagerVoucherDto(string id, string status, DateTime? expiresAt, int? maxUsageCount, int usageCount, IReadOnlyList<string> promotions, int orderCount)
+        public ManagerVoucherDto(string id, string status, DateTime? expiresAt, int? maxUsageCount, int usageCount, List<string> promotions, int orderCount)
         {
             this.Id = id;
             this.Status = status;

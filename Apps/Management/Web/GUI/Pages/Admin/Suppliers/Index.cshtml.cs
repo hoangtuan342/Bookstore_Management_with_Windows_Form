@@ -10,7 +10,7 @@ namespace TrangSach.Management.Web.GUI.Pages.Admin.Suppliers;
 [Authorize(Roles = StaffRoles.ManagerOrInventory)]
 public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
 {
-    public IReadOnlyList<SupplierOptionDto> Suppliers { get; private set; } = [];
+    public List<SupplierOptionDto> Suppliers { get; private set; } = [];
     [BindProperty] public SupplierInput Input { get; set; } = new();
     public async Task OnGetAsync(string? id, CancellationToken ct)
     {

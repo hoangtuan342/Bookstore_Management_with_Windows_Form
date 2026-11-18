@@ -17,7 +17,7 @@ public sealed class AdminBooksController(AdminBookService service) : ControllerB
 
     [Authorize(Roles = StaffRoles.ProductReaders)]
     [HttpGet]
-    public ActionResult<IReadOnlyList<BookItemDto>> GetBooks() =>
+    public ActionResult<List<BookItemDto>> GetBooks() =>
         Ok(service.GetBooks());
 
     [Authorize(Roles = StaffRoles.ManagerOrCatalog)]

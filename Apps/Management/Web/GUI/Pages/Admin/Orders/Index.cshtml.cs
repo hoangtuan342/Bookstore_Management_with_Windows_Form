@@ -10,10 +10,10 @@ namespace TrangSach.Management.Web.GUI.Pages.Admin.Orders;
 [Authorize(Roles = StaffRoles.ManagerOrSales)]
 public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
 {
-    private static readonly string[] Statuses = ["Pending", "Confirmed", "Shipping", "Completed", "Cancelled"];
-    public IReadOnlyList<ManagerOrderRowDto> Orders { get; private set; } = [];
-    public IReadOnlyList<ManagerCustomerDto> Customers { get; private set; } = [];
-    public IReadOnlyList<BookItemDto> Books { get; private set; } = [];
+    private static readonly List<string> Statuses = ["Pending", "Confirmed", "Shipping", "Completed", "Cancelled"];
+    public List<ManagerOrderRowDto> Orders { get; private set; } = [];
+    public List<ManagerCustomerDto> Customers { get; private set; } = [];
+    public List<BookItemDto> Books { get; private set; } = [];
     [BindProperty(SupportsGet = true)] public string? Status { get; set; }
     [BindProperty(SupportsGet = true)] public string? Search { get; set; }
     [BindProperty] public OrderInput Input { get; set; } = new();
@@ -33,7 +33,7 @@ public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
             if (lines.Length == 0) throw new InvalidOperationException("Đơn hàng cần ít nhất một sản phẩm.");
             if (lines.Any(line => line.Quantity < 1 || line.Quantity > 99)) throw new InvalidOperationException("Số lượng mỗi sản phẩm phải từ 1 đến 99.");
             await api.CreateOrderAsync(Token, new CreateAdminOrderDto(Input.CustomerId, Input.ShippingAddress, Input.ReceiverPhone, Input.PaymentMethod,
-                lines.Select(line => new CreateAdminOrderLineDto(line.BookId, line.Quantity)).ToArray()), ct);
+                lines.Select(line => new CreateAdminOrderLineDto(line.BookId, line.Quantity)).ToList()), ct);
             TempData["Notice"] = "Đã tạo đơn hàng.";
             return RedirectToPage();
         }
@@ -94,12 +94,12 @@ public sealed class IndexModel(ManagementWebApiClient api) : AdminPageModel
     private async Task LoadAsync(CancellationToken ct)
     {
         var rows = await api.GetOrdersAsync(Token, Status, ct);
-        Orders = rows.Where(x => string.IsNullOrWhiteSpace(Search) || string.Join(' ', x.Id, x.CustomerName, x.EmployeeName, x.ReceiverPhone, x.ShippingAddress).Contains(Search, StringComparison.CurrentCultureIgnoreCase)).ToArray();
+        Orders = rows.Where(x => string.IsNullOrWhiteSpace(Search) || string.Join(' ', x.Id, x.CustomerName, x.EmployeeName, x.ReceiverPhone, x.ShippingAddress).Contains(Search, StringComparison.CurrentCultureIgnoreCase)).ToList();
         Customers = await api.GetCustomersAsync(Token, ct);
         Books = await api.GetBooksAsync(Token, ct);
     }
 
-    public static IReadOnlyList<string> AllowedStatuses => Statuses;
+    public static List<string> AllowedStatuses => Statuses;
     public sealed class OrderInput
     {
         [Required, StringLength(20), Display(Name = "Mã khách hàng")] public string CustomerId { get; set; } = "";

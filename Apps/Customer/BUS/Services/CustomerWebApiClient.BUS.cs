@@ -9,7 +9,7 @@ namespace TrangSach.Customer.BUS;
 /// <summary>Stateless BUS-side client for the customer website to call the bookstore API.</summary>
 public sealed class CustomerWebApiClient(HttpClient httpClient)
 {
-    public async Task<IReadOnlyList<BookItemDto>> GetBooksAsync(string? search, string? category, CancellationToken ct = default)
+    public async Task<List<BookItemDto>> GetBooksAsync(string? search, string? category, CancellationToken ct = default)
     {
         var query = new List<string>();
         if (!string.IsNullOrWhiteSpace(search)) query.Add("search=" + Uri.EscapeDataString(search.Trim()));
@@ -30,7 +30,7 @@ public sealed class CustomerWebApiClient(HttpClient httpClient)
     public Task<AccountProfileDto?> GetProfileAsync(string token, CancellationToken ct = default) =>
         GetAsync<AccountProfileDto>("api/auth/me", token, ct);
 
-    public async Task<IReadOnlyList<StoreCartLineDto>> GetCartAsync(string token, CancellationToken ct = default) =>
+    public async Task<List<StoreCartLineDto>> GetCartAsync(string token, CancellationToken ct = default) =>
         await GetAsync<List<StoreCartLineDto>>("api/cart", token, ct) ?? [];
 
     public Task SetCartQuantityAsync(string token, string bookId, int quantity, CancellationToken ct = default) =>
@@ -43,7 +43,7 @@ public sealed class CustomerWebApiClient(HttpClient httpClient)
         await SendAsync<StoreOrderDto>(HttpMethod.Post, "api/orders", details, token, ct)
         ?? throw new InvalidOperationException("Máy chủ không trả về thông tin đơn hàng.");
 
-    public async Task<IReadOnlyList<StoreOrderDto>> GetOrdersAsync(string token, CancellationToken ct = default) =>
+    public async Task<List<StoreOrderDto>> GetOrdersAsync(string token, CancellationToken ct = default) =>
         await GetAsync<List<StoreOrderDto>>("api/orders", token, ct) ?? [];
 
     public Task<StoreOrderDto?> GetOrderAsync(string token, string orderId, CancellationToken ct = default) =>

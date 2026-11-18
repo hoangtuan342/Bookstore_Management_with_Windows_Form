@@ -33,9 +33,9 @@ public sealed class DailyModel(ManagementWebApiClient api) : AdminPageModel
         var rows = Report.RevenueByDayDto.OrderBy(x => x.Date).ToArray();
         static ReportChartItem Point(RevenueByDayDto row, decimal value) => new(row.Date.ToString("dd/MM/yyyy"), value, value.ToString("N0") + " ₫");
         Chart = new ReportChartPanel("Doanh thu và nhập hàng theo ngày",
-            rows.Select(row => Point(row, row.Revenue)).ToArray(), ReportChartType.Line,
-            [new ReportChartSeries("Doanh thu", "#456f55", rows.Select(row => Point(row, row.Revenue)).ToArray()),
-             new ReportChartSeries("Nhập hàng", "#d4a268", rows.Select(row => Point(row, row.PurchaseSpend)).ToArray())]);
+            rows.Select(row => Point(row, row.Revenue)).ToList(), ReportChartType.Line,
+            [new ReportChartSeries("Doanh thu", "#456f55", rows.Select(row => Point(row, row.Revenue)).ToList()),
+             new ReportChartSeries("Nhập hàng", "#d4a268", rows.Select(row => Point(row, row.PurchaseSpend)).ToList())]);
         ViewData["Title"] = "Doanh thu theo ngày";
         return Page();
     }

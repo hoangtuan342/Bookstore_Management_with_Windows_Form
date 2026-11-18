@@ -12,7 +12,7 @@ namespace TrangSach.API.Controllers;
 public sealed class AdminRecordsController(AdminRecordsService service) : ControllerBase
 {
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpGet("categories")]
-    public IReadOnlyList<ManagerCategoryDto> Categories() => service.GetAllCategoriesList();
+    public List<ManagerCategoryDto> Categories() => service.GetAllCategoriesList();
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPost("categories")]
     public IActionResult CreateCategory(CategoryRequest r)
     {
@@ -26,7 +26,7 @@ public sealed class AdminRecordsController(AdminRecordsService service) : Contro
     public IActionResult DeleteCategory(string id) => Result(service.DeleteCategory(id));
 
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpGet("authors")]
-    public IReadOnlyList<ManagerAuthorDto> Authors() => service.GetAllAuthorsList();
+    public List<ManagerAuthorDto> Authors() => service.GetAllAuthorsList();
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPost("authors")]
     public IActionResult CreateAuthor(AuthorRequest r)
     {
@@ -40,7 +40,7 @@ public sealed class AdminRecordsController(AdminRecordsService service) : Contro
     public IActionResult DeleteAuthor(int id) => Result(service.DeleteAuthor(id));
 
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpGet("publishers")]
-    public IReadOnlyList<ManagerPublisherDto> Publishers() => service.GetAllPublishersList();
+    public List<ManagerPublisherDto> Publishers() => service.GetAllPublishersList();
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPost("publishers")]
     public IActionResult CreatePublisher(PublisherRequest r)
     {
@@ -54,7 +54,7 @@ public sealed class AdminRecordsController(AdminRecordsService service) : Contro
     public IActionResult DeletePublisher(int id) => Result(service.DeletePublisher(id));
 
     [Authorize(Roles = StaffRoles.ManagerOrSales), HttpGet("customers")]
-    public IReadOnlyList<ManagerCustomerDto> Customers() => service.GetAllCustomersList();
+    public List<ManagerCustomerDto> Customers() => service.GetAllCustomersList();
     [Authorize(Roles = StaffRoles.ManagerOrSales), HttpPost("customers")]
     public IActionResult CreateCustomer(CustomerRequest r) => CreatedAtRouteResult(service.CreateCustomer(r.ToModel()), "api/admin/customers");
     [Authorize(Roles = StaffRoles.ManagerOrSales), HttpPut("customers/{id}")]
@@ -63,9 +63,9 @@ public sealed class AdminRecordsController(AdminRecordsService service) : Contro
     public IActionResult DeleteCustomer(string id) => Result(service.DeleteCustomer(id));
 
     [Authorize(Roles = StaffRoles.Manager), HttpGet("employees")]
-    public IReadOnlyList<ManagerEmployeeDto> Employees() => service.GetAllEmployeesList();
+    public List<ManagerEmployeeDto> Employees() => service.GetAllEmployeesList();
     [Authorize(Roles = StaffRoles.Manager), HttpGet("employee-roles")]
-    public IReadOnlyList<StaffRoleOptionDto> EmployeeRoles() => service.GetAllEmployeeRolesList();
+    public List<StaffRoleOptionDto> EmployeeRoles() => service.GetAllEmployeeRolesList();
     [Authorize(Roles = StaffRoles.Manager), HttpPost("employees")]
     public IActionResult CreateEmployee(EmployeeRequest r) => CreatedAtRouteResult(service.CreateEmployee(r.ToModel()), "api/admin/employees");
     [Authorize(Roles = StaffRoles.Manager), HttpPut("employees/{id}")]
