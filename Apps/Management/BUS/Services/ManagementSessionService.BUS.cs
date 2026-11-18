@@ -1,4 +1,7 @@
 using TrangSach.Shared.DTO;
+using TrangSach.Shared.Security;
+using TrangSach.BUS;
+
 namespace TrangSach.Management.BUS;
 
 /// <summary>WinForms-facing customer application service. All persistence and rules are delegated to BUS services.</summary>
@@ -12,53 +15,37 @@ public sealed class ManagementSessionService(IPasswordHashingService passwordHas
     public StoreApiResultDto Login(string userNameOrEmail, string password)
     {
         var dao = BookStoreDao.Create();
-        var user = dao.Users.FindAccountWithDetails(userNameOrEmail);
-        if (user == null || !passwordHasher.Verify(password, user.Value.PasswordHash))
-            return new(false, "Tên đăng nhập hoặc mật khẩu không hợp lệ cho khu vực khách hàng.");
-        if (user.Value.Status != "Active")
-            return new(false, "Tài khoản đang bị khóa.");
-        if (user.Value.RoleName != "Customer")
-            return new(false, "Tài khoản không phải là khách hàng.");
-
-        CustomerId = user.Value.CustomerId;
-        Role = user.Value.RoleName;
-        AccountId = user.Value.Id;
-        return new(true, "Đăng nhập thành công.");
+        var result = new AuthenticationService(dao, passwordHasher).LoginCustomer(new LoginCommandDto(userNameOrEmail, password));
+        return SetSession(result, "Tên đăng nhập hoặc mật khẩu không hợp lệ cho khu vực khách hàng.");
     }
 
     public StoreApiResultDto AdminLogin(string userNameOrEmail, string password)
     {
         var dao = BookStoreDao.Create();
-        var user = dao.Users.FindAccountWithDetails(userNameOrEmail);
-        if (user == null || !passwordHasher.Verify(password, user.Value.PasswordHash))
-            return new(false, "Thông tin đăng nhập không hợp lệ hoặc tài khoản không có quyền nhân viên.");
-        if (user.Value.Status != "Active" || user.Value.EmployeeStatus == "Inactive")
-            return new(false, "Tài khoản nhân viên đang bị tạm khóa hoặc ngừng hoạt động.");
-        if (user.Value.RoleName != "Admin" && user.Value.RoleName != "Staff" && user.Value.RoleName != "InventoryManager")
-            return new(false, "Tài khoản không có quyền nhân viên.");
-
-        CustomerId = user.Value.EmployeeId;
-        Role = user.Value.RoleName;
-        AccountId = user.Value.Id;
-        return new(true, "Đăng nhập thành công.");
+        var result = new AuthenticationService(dao, passwordHasher).LoginEmployee(new LoginCommandDto(userNameOrEmail, password));
+        return SetSession(result, "Thông tin đăng nhập không hợp lệ hoặc tài khoản không có quyền nhân viên.");
     }
 
     public bool HasManagerAccount()
     {
         var dao = BookStoreDao.Create();
-        return dao.Users.CountAccountsByRole("Admin") > 0;
+        return new AuthenticationService(dao, passwordHasher).HasManagerAccount();
     }
 
     public StoreApiResultDto SetupFirstManager(RegisterAccountCommandDto command)
     {
         var dao = BookStoreDao.Create();
-        if (dao.Users.CountAccountsByRole("Admin") > 0)
-            return new(false, "Hệ thống đã có tài khoản quản lý.");
-        var roleId = dao.Users.GetRoleIdByName("Admin") ?? 1;
-        var hash = passwordHasher.Hash(command.UserName.Trim(), command.Password);
-        var accId = dao.Users.CreateAccount(command.UserName.Trim(), command.Email.Trim(), hash, roleId, "Active");
-        dao.Users.InsertEmployee($"NV{DateTime.UtcNow:yyyyMMddHHmmss}", "Quản trị", "Viên", null, null, null, "Active", 0, accId);
-        return new(true, "Tạo tài khoản quản trị thành công.");
+        var result = new AuthenticationService(dao, passwordHasher).SetupFirstManager(command);
+        return SetSession(result, "Không thể tạo tài khoản quản lý đầu tiên.");
+    }
+
+    private StoreApiResultDto SetSession(OperationResult<AuthenticatedAccountDto> result, string fallback)
+    {
+        if (!result.Succeeded || result.Value is null) return new(false, result.Message ?? fallback);
+        AccountId = result.Value.Id;
+        CustomerId = result.Value.CustomerId;
+        Role = result.Value.Role;
+        return new(true, $"Xin chào {result.Value.UserName}!", Role);
     }
 
     public void SignOut()
@@ -67,5 +54,4 @@ public sealed class ManagementSessionService(IPasswordHashingService passwordHas
         Role = null;
         AccountId = null;
     }
-
 }
