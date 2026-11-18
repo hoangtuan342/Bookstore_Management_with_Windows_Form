@@ -10,13 +10,6 @@ public partial class ManagementForm
 
     private static T? Selected<T>(DataGridView grid) where T : class => grid.CurrentRow?.DataBoundItem as T;
 
-    private async Task SafeAsync(Func<Task> action)
-    {
-        try { UseWaitCursor = true; await action(); }
-        catch (Exception ex) { MessageBox.Show(this, ex.Message, "Không thực hiện được", MessageBoxButtons.OK, MessageBoxIcon.Error); }
-        finally { UseWaitCursor = false; }
-    }
-
     private void SafeAction(Action action)
     {
         try { UseWaitCursor = true; action(); }

@@ -12,7 +12,7 @@ public partial class ManagementForm
         {
             var page = new DashboardPageForm();
             _dashboardView = page;
-            page.RefreshRequested += async (_, _) => await SafeAsync(() => LoadDashboardAsync(true));
+            page.RefreshRequested += (_, _) => SafeAction(() => LoadDashboard(true));
             page.OpenReportRequested += (_, _) =>
             {
                 var reportTab = _tabs.TabPages.Cast<TabPage>().FirstOrDefault(item => item.Text == "Báo cáo");
@@ -28,12 +28,12 @@ public partial class ManagementForm
             _booksGrid = page.Grid;
             AddManagementPage(page, new()
             {
-                ["load"] = () => LoadBooksAsync(true),
-                ["add"] = () => EditBookAsync(null),
-                ["edit"] = EditSelectedBookAsync,
-                ["hide"] = HideSelectedBookAsync,
-                ["import"] = ImportBooksAsync,
-                ["export"] = () => ExportBooksAsync(_booksGrid)
+                ["load"] = () => LoadBooks(true),
+                ["add"] = () => EditBook(null),
+                ["edit"] = EditSelectedBook,
+                ["hide"] = HideSelectedBook,
+                ["import"] = ImportBooks,
+                ["export"] = () => ExportBooks(_booksGrid)
             });
         }
         if (StaffPermissions.CanAccess(_role, "customers"))
@@ -42,10 +42,10 @@ public partial class ManagementForm
             _customersGrid = page.Grid;
             AddManagementPage(page, new()
             {
-                ["load"] = () => LoadCustomersAsync(true),
-                ["add"] = () => EditCustomerAsync(null),
-                ["edit"] = EditSelectedCustomerAsync,
-                ["delete"] = DeleteSelectedCustomerAsync
+                ["load"] = () => LoadCustomers(true),
+                ["add"] = () => EditCustomer(null),
+                ["edit"] = EditSelectedCustomer,
+                ["delete"] = DeleteSelectedCustomer
             });
         }
         if (_role == StaffRoles.Manager)
@@ -54,10 +54,10 @@ public partial class ManagementForm
             _employeesGrid = page.Grid;
             AddManagementPage(page, new()
             {
-                ["load"] = () => LoadEmployeesAsync(true),
-                ["add"] = () => EditEmployeeAsync(null),
-                ["edit"] = EditSelectedEmployeeAsync,
-                ["delete"] = DeleteSelectedEmployeeAsync
+                ["load"] = () => LoadEmployees(true),
+                ["add"] = () => EditEmployee(null),
+                ["edit"] = EditSelectedEmployee,
+                ["delete"] = DeleteSelectedEmployee
             });
         }
         if (StaffPermissions.CanAccess(_role, "orders"))
@@ -66,11 +66,11 @@ public partial class ManagementForm
             _ordersGrid = page.Grid;
             AddManagementPage(page, new()
             {
-                ["load"] = () => LoadOrdersAsync(true),
-                ["status"] = ChangeOrderStatusAsync,
-                ["create"] = CreateOrderAsync,
-                ["edit"] = EditSelectedOrderAsync,
-                ["cancel"] = CancelSelectedOrderAsync
+                ["load"] = () => LoadOrders(true),
+                ["status"] = ChangeOrderStatus,
+                ["create"] = CreateOrder,
+                ["edit"] = EditSelectedOrder,
+                ["cancel"] = CancelSelectedOrder
             });
         }
         if (StaffPermissions.CanAccess(_role, "inventory"))
@@ -79,17 +79,17 @@ public partial class ManagementForm
             _receiptsGrid = page.Grid;
             AddManagementPage(page, new()
             {
-                ["load"] = () => LoadReceiptsAsync(true),
-                ["create"] = CreateReceiptAsync,
-                ["cancel"] = CancelSelectedReceiptAsync
+                ["load"] = () => LoadReceipts(true),
+                ["create"] = CreateReceipt,
+                ["cancel"] = CancelSelectedReceipt
             });
         }
         if (StaffPermissions.CanAccess(_role, "reports"))
         {
             var page = new TabPage("Báo cáo");
             _reportView = new ReportDashboardForm { Dock = DockStyle.Fill };
-            _reportView.PeriodSelected += days => { _ = SafeAsync(() => LoadReportAsync(days)); };
-            _reportView.DateRangeSelected += (from, to) => { _ = SafeAsync(() => LoadReportAsync(from, to)); };
+            _reportView.PeriodSelected += days => SafeAction(() => LoadReport(days));
+            _reportView.DateRangeSelected += (from, to) => SafeAction(() => LoadReport(from, to));
             _reportView.FullDailyTrendRequested += report => { using var detail = new RevenueTrendDetailForm(report); detail.ShowDialog(this); };
             _reportView.ExportPdfRequested += report => SafeAction(() => ExportReportPdf(report));
             _reportView.ExportExcelRequested += report => SafeAction(() => ExportReportExcel(report));
@@ -104,10 +104,10 @@ public partial class ManagementForm
             _referenceType = page.ReferenceType;
             AddManagementPage(page, new()
             {
-                ["load"] = () => LoadReferencesAsync(true),
-                ["add"] = () => SaveReferenceAsync(false),
-                ["edit"] = () => SaveReferenceAsync(true),
-                ["delete"] = DeleteReferenceAsync
+                ["load"] = () => LoadReferences(true),
+                ["add"] = () => SaveReference(false),
+                ["edit"] = () => SaveReference(true),
+                ["delete"] = DeleteReference
             });
         }
         if (StaffPermissions.CanAccess(_role, "inventory"))
@@ -116,10 +116,10 @@ public partial class ManagementForm
             _suppliersGrid = page.Grid;
             AddManagementPage(page, new()
             {
-                ["load"] = () => LoadSuppliersAsync(true),
-                ["add"] = () => SaveSupplierAsync(null),
-                ["edit"] = EditSelectedSupplierAsync,
-                ["delete"] = DeleteSelectedSupplierAsync
+                ["load"] = () => LoadSuppliers(true),
+                ["add"] = () => SaveSupplier(null),
+                ["edit"] = EditSelectedSupplier,
+                ["delete"] = DeleteSelectedSupplier
             });
         }
         if (StaffPermissions.CanAccess(_role, "promotions"))
@@ -128,35 +128,35 @@ public partial class ManagementForm
             _promotionsGrid = promotions.Grid;
             AddManagementPage(promotions, new()
             {
-                ["load"] = () => LoadPromotionsAsync(true),
-                ["create"] = CreatePromotionAsync,
-                ["edit"] = EditPromotionAsync,
-                ["delete"] = DeletePromotionAsync
+                ["load"] = () => LoadPromotions(true),
+                ["create"] = CreatePromotion,
+                ["edit"] = EditPromotion,
+                ["delete"] = DeletePromotion
             });
 
             var vouchers = new VouchersPageForm();
             _vouchersGrid = vouchers.Grid;
             AddManagementPage(vouchers, new()
             {
-                ["load"] = () => LoadVouchersAsync(true),
-                ["edit"] = EditVoucherAsync,
-                ["delete"] = DeleteVoucherAsync
+                ["load"] = () => LoadVouchers(true),
+                ["edit"] = EditVoucher,
+                ["delete"] = DeleteVoucher
             });
         }
         if (_role == StaffRoles.Manager)
         {
             var page = new AuditLogsPageForm();
             _logsGrid = page.Grid;
-            AddManagementPage(page, new() { ["load"] = () => LoadLogsAsync(true) });
+            AddManagementPage(page, new() { ["load"] = () => LoadLogs(true) });
         }
     }
 
-    private void AddManagementPage(ManagementGridPageForm view, Dictionary<string, Func<Task>> actions)
+    private void AddManagementPage(ManagementGridPageForm view, Dictionary<string, Action> actions)
     {
-        view.ActionRequested += async (_, e) =>
+        view.ActionRequested += (_, e) =>
         {
             if (actions.TryGetValue(e.Action, out var action))
-                await SafeAsync(action);
+                SafeAction(action);
         };
 
         var tab = new TabPage(view.PageTitle);

@@ -5,10 +5,10 @@ namespace TrangSach.Management.GUI;
 
 public partial class ManagementForm
 {
-    private async Task EditBookAsync(string? id)
+    private void EditBook(string? id)
     {
-        ManagerBookDetailsDto? old = id is null ? null : await _services.Manager.GetBookDetailsAsync(id);
-        var lookups = await GetLookupsAsync();
+        ManagerBookDetailsDto? old = id is null ? null : _services.Manager.GetBookDetails(id);
+        var lookups = GetLookups();
         var values = EditDialog.Show(this, id is null ? "Thêm sách" : "Sửa sách", [
             ("title", "Tên sách", old?.Title ?? ""), ("price", "Giá bán", old?.SalePrice.ToString(CultureInfo.InvariantCulture) ?? "0"),
             ("unit", "Đơn vị", old?.Unit ?? "Quyển"), ("category", "Mã danh mục (" + string.Join(", ", lookups.Categories.Select(x => x.Id)) + ")", old?.CategoryId ?? lookups.Categories.FirstOrDefault()?.Id ?? ""),
@@ -21,36 +21,36 @@ public partial class ManagementForm
         var authorIds = values["authors"].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(int.Parse).ToArray();
         int? publisherId = int.TryParse(values["publisher"], out var pub) ? pub : null;
         var book = new CreateManagerBookDto(values["title"], price, values["unit"], values["category"], publisherId, authorIds, values["description"]);
-        if (id is null) await _services.Manager.CreateBookAsync(book); else await _services.Manager.UpdateBookAsync(id, book);
-        await LoadBooksAsync(true);
+        if (id is null) _services.Manager.CreateBook(book); else _services.Manager.UpdateBook(id, book);
+        LoadBooks(true);
     }
 
-    private Task EditSelectedBookAsync()
+    private void EditSelectedBook()
     {
         var item = Selected<BookItemDto>(_booksGrid) ?? throw new InvalidOperationException("Chọn sách cần sửa.");
-        return EditBookAsync(item.Id);
+        EditBook(item.Id);
     }
 
-    private async Task HideSelectedBookAsync()
+    private void HideSelectedBook()
     {
         var item = Selected<BookItemDto>(_booksGrid) ?? throw new InvalidOperationException("Chọn sách cần ẩn.");
         if (MessageBox.Show(this, $"Ẩn sách ‘{item.Title}’ khỏi cửa hàng?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
-        await _services.Manager.HideBookAsync(item.Id); await LoadBooksAsync(true);
+        _services.Manager.HideBook(item.Id); LoadBooks(true);
     }
 
-    private async Task ExportBooksAsync(DataGridView grid)
+    private void ExportBooks(DataGridView grid)
     {
         var books = grid.DataSource as IEnumerable<BookItemDto>;
         if (books is null) throw new InvalidOperationException("Tải danh sách sách trước khi xuất.");
         using var dialog = new SaveFileDialog { Filter = "Excel Workbook (*.xlsx)|*.xlsx|Excel 97-2003 (*.xls)|*.xls", FileName = "sach-trang-sach.xlsx" };
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
         var rows = new List<(BookItemDto Book, ManagerBookDetailsDto Details)>();
-        foreach (var book in books) rows.Add((book, await _services.Manager.GetBookDetailsAsync(book.Id)));
+        foreach (var book in books) rows.Add((book, _services.Manager.GetBookDetails(book.Id)));
         _bookExcelFiles.Export(rows, dialog.FileName);
         MessageBox.Show(this, "Đã ghi danh sách sách ra file Excel.", "Xuất dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
-    private async Task ImportBooksAsync()
+    private void ImportBooks()
     {
         using var dialog = new OpenFileDialog { Filter = "Excel Workbook (*.xlsx;*.xls)|*.xlsx;*.xls|CSV (*.csv)|*.csv|Tất cả tệp (*.*)|*.*" };
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
@@ -62,8 +62,8 @@ public partial class ManagementForm
         var result = MessageBox.Show(this, $"Đọc được {rows.Count} dòng. Thêm các sách này vào database?\nMã danh mục, nhà xuất bản và tác giả phải hợp lệ.", "Nhập CSV", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         if (result != DialogResult.Yes) return;
         foreach (var row in rows)
-            await _services.Manager.CreateBookAsync(new CreateManagerBookDto(row.Title, row.SalePrice, row.Unit, row.CategoryId, row.PublisherId, row.AuthorIds));
-        await LoadBooksAsync(true);
+            _services.Manager.CreateBook(new CreateManagerBookDto(row.Title, row.SalePrice, row.Unit, row.CategoryId, row.PublisherId, row.AuthorIds));
+        LoadBooks(true);
     }
 }
 

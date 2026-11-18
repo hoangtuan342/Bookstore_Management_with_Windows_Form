@@ -10,54 +10,51 @@ namespace TrangSach.Management.GUI;
 
 public partial class ManagementForm
 {
-    private async Task LoadDashboardAsync(bool refresh = false)
+    private void LoadDashboard(bool refresh = false)
     {
-        var summaryTask = _services.GetDashboardAsync(refresh);
-        var trendTask = _services.Manager.GetReportAsync(7);
-        await Task.WhenAll(summaryTask, trendTask);
-        _dashboardView?.ShowDashboard(await summaryTask, await trendTask);
+        var summary = _services.GetDashboard(refresh);
+        var trend = _services.Manager.GetReport(7);
+        _dashboardView?.ShowDashboard(summary, trend);
         _status.Text = $"Tổng quan đã cập nhật · SQL Server: {_services.DatabaseConnectionCaption}";
     }
 
-    private async Task LoadBooksAsync(bool refresh = false) => _booksGrid.DataSource = (await _services.GetBooksAsync(refresh)).ToList();
+    private void LoadBooks(bool refresh = false) => _booksGrid.DataSource = _services.GetBooks(refresh).ToList();
 
-    private async Task LoadCustomersAsync(bool refresh = false) => _customersGrid.DataSource = (await _services.GetCustomersAsync(refresh)).ToList();
+    private void LoadCustomers(bool refresh = false) => _customersGrid.DataSource = _services.GetCustomers(refresh).ToList();
 
-    private async Task LoadEmployeesAsync(bool refresh = false) => _employeesGrid.DataSource = (await _services.GetEmployeesAsync(refresh)).ToList();
+    private void LoadEmployees(bool refresh = false) => _employeesGrid.DataSource = _services.GetEmployees(refresh).ToList();
 
-    private async Task LoadOrdersAsync(bool refresh = false) => _ordersGrid.DataSource = (await _services.GetOrdersAsync(refresh)).ToList();
+    private void LoadOrders(bool refresh = false) => _ordersGrid.DataSource = _services.GetOrders(refresh).ToList();
 
-    private async Task LoadReceiptsAsync(bool refresh = false) => _receiptsGrid.DataSource = (await _services.GetReceiptsAsync(refresh)).ToList();
+    private void LoadReceipts(bool refresh = false) => _receiptsGrid.DataSource = _services.GetReceipts(refresh).ToList();
 
-    private async Task LoadSuppliersAsync(bool refresh = false) => _suppliersGrid.DataSource = (await _services.GetLookupsAsync(refresh)).Suppliers.ToList();
+    private void LoadSuppliers(bool refresh = false) => _suppliersGrid.DataSource = _services.GetLookups(refresh).Suppliers.ToList();
 
-    private Task<ManagerLookupsDto> GetLookupsAsync(bool refresh = false) => _services.GetLookupsAsync(refresh);
+    private ManagerLookupsDto GetLookups(bool refresh = false) => _services.GetLookups(refresh);
 
-    private async Task LoadPromotionsAsync(bool refresh = false) => _promotionsGrid.DataSource = (await _services.GetPromotionsAsync(refresh)).ToList();
+    private void LoadPromotions(bool refresh = false) => _promotionsGrid.DataSource = _services.GetPromotions(refresh).ToList();
 
-    private async Task LoadVouchersAsync(bool refresh = false) => _vouchersGrid.DataSource = (await _services.GetVouchersAsync(refresh)).ToList();
+    private void LoadVouchers(bool refresh = false) => _vouchersGrid.DataSource = _services.GetVouchers(refresh).ToList();
 
-    private async Task LoadLogsAsync(bool refresh = false) => _logsGrid.DataSource = (await _services.GetAuditLogsAsync(refresh)).ToList();
+    private void LoadLogs(bool refresh = false) => _logsGrid.DataSource = _services.GetAuditLogs(refresh).ToList();
 
-    private async Task LoadReportAsync(int days)
+    private void LoadReport(int days)
     {
         if (_reportView is null) return;
         _reportView.SetLoading(days);
-        var reportTask = _services.Manager.GetReportAsync(days);
-        var historyTask = days >= 1820 ? reportTask : _services.Manager.GetReportAsync(1825);
-        await Task.WhenAll(reportTask, historyTask);
-        _reportView.ShowReport(await reportTask, await historyTask);
+        var report = _services.Manager.GetReport(days);
+        var history = days >= 1820 ? report : _services.Manager.GetReport(1825);
+        _reportView.ShowReport(report, history);
     }
 
-    private async Task LoadReportAsync(DateOnly fromDate, DateOnly toDate)
+    private void LoadReport(DateOnly fromDate, DateOnly toDate)
     {
         if (_reportView is null) return;
         if (toDate < fromDate) throw new InvalidOperationException("Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.");
         _reportView.SetLoading(fromDate, toDate);
-        var reportTask = _services.Manager.GetReportAsync(fromDate, toDate);
-        var historyTask = (toDate.DayNumber - fromDate.DayNumber + 1) >= 1820 ? reportTask : _services.Manager.GetReportAsync(1825);
-        await Task.WhenAll(reportTask, historyTask);
-        _reportView.ShowReport(await reportTask, await historyTask);
+        var report = _services.Manager.GetReport(fromDate, toDate);
+        var history = (toDate.DayNumber - fromDate.DayNumber + 1) >= 1820 ? report : _services.Manager.GetReport(1825);
+        _reportView.ShowReport(report, history);
     }
 
     private void ExportReportPdf(ManagerReportDto report)

@@ -72,12 +72,12 @@ public partial class ManagementForm : Form
         MinimumSize = new Size(1080, 720);
         StartPosition = FormStartPosition.CenterScreen;
         BuildShell();
-        Shown += async (_, _) => await SafeAsync(async () =>
+        Shown += (_, _) => SafeAction(() =>
         {
-            await _services.InitializeDatabaseAsync();
+            _services.InitializeDatabase();
             _status.Text = "Đăng nhập nhân viên để mở khu vực quản lý · SQL Server: " + _services.DatabaseConnectionCaption;
             _loginView.SetConnectionCaption(_services.DatabaseConnectionCaption);
-            _loginView.SetCanCreateManager(!await _services.Store.HasManagerAccountAsync());
+            _loginView.SetCanCreateManager(!_services.Store.HasManagerAccount());
             _loginView.FocusUserName();
         });
         FormClosed += (_, _) => _services.Dispose();
@@ -119,7 +119,7 @@ public partial class ManagementForm : Form
         logout.BackColor = Color.FromArgb(41, 64, 86);
         logout.ForeColor = Color.White;
         logout.FlatAppearance.BorderColor = Color.FromArgb(78, 101, 123);
-        logout.Click += async (_, _) => await SafeAsync(LogoutAsync);
+        logout.Click += (_, _) => SafeAction(Logout);
         _header.Controls.Add(logout);
 
         _tabs.Dock = DockStyle.Fill;
@@ -163,8 +163,8 @@ public partial class ManagementForm : Form
         _loginView.Dock = DockStyle.Fill;
         _header.Visible = false;
         _loginView.SetConnectionCaption(_services.DatabaseConnectionCaption);
-        _loginView.LoginRequested += async (_, _) => await ManagementLoginAsync();
-        _loginView.SetupFirstManagerRequested += async (_, _) => await SetupFirstManagerAsync();
+        _loginView.LoginRequested += (_, _) => ManagementLogin();
+        _loginView.SetupFirstManagerRequested += (_, _) => SetupFirstManager();
         Controls.Add(_loginView);
         _loginView.Show();
         _loginView.BringToFront();
