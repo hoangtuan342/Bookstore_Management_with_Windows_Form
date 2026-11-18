@@ -8,7 +8,7 @@ namespace TrangSach.BUS
 {
     /// <summary>
     /// Service quản lý sách. Giữ danh sách BookItemDto trong RAM,
-    /// nạp bất đồng bộ không gây deadlock luồng UI, cập nhật List khi có thay đổi.
+    /// lưu danh sách trong RAM theo mô hình 3 lớp đồng bộ, cập nhật List khi có thay đổi.
     /// </summary>
     public sealed class AdminBookService
     {
@@ -87,11 +87,7 @@ namespace TrangSach.BUS
             _books = _dao.Catalog.GetAllBooks();
             return OperationResult<Unit>.Success(new Unit());
         }
-
-        // ----------------------------------------------------------------
-        // GET books
-
-                private static string? Validate(BookManagementCommandDto c)
+        private static string? Validate(BookManagementCommandDto c)
         {
             if (string.IsNullOrWhiteSpace(c.Title) || c.Title.Trim().Length > 250)
                 return "Tên sách phải có từ 1 đến 250 ký tự.";
