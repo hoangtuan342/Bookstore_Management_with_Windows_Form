@@ -15,6 +15,11 @@ namespace TrangSach.BUS
             this.dao = dao;
         }
 
+        public IReadOnlyList<ManagerAuditLogDto> GetLogs()
+        {
+            return dao.Users.GetAuditLogs(500);
+        }
+
         public async Task<IReadOnlyList<ManagerAuditLogDto>> GetLogsAsync(CancellationToken cancellationToken = default)
         {
             return await dao.Users.GetAuditLogsAsync(500, cancellationToken);

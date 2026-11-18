@@ -41,17 +41,16 @@ namespace TrangSach.BUS
             CancellationToken cancellationToken = default)
         {
             if (_promotions.Count == 0)
-                _promotions = _dao.Promotions.GetAllPromotionsAsync(cancellationToken).GetAwaiter().GetResult();
+                _promotions = _dao.Promotions.GetAllPromotions();
 
             var result = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
             var active = _promotions.Where(p => p.StartsAt <= nowUtc && p.EndsAt >= nowUtc).ToList();
             foreach (var bookId in bookIds)
             {
                 decimal best = 0;
-                foreach (var promo in active)
+                foreach (var p in active)
                 {
-                    var rule = promo.BookRules.FirstOrDefault(r =>
-                        string.Equals(r.BookId, bookId, StringComparison.OrdinalIgnoreCase));
+                    var rule = p.BookRules.FirstOrDefault(r => string.Equals(r.BookId, bookId, StringComparison.OrdinalIgnoreCase));
                     if (rule != null && rule.DiscountPercent > best)
                         best = rule.DiscountPercent;
                 }
@@ -66,7 +65,7 @@ namespace TrangSach.BUS
         public decimal GetOrderDiscount(decimal subtotal, DateTime nowUtc)
         {
             if (_promotions.Count == 0)
-                _promotions = _dao.Promotions.GetAllPromotionsAsync().GetAwaiter().GetResult();
+                _promotions = _dao.Promotions.GetAllPromotions();
 
             var active = _promotions.Where(p => p.StartsAt <= nowUtc && p.EndsAt >= nowUtc);
             decimal best = 0;
@@ -87,7 +86,7 @@ namespace TrangSach.BUS
         public decimal GetVoucherDiscount(string voucherId, DateTime nowUtc)
         {
             if (_promotions.Count == 0)
-                _promotions = _dao.Promotions.GetAllPromotionsAsync().GetAwaiter().GetResult();
+                _promotions = _dao.Promotions.GetAllPromotions();
 
             var active = _promotions.Where(p => p.StartsAt <= nowUtc && p.EndsAt >= nowUtc);
             decimal best = 0;

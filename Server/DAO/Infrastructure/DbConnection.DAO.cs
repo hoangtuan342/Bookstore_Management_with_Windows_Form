@@ -35,6 +35,11 @@ public static class DbConnection
         return conn;
     }
 
+    public static void TestConnection()
+    {
+        using var conn = Open();
+    }
+
     public static async Task TestConnectionAsync(CancellationToken ct = default)
     {
         await using var conn = await OpenAsync(ct).ConfigureAwait(false);

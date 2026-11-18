@@ -16,6 +16,9 @@ public class BookStoreDao : IAsyncDisposable
     public static string ConnectionCaption => DbConnection.ConnectionCaption;
 
     /// <summary>Kiểm tra kết nối SQL Server khi khởi động.</summary>
+    public static void Initialize() => DbConnection.TestConnection();
+
+    /// <summary>Kiểm tra kết nối SQL Server khi khởi động.</summary>
     public static Task InitializeAsync(CancellationToken ct = default)
         => DbConnection.TestConnectionAsync(ct);
 

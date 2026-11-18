@@ -25,6 +25,167 @@ namespace TrangSach.BUS
         // ---- READ ----
         public IReadOnlyList<ManagerOrderRowDto> GetOrders() => _orders;
 
+        // ----------------------------------------------------------------
+        // Synchronous Methods (Phong cách thiết kế 3 lớp truyền thống)
+        // ----------------------------------------------------------------
+        public IReadOnlyList<ManagerOrderRowDto> GetOrdersList(string? status = null)
+        {
+            if (_orders.Count == 0) _orders = _dao.Orders.GetAllOrders();
+            if (string.IsNullOrWhiteSpace(status)) return _orders;
+            return _orders.Where(x => x.OrderStatus == status).ToList();
+        }
+
+        public IReadOnlyList<ManagerOrderLineDto> GetLines(string orderId)
+            => _dao.Orders.GetOrderLines(orderId);
+
+        public OperationResult<AdminOrderCreated> Create(CreateAdminOrderDto command, int? accountId)
+        {
+            var payment = command.PaymentMethod.Trim();
+            if (payment != "CashOnDelivery" && payment != "BankTransfer")
+                return OperationResult<AdminOrderCreated>.Invalid("Phương thức thanh toán không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(command.CustomerId)
+                || command.ShippingAddress.Trim().Length < 8 || command.ShippingAddress.Trim().Length > 500
+                || command.ReceiverPhone.Length > 30
+                || !new System.ComponentModel.DataAnnotations.PhoneAttribute().IsValid(command.ReceiverPhone))
+                return OperationResult<AdminOrderCreated>.Invalid("Khách hàng, địa chỉ giao hàng hoặc số điện thoại không hợp lệ.");
+
+            if (command.Lines.Count < 1 || command.Lines.Count > 1000
+                || command.Lines.Any(x => string.IsNullOrWhiteSpace(x.BookId) || x.Quantity < 1 || x.Quantity > 99))
+                return OperationResult<AdminOrderCreated>.Invalid("Đơn hàng cần có sách và số lượng hợp lệ.");
+
+            if (command.Lines.Select(x => x.BookId).Distinct().Count() != command.Lines.Count)
+                return OperationResult<AdminOrderCreated>.Invalid("Mỗi đầu sách chỉ được xuất hiện một lần trong đơn.");
+
+            var books = _dao.Catalog.GetBooksForOrder(command.Lines.Select(x => x.BookId).ToArray());
+            if (books.Count != command.Lines.Count)
+                return OperationResult<AdminOrderCreated>.Invalid("Một hoặc nhiều đầu sách không tồn tại hoặc đang ẩn.");
+
+            foreach (var line in command.Lines)
+            {
+                var book = books.FirstOrDefault(b => b.BookId == line.BookId);
+                if (string.IsNullOrEmpty(book.BookId) || book.Stock < line.Quantity)
+                    return OperationResult<AdminOrderCreated>.Conflict($"Tồn kho '{line.BookId}' không đủ.");
+            }
+
+            var now = DateTime.UtcNow;
+            var discounts = _pricing.GetActiveDiscounts(command.Lines.Select(x => x.BookId).ToArray(), now);
+
+            var orderLines = command.Lines.Select(x =>
+            {
+                var book = books.First(b => b.BookId == x.BookId);
+                decimal pct = discounts.TryGetValue(x.BookId, out var d) ? d : 0;
+                var unit = BookPricingService.ApplyDiscount(book.Price, pct);
+                return (BookId: x.BookId, Quantity: x.Quantity, UnitPrice: unit, LineTotal: unit * x.Quantity);
+            }).ToList();
+
+            var subtotal = orderLines.Sum(l => l.LineTotal);
+            var orderDiscPct = _pricing.GetOrderDiscount(subtotal, now);
+            var orderDisc = decimal.Round(subtotal * orderDiscPct / 100m, 2, MidpointRounding.AwayFromZero);
+            var total = subtotal - orderDisc;
+            var itemDisc = orderLines.Sum(l =>
+            {
+                var book = books.First(b => b.BookId == l.BookId);
+                decimal pct = discounts.TryGetValue(l.BookId, out var d) ? d : 0;
+                return (book.Price - BookPricingService.ApplyDiscount(book.Price, pct)) * l.Quantity;
+            });
+            var totalDisc = itemDisc + orderDisc;
+
+            var orderId = $"HD{now:yyyyMMddHHmmss}{Convert.ToHexString(RandomNumberGenerator.GetBytes(3))}";
+            var payStatus = payment == "CashOnDelivery" ? "Unpaid" : "AwaitingPayment";
+
+            _dao.Orders.InsertOrder(orderId, now, command.CustomerId, null, null,
+                total, totalDisc, "Pending", payStatus, payment,
+                command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(),
+                orderLines.Select(l => (l.BookId, l.Quantity, l.UnitPrice, l.LineTotal)).ToList());
+
+            var customerName = command.CustomerId;
+            var newRow = new ManagerOrderRowDto(orderId, now, "Pending", payStatus, payment, total,
+                customerName, string.Empty, command.ReceiverPhone, command.ShippingAddress, command.Lines.Sum(l => l.Quantity),
+                orderLines.Select(l =>
+                {
+                    var book = books.First(b => b.BookId == l.BookId);
+                    return new ManagerOrderLineDto(l.BookId, book.Title, l.Quantity, l.UnitPrice, l.LineTotal);
+                }).ToArray());
+            _orders.Insert(0, newRow);
+
+            return OperationResult<AdminOrderCreated>.Created(new AdminOrderCreated(orderId, total, now));
+        }
+
+        public OperationResult<Unit> Update(string id, UpdateAdminOrderDto command)
+        {
+            if (_orders.Count == 0) GetOrdersList();
+            var cached = _orders.FirstOrDefault(x => x.Id == id);
+            if (cached == null) return OperationResult<Unit>.NotFound();
+
+            cached.ShippingAddress = command.ShippingAddress;
+            cached.ReceiverPhone = command.ReceiverPhone;
+            cached.PaymentMethod = command.PaymentMethod;
+            return OperationResult<Unit>.Success(new Unit());
+        }
+
+        public OperationResult<Unit> UpdateStatus(string id, string status, int? accountId)
+        {
+            var next = status.Trim();
+            if (next != "Confirmed" && next != "Shipping" && next != "Completed" && next != "Cancelled")
+                return OperationResult<Unit>.Invalid("Trạng thái đơn hàng không hợp lệ.");
+
+            if (_orders.Count == 0) GetOrdersList();
+            var cached = _orders.FirstOrDefault(x => x.Id == id);
+            if (cached == null) return OperationResult<Unit>.NotFound();
+
+            bool allowed = cached.OrderStatus switch
+            {
+                "Pending" => next == "Confirmed" || next == "Cancelled",
+                "Confirmed" => next == "Shipping" || next == "Cancelled",
+                "Shipping" => next == "Completed",
+                _ => false
+            };
+            if (!allowed) return OperationResult<Unit>.Conflict($"Không thể chuyển đơn từ {cached.OrderStatus} sang {next}.");
+
+            string? newPayStatus = null;
+            if (next == "Cancelled")
+            {
+                _dao.Orders.RestoreStock(id);
+                _dao.Orders.DecrementVoucherUsage(id);
+                newPayStatus = cached.PaymentStatus == "Paid" ? "RefundPending" : "Cancelled";
+            }
+            if (next == "Completed" && cached.PaymentMethod == "CashOnDelivery")
+                newPayStatus = "Paid";
+
+            _dao.Orders.UpdateOrderStatus(id, next, newPayStatus);
+
+            cached.OrderStatus = next;
+            if (newPayStatus != null) cached.PaymentStatus = newPayStatus;
+            return OperationResult<Unit>.Success(new Unit());
+        }
+
+        public OperationResult<Unit> MarkBankTransferPaid(string id)
+        {
+            if (_orders.Count == 0) GetOrdersList();
+            var cached = _orders.FirstOrDefault(x => x.Id == id);
+            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached.PaymentMethod != "BankTransfer" || cached.PaymentStatus != "AwaitingPayment")
+                return OperationResult<Unit>.Conflict("Đơn này không ở trạng thái chờ xác nhận chuyển khoản.");
+
+            _dao.Orders.UpdateOrderStatus(id, cached.OrderStatus, "Paid");
+            cached.PaymentStatus = "Paid";
+            return OperationResult<Unit>.Success(new Unit());
+        }
+
+        public OperationResult<Unit> MarkRefundCompleted(string id)
+        {
+            if (_orders.Count == 0) GetOrdersList();
+            var cached = _orders.FirstOrDefault(x => x.Id == id);
+            if (cached == null) return OperationResult<Unit>.NotFound();
+            if (cached.OrderStatus != "Cancelled" || cached.PaymentStatus != "RefundPending")
+                return OperationResult<Unit>.Conflict("Đơn này không chờ ghi nhận hoàn tiền.");
+
+            _dao.Orders.UpdateOrderStatus(id, "Cancelled", "Refunded");
+            cached.PaymentStatus = "Refunded";
+            return OperationResult<Unit>.Success(new Unit());
+        }
+
         public async Task<IReadOnlyList<ManagerOrderRowDto>> GetAsync(string? status, CancellationToken ct = default)
         {
             if (_orders.Count == 0)
