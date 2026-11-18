@@ -1,20 +1,49 @@
 ﻿using TrangSach.Shared.DTO;
 using TrangSach.Shared.Security;
+using TrangSach.Shared.GUI;
 using System.Globalization;
 
 namespace TrangSach.Management.GUI;
 
 public partial class ManagementForm
 {
+    private static readonly List<(string Id, string Name)> AccountStatusOptions = new()
+    {
+        ("Active", "Hoạt động (Active)"),
+        ("Locked", "Đã khóa (Locked)"),
+        ("Disabled", "Vô hiệu hóa (Disabled)")
+    };
+
     private void EditCustomer(ManagerCustomerDto? old)
     {
-        var values = EditDialog.Show(this, old is null ? "Thêm khách hàng" : "Sửa khách hàng", [
-            ("id", "Mã khách (trống để tự sinh)", old?.Id ?? ""), ("name", "Họ tên", old?.FullName ?? ""),
-            ("phone", "Điện thoại", old?.PhoneNumber ?? ""), ("address", "Địa chỉ", old?.Address ?? ""),
-            ("user", "Tên đăng nhập (tạo/cập nhật tài khoản)", old?.UserName ?? ""), ("email", "Email", old?.Email ?? ""),
-            ("password", "Mật khẩu mới (bỏ trống nếu không đổi)", ""), ("status", "Trạng thái tài khoản", old?.AccountStatus ?? "Active")]);
+        var fields = new List<EditDialogField>
+        {
+            new("id", "Mã khách hàng", old?.Id ?? "(Tự động sinh khi để trống)", null, isReadOnly: old != null),
+            new("name", "Họ và tên", old?.FullName ?? ""),
+            new("phone", "Số điện thoại", old?.PhoneNumber ?? ""),
+            new("address", "Địa chỉ", old?.Address ?? ""),
+            new("user", "Tên đăng nhập", old?.UserName ?? ""),
+            new("email", "Email", old?.Email ?? ""),
+            new("password", old is null ? "Mật khẩu ban đầu" : "Mật khẩu mới (để trống nếu không đổi)", ""),
+            new("status", "Trạng thái tài khoản", old?.AccountStatus ?? "Active", AccountStatusOptions)
+        };
+
+        var values = EditDialog.Show(this, old is null ? "Thêm khách hàng mới" : $"Sửa khách hàng {old.Id}", fields);
         if (values is null) return;
-        _services.Manager.SaveCustomer(old?.Id, new SaveCustomerDto(EmptyToNull(values["id"]), values["name"], EmptyToNull(values["phone"]), EmptyToNull(values["address"]), EmptyToNull(values["user"]), EmptyToNull(values["email"]), EmptyToNull(values["password"]), values["status"]));
+
+        var idInput = old is null ? EmptyToNull(values["id"]) : old.Id;
+        if (idInput != null && idInput.Contains("Tự động", StringComparison.OrdinalIgnoreCase)) idInput = null;
+
+        _services.Manager.SaveCustomer(old?.Id, new SaveCustomerDto(
+            idInput,
+            values["name"],
+            EmptyToNull(values["phone"]),
+            EmptyToNull(values["address"]),
+            EmptyToNull(values["user"]),
+            EmptyToNull(values["email"]),
+            EmptyToNull(values["password"]),
+            values["status"]));
+
         LoadCustomers(true);
     }
 
@@ -33,16 +62,49 @@ public partial class ManagementForm
     private void EditEmployee(ManagerEmployeeDto? old)
     {
         var roles = _services.Manager.GetEmployeeRoles();
-        var values = EditDialog.Show(this, old is null ? "Thêm nhân viên" : "Sửa nhân viên", [
-            ("id", "Mã nhân viên (trống để tự sinh)", old?.Id ?? ""), ("last", "Họ", old?.LastName ?? ""), ("first", "Tên", old?.FirstName ?? ""),
-            ("birth", "Ngày sinh (yyyy-MM-dd)", old?.BirthDate?.ToString("yyyy-MM-dd") ?? ""), ("address", "Địa chỉ", old?.Address ?? ""),
-            ("salary", "Lương cơ bản", old?.BaseSalary.ToString(CultureInfo.InvariantCulture) ?? "0"), ("status", "Trạng thái nhân viên", old?.AccountStatus ?? "Active"),
-            ("user", "Tên đăng nhập", old?.UserName ?? ""), ("email", "Email", old?.Email ?? ""), ("password", "Mật khẩu (bắt buộc khi tạo tài khoản)", ""),
-            ("role", "Chức danh (" + string.Join(", ", roles.Select(x => x.Name)) + ")", old?.RoleName ?? "Sales"), ("loginStatus", "Trạng thái tài khoản", old?.LoginStatus ?? "Active")]);
+        var roleOptions = roles.Select(r => (r.Name, $"{r.Label} ({r.Name})")).ToList();
+
+        var fields = new List<EditDialogField>
+        {
+            new("id", "Mã nhân viên", old?.Id ?? "(Tự động sinh khi để trống)", null, isReadOnly: old != null),
+            new("last", "Họ đệm", old?.LastName ?? ""),
+            new("first", "Tên", old?.FirstName ?? ""),
+            new("birth", "Ngày sinh (yyyy-MM-dd)", old?.BirthDate?.ToString("yyyy-MM-dd") ?? ""),
+            new("address", "Địa chỉ liên hệ", old?.Address ?? ""),
+            new("salary", "Lương cơ bản (VNĐ)", old?.BaseSalary.ToString(CultureInfo.InvariantCulture) ?? "0"),
+            new("role", "Chức danh / Vai trò", old?.RoleName ?? StaffRoles.Sales, roleOptions),
+            new("status", "Trạng thái nhân sự", old?.AccountStatus ?? "Active", AccountStatusOptions),
+            new("user", "Tên đăng nhập hệ thống", old?.UserName ?? ""),
+            new("email", "Email", old?.Email ?? ""),
+            new("password", old is null ? "Mật khẩu ban đầu (bắt buộc)" : "Mật khẩu mới (để trống nếu không đổi)", ""),
+            new("loginStatus", "Trạng thái đăng nhập", old?.LoginStatus ?? "Active", AccountStatusOptions)
+        };
+
+        var values = EditDialog.Show(this, old is null ? "Thêm nhân viên mới" : $"Sửa nhân viên {old.Id}", fields);
         if (values is null) return;
+
         DateOnly? birth = DateOnly.TryParse(values["birth"], out var date) ? date : null;
-        if (!decimal.TryParse(values["salary"], NumberStyles.Number, CultureInfo.InvariantCulture, out var salary)) throw new InvalidOperationException("Lương phải là số.");
-        _services.Manager.SaveEmployee(old?.Id, new SaveEmployeeDto(EmptyToNull(values["id"]), values["last"], values["first"], birth, null, EmptyToNull(values["address"]), values["status"], salary, EmptyToNull(values["user"]), EmptyToNull(values["email"]), EmptyToNull(values["password"]), values["loginStatus"], values["role"]));
+        if (!decimal.TryParse(values["salary"], NumberStyles.Number, CultureInfo.InvariantCulture, out var salary) || salary < 0)
+            throw new InvalidOperationException("Lương cơ bản phải là số không âm.");
+
+        var idInput = old is null ? EmptyToNull(values["id"]) : old.Id;
+        if (idInput != null && idInput.Contains("Tự động", StringComparison.OrdinalIgnoreCase)) idInput = null;
+
+        _services.Manager.SaveEmployee(old?.Id, new SaveEmployeeDto(
+            idInput,
+            values["last"],
+            values["first"],
+            birth,
+            null,
+            EmptyToNull(values["address"]),
+            values["status"],
+            salary,
+            EmptyToNull(values["user"]),
+            EmptyToNull(values["email"]),
+            EmptyToNull(values["password"]),
+            values["loginStatus"],
+            values["role"]));
+
         LoadEmployees(true);
     }
 
@@ -76,25 +138,43 @@ public partial class ManagementForm
             {
                 var old = edit ? Selected<ManagerCategoryDto>(_referenceGrid) : null;
                 if (edit && old is null) throw new InvalidOperationException("Chọn danh mục cần sửa.");
-                var values = EditDialog.Show(this, "Danh mục", [("id", "Mã danh mục", old?.Id ?? ""), ("name", "Tên danh mục", old?.Name ?? "")]);
+                var fields = new List<EditDialogField>
+                {
+                    new("id", "Mã danh mục (để trống tự sinh)", old?.Id ?? "", null, isReadOnly: edit),
+                    new("name", "Tên danh mục", old?.Name ?? "")
+                };
+                var values = EditDialog.Show(this, edit ? $"Sửa danh mục {old?.Id}" : "Thêm danh mục", fields);
                 if (values is null) return;
-                _services.Manager.SaveCategory(old?.Id, new SaveCategoryDto(values["id"], values["name"])); break;
+                _services.Manager.SaveCategory(old?.Id, new SaveCategoryDto(EmptyToNull(values["id"]) ?? "", values["name"]));
+                break;
             }
             case 1:
             {
                 var old = edit ? Selected<ManagerAuthorDto>(_referenceGrid) : null;
                 if (edit && old is null) throw new InvalidOperationException("Chọn tác giả cần sửa.");
-                var values = EditDialog.Show(this, "Tác giả", [("name", "Tên tác giả", old?.Name ?? ""), ("bio", "Tiểu sử", old?.Biography ?? "")]);
+                var fields = new List<EditDialogField>
+                {
+                    new("name", "Tên tác giả", old?.Name ?? ""),
+                    new("bio", "Tiểu sử", old?.Biography ?? "")
+                };
+                var values = EditDialog.Show(this, edit ? $"Sửa tác giả #{old?.Id}" : "Thêm tác giả", fields);
                 if (values is null) return;
-                _services.Manager.SaveAuthor(old?.Id, new SaveAuthorDto(values["name"], EmptyToNull(values["bio"]))); break;
+                _services.Manager.SaveAuthor(old?.Id, new SaveAuthorDto(values["name"], EmptyToNull(values["bio"])));
+                break;
             }
             default:
             {
                 var old = edit ? Selected<ManagerPublisherDto>(_referenceGrid) : null;
                 if (edit && old is null) throw new InvalidOperationException("Chọn nhà xuất bản cần sửa.");
-                var values = EditDialog.Show(this, "Nhà xuất bản", [("name", "Tên nhà xuất bản", old?.Name ?? ""), ("address", "Địa chỉ", old?.Address ?? "")]);
+                var fields = new List<EditDialogField>
+                {
+                    new("name", "Tên nhà xuất bản", old?.Name ?? ""),
+                    new("address", "Địa chỉ", old?.Address ?? "")
+                };
+                var values = EditDialog.Show(this, edit ? $"Sửa nhà xuất bản #{old?.Id}" : "Thêm nhà xuất bản", fields);
                 if (values is null) return;
-                _services.Manager.SavePublisher(old?.Id, new SavePublisherDto(values["name"], EmptyToNull(values["address"]))); break;
+                _services.Manager.SavePublisher(old?.Id, new SavePublisherDto(values["name"], EmptyToNull(values["address"])));
+                break;
             }
         }
         _services.Invalidate("categories", "authors", "publishers", "lookups");
@@ -120,7 +200,12 @@ public partial class ManagementForm
 
     private void SaveSupplier(SupplierOptionDto? old)
     {
-        var values = EditDialog.Show(this, old is null ? "Thêm nhà cung cấp" : "Sửa nhà cung cấp", [("name", "Tên", old?.Name ?? ""), ("phone", "Điện thoại", old?.PhoneNumber ?? "")]);
+        var fields = new List<EditDialogField>
+        {
+            new("name", "Tên nhà cung cấp", old?.Name ?? ""),
+            new("phone", "Số điện thoại", old?.PhoneNumber ?? "")
+        };
+        var values = EditDialog.Show(this, old is null ? "Thêm nhà cung cấp mới" : $"Sửa nhà cung cấp {old.Id}", fields);
         if (values is null) return;
         if (old is null) _services.Manager.CreateSupplier(new CreateSupplierDto(values["name"], EmptyToNull(values["phone"])));
         else _services.Manager.UpdateSupplier(old.Id, new CreateSupplierDto(values["name"], EmptyToNull(values["phone"])));
@@ -135,7 +220,3 @@ public partial class ManagementForm
         if (Confirm($"Xóa nhà cung cấp {item.Name}?")) { _services.Manager.DeleteSupplier(item.Id); LoadSuppliers(true); }
     }
 }
-
-
-
-

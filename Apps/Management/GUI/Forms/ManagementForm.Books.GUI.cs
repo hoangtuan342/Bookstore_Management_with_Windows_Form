@@ -1,4 +1,5 @@
 ﻿using TrangSach.Shared.DTO;
+using TrangSach.Shared.GUI;
 using System.Globalization;
 
 namespace TrangSach.Management.GUI;
@@ -9,17 +10,40 @@ public partial class ManagementForm
     {
         ManagerBookDetailsDto? old = id is null ? null : _services.Manager.GetBookDetails(id);
         var lookups = GetLookups();
-        var values = EditDialog.Show(this, id is null ? "Thêm sách" : "Sửa sách", [
-            ("title", "Tên sách", old?.Title ?? ""), ("price", "Giá bán", old?.SalePrice.ToString(CultureInfo.InvariantCulture) ?? "0"),
-            ("unit", "Đơn vị", old?.Unit ?? "Quyển"), ("category", "Mã danh mục (" + string.Join(", ", lookups.Categories.Select(x => x.Id)) + ")", old?.CategoryId ?? lookups.Categories.FirstOrDefault()?.Id ?? ""),
-            ("publisher", "Mã NXB (để trống nếu không có)", old?.PublisherId?.ToString() ?? ""),
-            ("authors", "Mã tác giả, cách nhau dấu phẩy", string.Join(",", old?.AuthorIds ?? [])),
-            ("description", "Mô tả sách (tối đa 4.000 ký tự)", old?.Description ?? ""),
-            ("AvailableStock", "Số lượng tồn kho", old?.AvailableStock.ToString() ?? "0")]);
+
+        var categoryOptions = lookups.Categories.Select(c => (c.Id, $"{c.Name} ({c.Id})")).ToList();
+        var publisherOptions = new List<(string Id, string Name)> { ("", "-- Không chọn --") };
+        publisherOptions.AddRange(lookups.Publishers.Select(p => (p.Id.ToString(), p.Name)));
+
+        var authorHint = string.Join(", ", lookups.Authors.Take(5).Select(a => $"{a.Id}: {a.Name}"));
+
+        var fields = new List<EditDialogField>
+        {
+            new("title", "Tên sách", old?.Title ?? ""),
+            new("price", "Giá bán (VNĐ)", old?.SalePrice.ToString(CultureInfo.InvariantCulture) ?? "0"),
+            new("unit", "Đơn vị tính", old?.Unit ?? "Quyển"),
+            new("category", "Thể loại", old?.CategoryId ?? lookups.Categories.FirstOrDefault()?.Id ?? "", categoryOptions),
+            new("publisher", "Nhà xuất bản", old?.PublisherId?.ToString() ?? "", publisherOptions),
+            new("authors", $"Mã tác giả ({authorHint}...)", string.Join(",", old?.AuthorIds ?? [])),
+            new("description", "Mô tả sách", old?.Description ?? "")
+        };
+
+        if (old != null)
+        {
+            fields.Add(new EditDialogField("stock", "Tồn kho hiện tại", old.AvailableStock.ToString(), null, isReadOnly: true));
+        }
+
+        var values = EditDialog.Show(this, id is null ? "Thêm sách mới" : "Sửa thông tin sách", fields);
         if (values is null) return;
-        if (!decimal.TryParse(values["price"], NumberStyles.Number, CultureInfo.InvariantCulture, out var price)) throw new InvalidOperationException("Giá bán phải là số, nhập theo dạng 85000.");
-        var authorIds = values["authors"].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(int.Parse).ToList();
-        int? publisherId = int.TryParse(values["publisher"], out var pub) ? pub : null;
+
+        if (!decimal.TryParse(values["price"], NumberStyles.Number, CultureInfo.InvariantCulture, out var price) || price <= 0)
+            throw new InvalidOperationException("Giá bán phải là số dương lớn hơn 0.");
+
+        var authorIds = values["authors"].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(s => int.TryParse(s, out var aId) ? aId : throw new InvalidOperationException($"Mã tác giả '{s}' phải là số nguyên."))
+            .ToList();
+
+        int? publisherId = int.TryParse(values["publisher"], out var pub) && pub > 0 ? pub : null;
         var book = new CreateManagerBookDto(values["title"], price, values["unit"], values["category"], publisherId, authorIds, values["description"]);
         if (id is null) _services.Manager.CreateBook(book); else _services.Manager.UpdateBook(id, book);
         LoadBooks(true);
@@ -58,16 +82,14 @@ public partial class ManagementForm
         var rows = extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase) || extension.Equals(".xls", StringComparison.OrdinalIgnoreCase)
             ? _bookExcelFiles.Read(dialog.FileName)
             : _bookFiles.ReadForImport(dialog.FileName);
-        if (rows.Count == 0) throw new InvalidDataException("File không có dữ liệu sách.");
-        var result = MessageBox.Show(this, $"Đọc được {rows.Count} dòng. Thêm các sách này vào database?\nMã danh mục, nhà xuất bản và tác giả phải hợp lệ.", "Nhập CSV", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (rows.Count == 0) throw new InvalidOperationException("Tệp không có dữ liệu hợp lệ.");
+        var result = MessageBox.Show(this, $"Đọc được {rows.Count} dòng sách từ tệp. Thêm các sách này vào hệ thống?", "Nhập dữ liệu", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         if (result != DialogResult.Yes) return;
         foreach (var row in rows)
+        {
             _services.Manager.CreateBook(new CreateManagerBookDto(row.Title, row.SalePrice, row.Unit, row.CategoryId, row.PublisherId, row.AuthorIds));
+        }
         LoadBooks(true);
+        MessageBox.Show(this, $"Đã nhập thành công {rows.Count} cuốn sách.", "Nhập dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 }
-
-
-
-
-

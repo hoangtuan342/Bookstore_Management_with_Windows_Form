@@ -80,10 +80,20 @@ namespace TrangSach.BUS
 
         public string CreateCategory(SaveCategoryDto command)
         {
-            if (string.IsNullOrWhiteSpace(command.Id) || command.Id.Trim().Length > 20 || string.IsNullOrWhiteSpace(command.Name) || command.Name.Trim().Length < 2 || command.Name.Trim().Length > 120)
-                throw new ArgumentException("Mã hoặc tên loại sách không hợp lệ.");
+            if (string.IsNullOrWhiteSpace(command.Name) || command.Name.Trim().Length < 2 || command.Name.Trim().Length > 120)
+                throw new ArgumentException("Tên loại sách cần từ 2 đến 120 ký tự.");
 
-            var id = command.Id.Trim();
+            string id;
+            if (!string.IsNullOrWhiteSpace(command.Id))
+            {
+                id = command.Id.Trim();
+                if (id.Length > 20) throw new ArgumentException("Mã loại sách không được vượt quá 20 ký tự.");
+            }
+            else
+            {
+                id = $"TL{Convert.ToHexString(RandomNumberGenerator.GetBytes(4))}";
+            }
+
             if (_categories.Any(x => x.Id == id) || dao.Catalog.CategoryExists(id))
                 throw new InvalidOperationException("Mã loại sách đã tồn tại.");
 

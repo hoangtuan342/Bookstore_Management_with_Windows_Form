@@ -93,6 +93,15 @@ public class InventoryDao
     public void InsertReceipt(string receiptId, DateTime createdAt, string? employeeId, string supplierId, decimal total, List<(string BookId, int Qty, decimal Cost, decimal LineTotal)> lines)
     {
         using var conn = DbConnection.Open();
+
+        // Nếu employeeId chưa có, tự động lấy nhân viên đầu tiên trong hệ thống
+        if (string.IsNullOrWhiteSpace(employeeId))
+        {
+            using var cmdFindEmp = new SqlCommand("SELECT TOP 1 MaNV FROM NV ORDER BY MaNV", conn);
+            var found = cmdFindEmp.ExecuteScalar()?.ToString();
+            if (!string.IsNullOrWhiteSpace(found)) employeeId = found;
+        }
+
         using var tx = conn.BeginTransaction();
         try
         {

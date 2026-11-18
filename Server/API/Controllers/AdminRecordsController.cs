@@ -21,7 +21,7 @@ public sealed class AdminRecordsController(AdminRecordsService service) : Contro
         {
             var id = service.CreateCategory(new(r.Id, r.Name));
             return new { Id = id, Name = r.Name.Trim() };
-        }, StatusCodes.Status201Created, $"api/admin/categories/{r.Id.Trim()}");
+        }, StatusCodes.Status201Created, $"api/admin/categories");
 
     [Authorize(Roles = StaffRoles.ManagerOrCatalog), HttpPut("categories/{id}")]
     public IActionResult UpdateCategory(string id, CategoryRequest r) =>
@@ -113,7 +113,7 @@ public sealed class AdminRecordsController(AdminRecordsService service) : Contro
     private int? GetAccountId() => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var value) ? value : null;
 }
 
-public sealed class CategoryRequest { [Required, StringLength(20, MinimumLength = 1)] public string Id { get; init; } = ""; [Required, StringLength(120, MinimumLength = 2)] public string Name { get; init; } = ""; }
+public sealed class CategoryRequest { [StringLength(20)] public string? Id { get; init; } [Required, StringLength(120, MinimumLength = 2)] public string Name { get; init; } = ""; }
 public sealed class AuthorRequest { [Required, StringLength(180, MinimumLength = 2)] public string Name { get; init; } = ""; public string? Biography { get; init; } }
 public sealed class PublisherRequest { [Required, StringLength(180, MinimumLength = 2)] public string Name { get; init; } = ""; [StringLength(300)] public string? Address { get; init; } }
 public sealed class CustomerRequest
