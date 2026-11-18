@@ -1,0 +1,16 @@
+@page
+@model TrangSach.Customer.Web.Pages.Cart.IndexModel
+<div class="section-heading"><div><span class="eyebrow">GIỎ HÀNG CỦA BẠN</span><h1>Sách bạn đã chọn</h1></div><a class="button button-light" asp-page="/Index">Tiếp tục mua sắm</a></div>
+@if (Model.Lines.Count == 0)
+{
+    <div class="empty-state"><h2>Giỏ hàng đang trống</h2><p>Hãy chọn một cuốn sách bạn yêu thích để bắt đầu.</p><a class="button button-primary" asp-page="/Index">Khám phá sách</a></div>
+}
+else
+{
+    <div class="cart-layout"><section class="panel cart-lines">
+        @foreach (var line in Model.Lines)
+        {
+            <article class="cart-line"><div class="mini-cover">TS</div><div class="cart-book"><h3>@line.Title</h3><p class="muted">@line.Author · @line.UnitPrice.ToString("N0") ₫/cuốn</p></div><form method="post" asp-page-handler="Update" class="quantity-form"><input type="hidden" name="bookId" value="@line.BookId" /><label for="qty-@line.BookId">SL</label><input id="qty-@line.BookId" type="number" name="quantity" value="@line.Quantity" min="1" max="99" /><button class="button button-light" type="submit">Cập nhật</button></form><div class="line-total">@line.LineTotal.ToString("N0") ₫</div><form method="post" asp-page-handler="Remove"><input type="hidden" name="bookId" value="@line.BookId" /><button class="text-button danger" type="submit">Xóa</button></form></article>
+        }
+    </section><aside class="panel order-summary"><h2>Tóm tắt đơn hàng</h2><div class="summary-row"><span>@Model.Lines.Sum(line => line.Quantity) cuốn sách</span><strong>@Model.Subtotal.ToString("N0") ₫</strong></div><div class="summary-total"><span>Tạm tính</span><strong>@Model.Subtotal.ToString("N0") ₫</strong></div><p class="muted small">Phí giao hàng và giảm giá (nếu có) sẽ được tính khi xác nhận.</p><a class="button button-primary button-wide" asp-page="/Checkout/Index">Tiến hành thanh toán</a></aside></div>
+}

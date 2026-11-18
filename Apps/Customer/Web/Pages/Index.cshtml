@@ -1,0 +1,40 @@
+@page
+@model IndexModel
+<section class="hero">
+    <div class="hero-copy"><span class="eyebrow">MỘT GÓC NHỎ DÀNH CHO NGƯỜI YÊU SÁCH</span><h1>Mỗi cuốn sách,<br />một thế giới mới.</h1><p>Chọn một cuốn sách hay, dành cho mình một khoảng lặng và bắt đầu chuyến đi của riêng bạn.</p></div>
+    <div class="hero-art" aria-hidden="true"><div class="hero-book book-one">THE QUIET<br />MIND</div><div class="hero-book book-two">NHỮNG NGÀY<br />THƠ ẤU</div><div class="hero-book book-three">ĐI TÌM<br />BÌNH YÊN</div></div>
+</section>
+<section class="catalog-section">
+    <div class="section-heading"><div><span class="eyebrow">ĐƯỢC BẠN ĐỌC YÊU THÍCH</span><h2>Sách dành cho bạn</h2></div><span class="muted">@Model.Books.Count cuốn sách</span></div>
+    <form method="get" class="catalog-tools">
+        <input type="search" name="search" value="@Model.Search" placeholder="Tìm tên sách, tác giả, nội dung..." aria-label="Tìm kiếm sách" />
+        <select name="category" aria-label="Chọn thể loại"><option value="">Tất cả thể loại</option>@foreach (var item in Model.Categories) { <option value="@item" selected="@(item == Model.Category)">@item</option> }</select>
+        <button class="button button-primary" type="submit">Tìm sách</button>
+        @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.Category)) { <a class="button button-light" asp-page="/Index">Xóa lọc</a> }
+    </form>
+    @if (Model.Books.Count == 0) { <div class="empty-state">Chưa tìm thấy sách phù hợp. Hãy thử từ khóa hoặc thể loại khác.</div> }
+    else
+    {
+        <div class="book-grid">
+        @foreach (var book in Model.Books)
+        {
+            <article class="book-card">
+                <a class="book-cover @book.CoverStyle" asp-page="/Books/Details" asp-route-id="@book.Id">
+                    @if (!string.IsNullOrWhiteSpace(book.CoverImagePath))
+                    {
+                        <img class="book-cover-image" src="@book.CoverImagePath" alt="Bìa sách @book.Title" loading="lazy" />
+                    }
+                    else
+                    {
+                        <span class="cover-brand">TRANG SÁCH</span><span class="cover-title">@book.Title</span><span class="cover-author">@book.Author</span>
+                    }
+                    <span class="cover-label">@book.Label</span>
+                </a>
+                <div class="book-meta"><span class="eyebrow">@book.Category</span><h3><a asp-page="/Books/Details" asp-route-id="@book.Id">@book.Title</a></h3><p class="muted">@book.Author</p><div class="book-bottom"><strong class="price">@book.Price.ToString("N0") ₫</strong><span class="stock">@(book.AvailableStock > 0 ? $"Còn {book.AvailableStock} cuốn" : "Tạm hết hàng")</span></div>
+                    <div class="card-actions"><a class="button button-light" asp-page="/Books/Details" asp-route-id="@book.Id">Chi tiết</a><form method="post" asp-page-handler="AddToCart"><input type="hidden" name="id" value="@book.Id" /><button class="button button-primary" type="submit" disabled="@(book.AvailableStock <= 0)">Thêm vào giỏ</button></form></div>
+                </div>
+            </article>
+        }
+        </div>
+    }
+</section>

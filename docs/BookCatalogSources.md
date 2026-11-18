@@ -1,0 +1,20 @@
+# Book catalog sources
+
+The demo catalog's twelve synthetic titles were replaced with real Vietnamese editions. Descriptions are short paraphrases. Cover files are local copies so the catalog does not depend on third-party image hosts at runtime.
+
+| Book | Metadata source | Cover source | Local cover |
+|---|---|---|---|
+| Mắt biếc — Nguyễn Nhật Ánh | [Google Books](https://books.google.com/books/about/M%E1%BA%AFt_bi%E1%BA%BFc.html?id=ngmRzQEACAAJ) | [Fahasa](https://www.fahasa.com/mat-biec-tai-ban-2022-406033.html) | `Apps/Customer/Web/wwwroot/images/books/DEMO-S001.jpg` |
+| Cô gái đến từ hôm qua — Nguyễn Nhật Ánh | [Google Books](https://books.google.com/books/about/C%C3%B4_g%C3%A1i_%C4%91%E1%BA%BFn_t%E1%BB%AB_h%C3%B4m_qua.html?id=oMQsnwEACAAJ) | [Fahasa](https://www.fahasa.com/co-gai-den-tu-hom-qua-164818.html) | `Apps/Customer/Web/wwwroot/images/books/DEMO-S002.jpg` |
+| Tôi thấy hoa vàng trên cỏ xanh — Nguyễn Nhật Ánh | [Google Books](https://books.google.com/books/about/T%C3%B4i_th%E1%BA%A5y_hoa_v%C3%A0ng_tr%C3%AAn_c%E1%BB%8F_xanh.html?id=dw1l0AEACAAJ) | [NetaBooks](https://www.netabooks.vn/toi-thay-hoa-vang-tren-co-xanh) | `Apps/Customer/Web/wwwroot/images/books/DEMO-S003.jpg` |
+| Dế mèn phiêu lưu ký — Tô Hoài | [Google Books](https://books.google.com/books/about/D%E1%BA%BF_m%C3%A8n_phi%C3%AAu_l%C6%B0u_k%C3%BD.html?id=mvDi0AEACAAJ) | [NXB Kim Đồng](https://nxbkimdong.com.vn/products/de-men-phieu-luu-ky-ban-bia-mem-25) | `Apps/Customer/Web/wwwroot/images/books/DEMO-S004.jpg` |
+| Cây cam ngọt của tôi — José Mauro de Vasconcelos | [Google Books](https://books.google.com/books/about/C%C3%A2y_cam_ng%E1%BB%8Dt_c%E1%BB%A7a_t%C3%B4i.html?id=OBwM0AEACAAJ) | [NetaBooks](https://www.netabooks.vn/cay-cam-ngot-cua-toi-an-ban-dac-biet-20-nam-thanh-lap-nha-nam-bia-cung) | `Apps/Customer/Web/wwwroot/images/books/DEMO-S005.jpg` |
+| Nhà giả kim — Paulo Coelho | [Google Books](https://books.google.com/books/about/Nh%C3%A0_gi%E1%BA%A3_kim.html?id=1onn0AEACAAJ) | [NetaBooks](https://www.netabooks.vn/nha-gia-kim) | `Apps/Customer/Web/wwwroot/images/books/DEMO-S006.jpg` |
+| Đắc nhân tâm — Dale Carnegie | [Google Books](https://books.google.com/books/about/%C4%90%E1%BA%AFc_nh%C3%A2n_t%C3%A2m.html?id=Ml6bzwEACAAJ) | [NetaBooks](https://www.netabooks.vn/dac-nhan-tam-how-to-win-friends-and-influence-people) | `Apps/Customer/Web/wwwroot/images/books/DEMO-S007.jpg` |
+| Tuổi trẻ đáng giá bao nhiêu? — Rosie Nguyễn | [Google Books](https://books.google.com/books/about/Tu%E1%BB%95i_tr%E1%BA%BB_%C4%91%C3%A1ng_gi%C3%A1_bao_nhi%C3%AAu.html?id=eZE50AEACAAJ) | [NetaBooks](https://www.netabooks.vn/tuoi-tre-dang-gia-bao-nhieu) | `Apps/Customer/Web/wwwroot/images/books/DEMO-S008.jpg` |
+| Atomic Habits — James Clear | [Google Books](https://books.google.com/books/about/Atomic_Habits_Thay_%C4%90%E1%BB%95i_T%C3%AD_Hon_Hi%E1%BB%87u.html?id=ZEzcEAAAQBAJ) | [Google Books cover](https://books.google.com/books/publisher/content/images/frontcover/ZEzcEAAAQBAJ?fife=w600-h900&source=gbs_api) | `Apps/Customer/Web/wwwroot/images/books/DEMO-S009.jpg` |
+| Sapiens: Lược sử loài người — Yuval Noah Harari | [Google Books](https://books.google.com/books/about/Sapiens.html?id=hN0vEQAAQBAJ) | [Google Books cover](https://books.google.com/books/publisher/content/images/frontcover/hN0vEQAAQBAJ?fife=w600-h900&source=gbs_api) | `Apps/Customer/Web/wwwroot/images/books/DEMO-S010.jpg` |
+| Harry Potter và hòn đá phù thủy — J. K. Rowling | [Google Books](https://books.google.com/books/about/Harry_Potter_v%C3%A0_h%C3%B2n_%C4%91%C3%A1_ph%C3%B9_th%E1%BB%A7y.html?id=uEI30AEACAAJ) | [ADCBook](https://adcbook.net.vn/harry-potter-tap-1-harry-potter-va-hon-da-phu-thuy) | `Apps/Customer/Web/wwwroot/images/books/DEMO-S011.jpg` |
+| Hoàng tử bé — Antoine de Saint-Exupéry | [Google Books](https://books.google.com/books/about/Ho%C3%A0ng_T%E1%BB%AD_B%C3%A9.html?id=MOPNEAAAQBAJ) | [Fahasa](https://www.fahasa.com/hoang-tu-be-tai-ban-2025.html) | `Apps/Customer/Web/wwwroot/images/books/DEMO-S012.jpg` |
+
+The database update script is [RealBookCatalog.sql](RealBookCatalog.sql). It keeps each stable `MaSach`, stock quantity, sale price and transaction link intact.

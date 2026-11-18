@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>TrangSach.Management.Web.BUS</AssemblyName>
+    <RootNamespace>TrangSach.Management.Web.BUS</RootNamespace>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Shared\DTO\TrangSach.Shared.DTO.csproj" />
+    <ProjectReference Include="..\..\..\..\Shared\Security\TrangSach.Shared.Security.csproj" />
+    <PackageReference Include="NPOI" Version="2.7.5" />
+    <PackageReference Include="QuestPDF" Version="2026.9.1" />
+  </ItemGroup>
+</Project>

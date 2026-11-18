@@ -1,12 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <AssemblyName>TrangSach.DAO</AssemblyName>
+    <RootNamespace>TrangSach.DAO</RootNamespace>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Infrastructure\BookStore.Infrastructure\BookStore.Infrastructure.csproj" />
-    <ProjectReference Include="..\Domain\BookStore.Domain\BookStore.Domain.csproj" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.5" />
+    <ProjectReference Include="..\..\Shared\DTO\TrangSach.Shared.DTO.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.8" />
   </ItemGroup>
 </Project>

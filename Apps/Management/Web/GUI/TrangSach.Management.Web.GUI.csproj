@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <AssemblyName>TrangSach.Management.Web.GUI</AssemblyName>
+    <RootNamespace>TrangSach.Management.Web.GUI</RootNamespace>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\BUS\Web\TrangSach.Management.Web.BUS.csproj" />
+    <ProjectReference Include="..\..\..\..\Shared\DTO\TrangSach.Shared.DTO.csproj" />
+    <ProjectReference Include="..\..\..\..\Shared\Security\TrangSach.Shared.Security.csproj" />
+  </ItemGroup>
+</Project>

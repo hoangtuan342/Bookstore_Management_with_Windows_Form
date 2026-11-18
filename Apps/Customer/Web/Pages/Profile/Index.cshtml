@@ -1,0 +1,5 @@
+@page
+@model TrangSach.Customer.Web.Pages.Profile.IndexModel
+<section class="panel profile-panel"><span class="eyebrow">TÀI KHOẢN CỦA BẠN</span><h1>Hồ sơ cá nhân</h1><p class="muted">Thông tin tài khoản và liên hệ đang được sử dụng cho đơn hàng.</p>
+<dl class="profile-details"><dt>Họ và tên</dt><dd>@Model.Profile?.FullName</dd><dt>Tên đăng nhập</dt><dd>@Model.Profile?.UserName</dd><dt>Email</dt><dd>@Model.Profile?.Email</dd><dt>Số điện thoại</dt><dd>@(string.IsNullOrWhiteSpace(Model.Profile?.PhoneNumber) ? "Chưa cập nhật" : Model.Profile.PhoneNumber)</dd><dt>Địa chỉ</dt><dd>@(string.IsNullOrWhiteSpace(Model.Profile?.Address) ? "Chưa cập nhật" : Model.Profile.Address)</dd></dl>
+<a class="button button-primary" asp-page="/Orders/Index">Đơn hàng của tôi</a></section>

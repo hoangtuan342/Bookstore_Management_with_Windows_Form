@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <AssemblyName>TrangSach.API</AssemblyName>
+    <RootNamespace>TrangSach.API</RootNamespace>
+<TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>TrangSach-API-Local</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="TrangSach.BUS" />
+    <Using Include="TrangSach.DAO" />
+    <ProjectReference Include="..\DAO\TrangSach.DAO.csproj" />
+    <ProjectReference Include="..\BUS\TrangSach.BUS.csproj" />
+    <ProjectReference Include="..\..\Shared\DTO\TrangSach.Shared.DTO.csproj" />
+    <ProjectReference Include="..\..\Shared\Security\TrangSach.Shared.Security.csproj" />
+  </ItemGroup>
+
+</Project>

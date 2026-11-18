@@ -1,0 +1,11 @@
+@page "{id}"
+@model TrangSach.Customer.Web.Pages.Orders.DetailsModel
+@if (Model.Order is { } order)
+{
+    <nav class="breadcrumbs"><a asp-page="/Orders/Index">Đơn hàng</a><span>/</span><span>@order.Id</span></nav>
+    <div class="section-heading"><div><span class="eyebrow">ĐẶT LÚC @order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span><h1>Đơn hàng @order.Id</h1></div><span class="status-pill">@order.Status</span></div>
+    <div class="checkout-layout"><section class="panel"><h2>Sản phẩm</h2>@foreach (var line in order.Lines) { <article class="order-product"><div><h3>@line.Title</h3><p class="muted">@line.UnitPrice.ToString("N0") ₫ × @line.Quantity</p></div><strong>@line.LineTotal.ToString("N0") ₫</strong></article> }</section>
+        <aside class="panel order-summary"><h2>Thông tin đơn hàng</h2><p><strong>Người nhận:</strong> @order.ReceiverPhone</p><p><strong>Địa chỉ:</strong> @order.ShippingAddress</p><p><strong>Phương thức:</strong> @PaymentName(order.PaymentMethod)</p><p><strong>Thanh toán:</strong> @order.PaymentStatus</p><div class="summary-row"><span>Giảm giá</span><strong>−@order.DiscountAmount.ToString("N0") ₫</strong></div><div class="summary-total"><span>Tổng thanh toán</span><strong>@order.TotalAmount.ToString("N0") ₫</strong></div><a class="button button-light button-wide" asp-page="/Orders/Index">Quay lại đơn hàng</a></aside>
+    </div>
+}
+@functions { private static string PaymentName(string method) => method switch { "CashOnDelivery" => "Thanh toán khi nhận hàng", "BankTransfer" => "Chuyển khoản", _ => method }; }

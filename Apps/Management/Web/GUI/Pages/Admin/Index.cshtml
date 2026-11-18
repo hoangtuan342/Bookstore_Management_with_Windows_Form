@@ -1,0 +1,13 @@
+@page
+@model TrangSach.Management.Web.GUI.Pages.Admin.IndexModel
+<div class="welcome-row"><div><h2>Chào mừng trở lại, @User.Identity?.Name</h2><p>Theo dõi nhanh tình hình kinh doanh của cửa hàng.</p></div><span class="date-chip">@DateTime.Today.ToString("dd/MM/yyyy")</span></div>
+@if (Model.Summary is { } data)
+{
+    <div class="stat-grid"><article class="stat-card"><span>Doanh thu tháng này</span><strong>@data.RevenueThisMonth.ToString("N0") ₫</strong><small>Đơn đã hoàn tất</small></article><article class="stat-card"><span>Đơn hàng hôm nay</span><strong>@data.OrdersToday</strong><small>@data.PendingOrders đơn đang chờ</small></article><article class="stat-card"><span>Sách đang bán</span><strong>@data.ActiveBooks</strong><small>@data.LowStockBooks sách sắp hết</small></article><article class="stat-card"><span>Khách hàng</span><strong>@data.CustomerCount</strong><small>Tổng khách trong hệ thống</small></article></div>
+    @if (Model.WeeklyTrend is { } trend)
+    {
+        <section class="panel dashboard-trend"><div class="panel-head"><div><span class="eyebrow">7 NGÀY GẦN ĐÂY</span><h2>Doanh thu theo ngày</h2></div><a class="button light" asp-page="/Admin/Reports/Index" asp-route-days="7">Mở báo cáo</a></div><div class="trend-bars">@foreach(var day in trend.RevenueByDayDto){<div class="trend-day"><div class="trend-bar-area"><i style="height:@(Model.BarHeight(day.Revenue))%"></i></div><strong>@day.Revenue.ToString("N0") ₫</strong><span>@day.Date.ToString("dd/MM")</span></div>}</div></section>
+    }
+    <section class="panel"><div class="panel-head"><div><span class="eyebrow">HOẠT ĐỘNG GẦN ĐÂY</span><h2>Đơn hàng mới</h2></div><a class="button light" asp-page="/Admin/Orders/Index">Xem tất cả</a></div><div class="table-wrap"><table><thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Ngày đặt</th><th>Trạng thái</th><th>Tổng tiền</th></tr></thead><tbody>@foreach (var order in data.RecentOrders) { <tr><td>@order.Id</td><td>@order.CustomerName</td><td>@order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td><td><span class="status">@order.OrderStatus</span></td><td>@order.TotalAmount.ToString("N0") ₫</td></tr> }</tbody></table></div></section>
+}
+else { <div class="panel">Không có dữ liệu tổng quan.</div> }

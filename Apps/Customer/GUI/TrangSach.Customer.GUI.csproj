@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>TrangSach.Customer.GUI</AssemblyName>
+    <RootNamespace>TrangSach.Customer.GUI</RootNamespace>
+<OutputType>WinExe</OutputType>
+    <StartupObject>TrangSach.Customer.GUI.CustomerForm</StartupObject>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="TrangSach.Shared.GUI" />
+    <ProjectReference Include="..\..\Shared\GUI\TrangSach.Shared.GUI.csproj" />
+    <ProjectReference Include="..\BUS\TrangSach.Customer.BUS.csproj" />
+    <ProjectReference Include="..\..\..\Shared\DTO\TrangSach.Shared.DTO.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Security\TrangSach.Shared.Security.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="appsettings.GUI.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
+
+

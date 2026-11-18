@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · Trang Sách</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" asp-page="/Index"><span class="brand-mark">TS</span><span>Trang Sách<small>một góc nhỏ dành cho người yêu sách</small></span></a>
+        <nav class="main-nav">
+            <a asp-page="/Index">Cửa hàng</a>
+            @if (User.IsInRole("Customer"))
+            {
+                <a asp-page="/Cart/Index">Giỏ hàng</a>
+                <a asp-page="/Orders/Index">Đơn hàng</a>
+                <a asp-page="/Profile/Index">Hồ sơ</a>
+            }
+        </nav>
+        <div class="account-nav">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <span class="welcome">Xin chào, @User.Identity.Name</span>
+                <form method="post" asp-page="/Account/Logout"><button class="button button-light" type="submit">Đăng xuất</button></form>
+            }
+            else
+            {
+                <a class="button button-light" asp-page="/Account/Login">Đăng nhập</a>
+                <a class="button button-primary" asp-page="/Account/Register">Đăng ký</a>
+            }
+        </div>
+    </header>
+    <main class="page-shell">
+        @if (TempData["Notice"] is string notice) { <div class="notice">@notice</div> }
+        @RenderBody()
+    </main>
+    <footer class="site-footer">© @DateTime.Now.Year Trang Sách · Chúc bạn tìm được cuốn sách phù hợp.</footer>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

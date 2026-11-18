@@ -1,10 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>TrangSach.Customer.BUS</AssemblyName>
+    <RootNamespace>TrangSach.Customer.BUS</RootNamespace>
+<TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Shared\Contracts\BookStore.Contracts\BookStore.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Shared\DTO\TrangSach.Shared.DTO.csproj" />
   </ItemGroup>
 </Project>

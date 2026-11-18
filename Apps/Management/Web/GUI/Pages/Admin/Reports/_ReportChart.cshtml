@@ -1,0 +1,93 @@
+@model TrangSach.Management.Web.GUI.Pages.Admin.Reports.ReportChartPanel
+<section class="panel report-chart-card report-chart-@Model.Type.ToString().ToLowerInvariant()">
+    <div class="report-chart-heading">
+        <h2>@Model.Title</h2>
+        @if (Model.IsDaily)
+        {
+            <a class="button light report-detail-link" asp-page="/Admin/Reports/Daily" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">Xem toàn bộ</a>
+        }
+    </div>
+    @if (Model.Type == TrangSach.Management.Web.GUI.Pages.Admin.Reports.ReportChartType.Line)
+    {
+        var series = Model.Series ?? [];
+        if (series.Count == 0 || series[0].Items.Count == 0)
+        {
+            <div class="report-chart-empty">Chưa có dữ liệu trong kỳ.</div>
+        }
+        else
+        {
+            <svg class="report-line-svg" viewBox="0 0 600 145" preserveAspectRatio="none" role="img" aria-label="@Model.Title">
+                <line x1="10" y1="8" x2="590" y2="8" />
+                <line x1="10" y1="70" x2="590" y2="70" />
+                <line x1="10" y1="133" x2="590" y2="133" />
+                @foreach (var line in series)
+                {
+                    var points = Model.PlotPoints(line);
+                    <polyline points="@Model.PointsAttribute(points)" style="stroke:@line.Color" />
+                    @foreach (var point in points)
+                    {
+                        <circle cx="@Model.Coordinate(point.X)" cy="@Model.Coordinate(point.Y)" r="3.2" style="fill:@line.Color"><title>@point.Label: @point.Display</title></circle>
+                    }
+                }
+            </svg>
+            <div class="report-line-labels">@foreach (var item in Model.AxisLabels) { <span title="@item.Label">@item.Label</span> }</div>
+            @if (series.Count > 1)
+            {
+                <div class="report-chart-legend">@foreach (var line in series) { <span><i style="background:@line.Color"></i>@line.Name</span> }</div>
+            }
+        }
+    }
+    else if (Model.Type == TrangSach.Management.Web.GUI.Pages.Admin.Reports.ReportChartType.HorizontalBar)
+    {
+        @if (Model.Items.Count == 0)
+        {
+            <div class="report-chart-empty">Chưa có dữ liệu trong kỳ.</div>
+        }
+        else
+        {
+            <div class="report-horizontal-chart">
+                @foreach (var item in Model.Items)
+                {
+                    <div class="report-horizontal-row" title="@item.Label: @item.Display">
+                        <div><span>@item.Label</span><strong>@item.Display</strong></div>
+                        <div class="report-horizontal-track"><i style="width:@(Model.Height(item.Value))%"></i></div>
+                    </div>
+                }
+            </div>
+        }
+    }
+    else if (Model.Type == TrangSach.Management.Web.GUI.Pages.Admin.Reports.ReportChartType.Donut)
+    {
+        @if (Model.Items.Count == 0 || Model.Maximum <= 0)
+        {
+            <div class="report-chart-empty">Chưa có dữ liệu trong kỳ.</div>
+        }
+        else
+        {
+            <div class="report-donut-layout">
+                <div class="report-donut" style="background:@Model.DonutGradient"><div><strong>@Model.Items.Sum(x => x.Value).ToString("N0")</strong><span>Tổng kỳ này</span></div></div>
+                <div class="report-donut-legend">@for (var i = 0; i < Model.Items.Count; i++) { var item = Model.Items[i]; <div title="@item.Label: @item.Display"><i class="donut-color-@(i % 8)"></i><span>@item.Label</span><strong>@item.Display</strong></div> }</div>
+            </div>
+        }
+    }
+    else
+    {
+        @if (Model.Items.Count == 0)
+        {
+            <div class="report-chart-empty">Chưa có dữ liệu trong kỳ.</div>
+        }
+        else
+        {
+            <div class="report-column-chart">
+                @foreach (var item in Model.Items)
+                {
+                    <div class="report-column" title="@item.Label: @item.Display">
+                        <strong>@item.Display</strong>
+                        <div class="report-column-track"><i style="height:@(Model.Height(item.Value))%"></i></div>
+                        <span>@item.Label</span>
+                    </div>
+                }
+            </div>
+        }
+    }
+</section>

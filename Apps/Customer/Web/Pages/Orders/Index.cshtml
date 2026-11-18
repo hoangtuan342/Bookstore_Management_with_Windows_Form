@@ -1,0 +1,17 @@
+@page
+@model TrangSach.Customer.Web.Pages.Orders.IndexModel
+<div class="section-heading"><div><span class="eyebrow">LỊCH SỬ MUA SẮM</span><h1>Đơn hàng của tôi</h1></div></div>
+@if (Model.Orders.Count == 0)
+{
+    <div class="empty-state"><h2>Bạn chưa có đơn hàng</h2><p>Đơn hàng đã đặt sẽ xuất hiện tại đây.</p><a class="button button-primary" asp-page="/Index">Khám phá sách</a></div>
+}
+else
+{
+    <section class="panel order-list">
+    @foreach (var order in Model.Orders)
+    {
+        <article class="order-row"><div><span class="eyebrow">MÃ ĐƠN</span><h3>@order.Id</h3><p class="muted">@order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · @order.Lines.Sum(line => line.Quantity) cuốn</p></div><div><span class="status-pill">@order.Status</span><p class="muted">@PaymentName(order.PaymentMethod) · @order.PaymentStatus</p></div><strong class="price">@order.TotalAmount.ToString("N0") ₫</strong><a class="button button-light" asp-page="/Orders/Details" asp-route-id="@order.Id">Xem đơn hàng</a>@if(order.Status is "Pending" or "Confirmed"){<form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Hủy đơn @order.Id?')"><input type="hidden" name="id" value="@order.Id"/><button class="button button-light" type="submit">Hủy đơn</button></form>}</article>
+    }
+    </section>
+}
+@functions { private static string PaymentName(string method) => method switch { "CashOnDelivery" => "Thanh toán khi nhận hàng", "BankTransfer" => "Chuyển khoản", _ => method }; }

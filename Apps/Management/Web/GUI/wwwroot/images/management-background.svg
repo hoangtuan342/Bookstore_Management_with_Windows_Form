@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1200" viewBox="0 0 1920 1200" fill="none">
+ <defs>
+  <linearGradient id="wall" x1="0" y1="0" x2="1920" y2="1200" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF4DF"/><stop offset=".44" stop-color="#F8F8EF"/><stop offset="1" stop-color="#EAF7F4"/></linearGradient>
+  <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#C87945"/><stop offset="1" stop-color="#874E3A"/></linearGradient>
+  <linearGradient id="bookBlue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#42B5C8"/><stop offset="1" stop-color="#24738E"/></linearGradient>
+  <linearGradient id="bookCoral" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FF9B6A"/><stop offset="1" stop-color="#DC5262"/></linearGradient>
+  <linearGradient id="bookViolet" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#A78BDA"/><stop offset="1" stop-color="#6854AD"/></linearGradient>
+  <linearGradient id="bookGreen" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8BCB79"/><stop offset="1" stop-color="#368B71"/></linearGradient>
+  <filter id="soft"><feGaussianBlur stdDeviation="42"/></filter>
+  <filter id="shadow" x="-20%" y="-20%" width="150%" height="160%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#45352D" flood-opacity=".16"/></filter>
+  <pattern id="speckle" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="4" cy="5" r="1.2" fill="#B7834E" fill-opacity=".13"/><circle cx="20" cy="18" r="1" fill="#458D84" fill-opacity=".12"/></pattern>
+ </defs>
+ <path fill="url(#wall)" d="M0 0h1920v1200H0z"/>
+ <ellipse cx="240" cy="310" rx="330" ry="280" fill="#FFB14D" fill-opacity=".42" filter="url(#soft)"/>
+ <ellipse cx="1665" cy="270" rx="370" ry="300" fill="#55C9BB" fill-opacity=".40" filter="url(#soft)"/>
+ <ellipse cx="1500" cy="1030" rx="390" ry="250" fill="#A889DC" fill-opacity=".29" filter="url(#soft)"/>
+ <ellipse cx="220" cy="1040" rx="320" ry="260" fill="#F2786D" fill-opacity=".28" filter="url(#soft)"/>
+ <!-- bright bookshop shelves framing the working area -->
+ <g filter="url(#shadow)">
+  <path d="M0 0h430v430H0z" fill="#F6D8A8" fill-opacity=".72"/>
+  <path d="M0 0h430v24H0z" fill="url(#wood)"/><path d="M0 422h430v22H0z" fill="url(#wood)"/>
+  <path d="M28 68h54v332H28z" fill="url(#bookCoral)"/><path d="M37 84h36v263H37z" fill="#FFE3B8"/><path d="M47 95v225" stroke="#D95B56" stroke-width="5"/><path d="M37 354h36v18H37z" fill="#D95B56"/>
+  <path d="M91 43h72v357H91z" fill="url(#bookBlue)"/><path d="M101 59h52v302h-52z" fill="#B8EDF0"/><path d="M112 76h29v190h-29z" fill="#48A9B5"/><path d="M101 368h52v14h-52z" fill="#22758D"/>
+  <path d="M172 93h48v307h-48z" fill="#F2C94C"/><path d="M180 109h32v248h-32z" fill="#FFF0A4"/><path d="M187 122h18v194h-18z" fill="#E6A92F"/>
+  <path d="M230 52h82v348h-82z" fill="url(#bookViolet)"/><path d="M240 69h61v291h-61z" fill="#DCD0FA"/><path d="M252 88h37v187h-37z" fill="#8975C5"/><path d="M240 367h61v16h-61z" fill="#59489A"/>
+  <path d="M321 80h47v320h-47z" fill="url(#bookGreen)"/><path d="M329 98h31v247h-31z" fill="#D1E9A4"/><path d="M336 112h17v199h-17z" fill="#64A95D"/>
+  <path d="M376 38h39v362h-39z" fill="#F28D55"/><path d="M383 55h25v291h-25z" fill="#FFD1A1"/><path d="M390 68h12v219h-12z" fill="#D5654D"/>
+ </g>
+ <g opacity=".72">
+  <path d="M1510 0h410v390h-410z" fill="#D0F0E9" fill-opacity=".73"/>
+  <path d="M1510 0h410v23h-410z" fill="#428B7F"/><path d="M1510 377h410v22h-410z" fill="#428B7F"/>
+  <path d="M1535 62h62v300h-62z" fill="#E96B5D"/><path d="M1544 76h44v244h-44z" fill="#FFC49B"/><path d="M1555 93h22v174h-22z" fill="#DD554F"/>
+  <path d="M1605 38h78v324h-78z" fill="#4F91CF"/><path d="M1616 54h56v276h-56z" fill="#C7E6FF"/><path d="M1628 69h31v190h-31z" fill="#4F91CF"/>
+  <path d="M1692 91h49v271h-49z" fill="#F4C84B"/><path d="M1700 107h33v216h-33z" fill="#FFF0A0"/>
+  <path d="M1750 48h72v314h-72z" fill="#9B72C6"/><path d="M1760 63h52v268h-52z" fill="#DCC6F1"/><path d="M1771 81h29v175h-29z" fill="#8962B7"/>
+  <path d="M1830 75h52v287h-52z" fill="#55A77D"/><path d="M1838 91h36v235h-36z" fill="#C9EBA8"/>
+ </g>
+ <!-- leafy plant -->
+ <g opacity=".86" filter="url(#shadow)">
+  <path d="M1665 525c-5-105 16-181 70-241M1681 460c-48-81-95-108-151-111 25 59 75 100 151 111ZM1701 402c52-83 100-118 162-124-23 68-76 111-162 124ZM1688 349c-14-69-4-123 30-171 26 63 17 121-30 171ZM1732 319c34-92 83-145 152-163-10 75-58 129-152 163Z" fill="#43A879"/>
+  <path d="M1633 522h123l-15 101h-94z" fill="#F27D62"/><path d="M1644 536h101" stroke="#FFBE7C" stroke-width="8"/>
+ </g>
+ <!-- open illustrated book -->
+ <g filter="url(#shadow)" transform="translate(1190 845) rotate(-8)">
+  <path d="M0 62c85-42 164-36 238 6v175c-77-42-156-48-238-6V62Z" fill="#FFFDF4" stroke="#CF9B57" stroke-width="8"/>
+  <path d="M238 68c74-42 153-48 238-6v175c-82-42-161-36-238 6V68Z" fill="#FFF8E6" stroke="#CF9B57" stroke-width="8"/>
+  <path d="M238 68v175" stroke="#D8B77A" stroke-width="5"/>
+  <path d="M37 105c52-21 103-23 157-6M37 130c52-20 103-22 157-5M37 155c52-19 103-20 157-3M281 99c53-17 105-15 158 6M281 125c53-17 105-14 158 8M281 151c53-16 105-13 158 10" stroke="#70A7A0" stroke-width="7" stroke-linecap="round"/>
+  <path d="M209 234h58" stroke="#E97960" stroke-width="11" stroke-linecap="round"/>
+ </g>
+ <!-- colorful pencil cup and stacked books -->
+ <g filter="url(#shadow)">
+  <path d="M148 978h235v38H148z" rx="8" fill="#3C8290"/><path d="M169 1016h228v39H169z" fill="#F2C34F"/><path d="M143 1055h272v42H143z" fill="#E57562"/>
+  <path d="M164 987h25v18h-25zM190 987h25v18h-25zM216 987h25v18h-25z" fill="#F5D9A8"/>
+  <path d="M272 930h102v50h-102z" fill="#A678C4"/><path d="M284 938v34M301 938v34M318 938v34M335 938v34M352 938v34" stroke="#E8D6F4" stroke-width="5"/>
+  <path d="m282 930 17-73 10 73M316 930l21-91 10 91M352 930l17-64 9 64" fill="#F4C84B" stroke="#B6783E" stroke-width="5" stroke-linejoin="round"/>
+ </g>
+ <!-- playful color confetti and soft central reading zone -->
+ <path d="M480 0h940v1200H480z" fill="#FFFDF8" fill-opacity=".34"/>
+ <g opacity=".48">
+  <circle cx="565" cy="125" r="12" fill="#E97862"/><circle cx="620" cy="158" r="7" fill="#579DC0"/><circle cx="1400" cy="723" r="11" fill="#F1BD42"/>
+  <path d="m460 265 18-31 18 31h-36ZM1440 134l12-21 12 21h-24ZM1070 1090l16-28 16 28h-32Z" fill="#9A78C4"/>
+  <path d="M521 677c20-23 41-23 61 0M1345 491c20-23 41-23 61 0" stroke="#EF8A64" stroke-width="7" stroke-linecap="round"/>
+ </g>
+ <path fill="url(#speckle)" d="M0 0h1920v1200H0z"/>
+</svg>

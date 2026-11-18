@@ -1,0 +1,12 @@
+@page
+@model TrangSach.Customer.Web.Pages.Account.RegisterModel
+<section class="auth-card"><span class="eyebrow">MỞ TÀI KHOẢN MIỄN PHÍ</span><h1>Đăng ký khách hàng</h1><p class="muted">Tạo tài khoản để thêm sách vào giỏ và theo dõi đơn hàng.</p>
+    <form method="post" class="form-stack"><div asp-validation-summary="ModelOnly" class="validation"></div>
+        <label asp-for="Input.FullName"></label><input asp-for="Input.FullName" autocomplete="name" /><span asp-validation-for="Input.FullName" class="validation"></span>
+        <label asp-for="Input.UserName"></label><input asp-for="Input.UserName" autocomplete="username" /><span asp-validation-for="Input.UserName" class="validation"></span>
+        <label asp-for="Input.Email"></label><input asp-for="Input.Email" autocomplete="email" /><span asp-validation-for="Input.Email" class="validation"></span>
+        <label asp-for="Input.PhoneNumber"></label><input asp-for="Input.PhoneNumber" autocomplete="tel" /><span asp-validation-for="Input.PhoneNumber" class="validation"></span>
+        <label asp-for="Input.Password"></label><input asp-for="Input.Password" autocomplete="new-password" /><span asp-validation-for="Input.Password" class="validation"></span>
+        <button class="button button-primary button-wide" type="submit">Tạo tài khoản</button>
+    </form><p class="auth-switch">Đã có tài khoản? <a asp-page="/Account/Login">Đăng nhập</a></p>
+</section>

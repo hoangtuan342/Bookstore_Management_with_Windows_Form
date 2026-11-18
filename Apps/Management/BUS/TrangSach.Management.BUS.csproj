@@ -1,12 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>TrangSach.Management.BUS</AssemblyName>
+    <RootNamespace>TrangSach.Management.BUS</RootNamespace>
+<TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Web/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="TrangSach.BUS" />
+    <Using Include="TrangSach.DAO" />
     <ProjectReference Include="..\..\..\Server\BUS\TrangSach.BUS.csproj" />
     <ProjectReference Include="..\..\..\Server\DAO\TrangSach.DAO.csproj" />
-    <ProjectReference Include="..\..\..\Shared\Contracts\BookStore.Contracts\BookStore.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Shared\DTO\TrangSach.Shared.DTO.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Security\TrangSach.Shared.Security.csproj" />
+    <PackageReference Include="NPOI" Version="2.7.5" />
   </ItemGroup>
 </Project>

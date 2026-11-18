@@ -1,0 +1,25 @@
+@page "{id}"
+@model TrangSach.Customer.Web.Pages.Books.DetailsModel
+@if (Model.Book is { } book)
+{
+    <nav class="breadcrumbs"><a asp-page="/Index">Cửa hàng</a><span>/</span><span>@book.Category</span><span>/</span><span>@book.Title</span></nav>
+    <article class="product-detail">
+        <div class="detail-cover-wrap"><div class="book-cover detail-cover @book.CoverStyle">
+            @if (!string.IsNullOrWhiteSpace(book.CoverImagePath))
+            {
+                <img class="book-cover-image" src="@book.CoverImagePath" alt="Bìa sách @book.Title" />
+            }
+            else
+            {
+                <span class="cover-brand">TRANG SÁCH</span><span class="cover-title">@book.Title</span><span class="cover-author">@book.Author</span>
+            }
+            <span class="cover-label">@book.Label</span>
+        </div></div>
+        <div class="detail-copy"><span class="eyebrow">@book.Category</span><h1>@book.Title</h1><p class="detail-author">Tác giả: <strong>@book.Author</strong></p><p class="detail-author">Nhà xuất bản: <strong>@(string.IsNullOrWhiteSpace(book.Publisher) ? "Chưa cập nhật" : book.Publisher)</strong></p>
+            <div class="detail-price">@book.Price.ToString("N0") ₫</div><p class="stock-pill @(book.AvailableStock > 0 ? "in-stock" : "out-stock")">@(book.AvailableStock > 0 ? $"Còn hàng · {book.AvailableStock} cuốn" : "Tạm hết hàng")</p>
+            <section class="description"><h2>Giới thiệu sách</h2><p>@(string.IsNullOrWhiteSpace(book.Description) ? "Chưa có mô tả cho sản phẩm này." : book.Description)</p></section>
+            <div class="detail-actions"><form method="post" asp-page-handler="AddToCart"><input type="hidden" name="id" value="@book.Id" /><button class="button button-light button-large" type="submit" disabled="@(book.AvailableStock <= 0)">Thêm vào giỏ</button></form><form method="post" asp-page-handler="BuyNow"><input type="hidden" name="id" value="@book.Id" /><button class="button button-primary button-large" type="submit" disabled="@(book.AvailableStock <= 0)">Mua ngay</button></form></div>
+            <small class="muted">Mã sản phẩm: @book.Id</small>
+        </div>
+    </article>
+}

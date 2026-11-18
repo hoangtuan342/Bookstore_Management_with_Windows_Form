@@ -1,55 +1,68 @@
-# Kiến trúc dự án Trang Sách
+﻿# Kiến trúc Trang Sách
 
-## Cấu trúc thư mục
+## Cấu trúc
 
 ```text
 Apps/
-  Management/
-    GUI/                 WinForms quản lý
-    BUS/                 Điều phối use case và quyền riêng của ứng dụng quản lý
-  Customer/
-    GUI/                 WinForms khách hàng
-    BUS/                 Client BUS gọi API qua HTTPS
-  Shared/GUI/            Thành phần giao diện dùng chung
+  Customer/GUI/Forms/            WinForms khách hàng
+  Customer/Web/Pages/            Razor Pages khách hàng
+  Customer/Web/wwwroot/          CSS website khách hàng
+  Customer/BUS/Services/         BUS client gọi HTTPS API cho WinForms và Web
+  Management/GUI/Forms/          WinForms quản lý
+  Management/BUS/Services/       Use case quản lý
+  Management/BUS/ImportExport/   Xử lý nhập/xuất CSV/Excel
+  Management/Web/GUI/Pages/      Website quản lý bằng Razor Pages
+  Management/BUS/Web/            BUS client gọi API quản trị qua HTTPS
+  Shared/GUI/Forms/              Form nhập liệu dùng chung
 Server/
-  API/                   ASP.NET Core REST API và bộ chuyển HTTP
-  BUS/                   Nghiệp vụ lõi dùng chung
-  DAO/                   Truy cập dữ liệu qua các DAO có kiểu
-  Domain/                Entity nghiệp vụ được lưu trữ
-  Infrastructure/        EF Core, DbContext, migrations và persistence
-Shared/Contracts/        DTO trao đổi giữa client và server
-docs/                    Tài liệu kiến trúc
+  API/                          REST API, controller và middleware
+  BUS/Services/                 Nghiệp vụ dùng chung phía server
+  DAO/                          Project DAO của server
+    Entities/                   Các kiểu dữ liệu lưu trữ
+    Repositories/               Các DAO truy vấn theo dữ liệu
+    Infrastructure/             Kết nối, kiểm tra schema và dữ liệu khởi tạo
+
+Shared/
+  DTO/{Accounts,Catalog,Commerce,Inventory,People,Promotions,Reports,Audit}/ Kiểu dữ liệu trao đổi theo nghiệp vụ
+  Security/                     Quy tắc quyền dùng chung
 ```
 
-`TrangSach.sln` ở thư mục gốc chứa toàn bộ project để mở hoặc build cùng nhau.
+Mã nguồn được đặt theo lớp và ứng dụng; các file `.csproj` là cấu hình build của từng project. Tất cả file mã nguồn trong GUI kết thúc bằng `.GUI.cs`, trong BUS bằng `.BUS.cs`, trong DAO bằng `.DAO.cs`. Các khai báo `global using` được đặt trong `.csproj`, không tạo thêm file mã nguồn lệch quy ước. `TrangSach.sln` là solution tổng.
 
 ## Luồng xử lý
 
 ```text
-WinForms khách hàng: Apps/Customer/GUI → Apps/Customer/BUS → HTTPS API → Server/BUS → Server/DAO → Server/Infrastructure → SQL Server
-WinForms quản lý:    Apps/Management/GUI → Apps/Management/BUS → Server/BUS và Server/DAO → Server/Infrastructure → SQL Server
-Blazor:              Apps/Shared/GUI → HTTPS API → Server/BUS → Server/DAO → Server/Infrastructure → SQL Server
+WinForms khách hàng: Apps/Customer/GUI → Apps/Customer/BUS → HTTPS API → Server/BUS → Server/DAO → SQL Server
+Web khách hàng:      Apps/Customer/Web/Pages → Apps/Customer/BUS → HTTPS API → Server/BUS → Server/DAO → SQL Server
+WinForms quản lý:    Apps/Management/GUI → Apps/Management/BUS → Server/BUS → Server/DAO → SQL Server
+Web quản lý:         Apps/Management/Web/GUI → Apps/Management/BUS/Web → HTTPS API → Server/BUS → Server/DAO → SQL Server
 ```
 
-App khách hàng là client phân tán, không tham chiếu BUS server, DAO hay Infrastructure. `Apps/Customer/BUS/CustomerApiGateway` gửi request HTTPS và ánh xạ response cho GUI; nó không truy cập database. Nghiệp vụ có thẩm quyền chạy tại API server qua `Server/BUS`. `Shared/Contracts` chứa kiểu dữ liệu trao đổi, không chứa truy cập database.
+Customer app chỉ gọi API, không chứa chuỗi kết nối database. Ứng dụng quản lý chạy nội bộ và gọi BUS server trong cùng tiến trình. API là cổng giao tiếp HTTP(S), không phải một lớp dữ liệu của GUI–BUS–DAO.
 
-`Apps/Management/BUS` chứa điều phối use case và quyền riêng của ứng dụng quản lý. BUS lõi và các dịch vụ nghiệp vụ dùng chung với API nằm tại `Server/BUS`. App quản lý chạy nội bộ, gọi các project server trong cùng tiến trình; composition root nằm ở `Apps/Management/GUI/Services/ManagementAppServices`.
+## Trách nhiệm
 
-## Trách nhiệm từng lớp
+- **GUI** nhận thao tác, hiển thị dữ liệu và gọi BUS.
+- **GUI khách hàng** khởi tạo `CustomerApiGateway` tại `CustomerForm.Main` rồi truyền nó cho Form; không có lớp service trung gian trong thư mục GUI.
+- **Web khách hàng** dùng Razor Pages làm GUI; các trang chỉ bind input, hiển thị DTO và gọi BUS client. Cookie xác thực của ASP.NET Core giữ JWT được bảo vệ; trình duyệt không nhận thông tin kết nối database.
+- **Web quản lý** dùng Razor Pages làm GUI; BUS client giữ trạng thái ngoài form và gọi API HTTPS. Cookie xác thực bảo vệ JWT nhân viên, còn quyền ở từng trang lẫn từng API được kiểm tra theo vai trò.
+- **BUS ứng dụng** điều phối use case của từng client. Customer BUS gọi API qua HTTPS; Management BUS gọi nghiệp vụ server trong tiến trình nội bộ.
+- **Management BUS** thực hiện use case quản lý, phân tích tìm kiếm và đọc/ghi file CSV, Excel. Form quản lý xử lý sự kiện chọn file và dựng nội dung báo cáo để xuất.
+- Các Form trang trong Management GUI được nhúng vào tab của Form quản lý; chúng chỉ dựng giao diện và phát sự kiện về Form quản lý, không gọi DAO hoặc tự chứa quy tắc nghiệp vụ.
+- **API** chuyển HTTP request thành lời gọi BUS và trả response; controller không truy cập DAO.
+- **BUS server** xác thực quyền, kiểm tra quy tắc nghiệp vụ và điều phối thao tác dữ liệu.
+- **DAO** dùng `Microsoft.Data.SqlClient` để đọc/ghi SQL Server bằng lệnh tham số hóa. Dữ liệu được nạp vào `List` cục bộ; `AdoBookStoreUnitOfWork` quản lý liên kết, snapshot và transaction.
+- **DTO** nằm trong `Shared/DTO`; không chứa logic truy cập database.
+- **Security** nằm trong `Shared/Security` để dùng chung quy tắc phân quyền; đây là thư viện hỗ trợ, không phải lớp thứ tư.
 
-- **GUI** (`Apps/*/GUI`): form, view, điều hướng, hiển thị và nhận thao tác người dùng; không truy vấn DbContext.
-- **BUS phía App** (`Apps/Management/BUS`, `Apps/Customer/BUS`): điều phối use case riêng của App. Customer BUS gọi HTTPS API, không truy cập DAO.
-- **BUS lõi** (`Server/BUS/Services`): quy tắc và nghiệp vụ có thẩm quyền, dùng chung bởi API và ứng dụng quản lý.
-- **DAO** (`Server/DAO/Entities`): truy vấn/cập nhật dữ liệu qua DAO; không đưa `DbContext`, `DbSet` hoặc `IQueryable` ra GUI/API.
-- **API** (`Server/API/BookStore.Api/Controllers`): adapter HTTP, xác thực/ủy quyền và chuyển request/response; controller gọi BUS, không tự truy cập database.
-- **Infrastructure** (`Server/Infrastructure/BookStore.Infrastructure`): EF Core, context, mapping, migrations và seeding.
-- **Domain** (`Server/Domain/BookStore.Domain`): entity và kiểu miền cốt lõi.
-- **Contracts** (`Shared/Contracts/BookStore.Contracts`): DTO dùng chung giữa client/server, không tham chiếu DAO hoặc Infrastructure.
+## Database
 
-API host đăng ký DbContext, DAO và BUS vào DI trong `Program.cs`; middleware không truy vấn DAO trực tiếp.
+Database và schema phải được tạo sẵn trên SQL Server. Khi khởi động, `DirectDatabase` kết nối tới database đã cấu hình và kiểm tra các bảng/cột bắt buộc; database hoặc bảng bị thiếu sẽ gây lỗi thay vì được tự tạo. `DatabaseInitializer` chỉ bổ sung dữ liệu tham chiếu còn thiếu; ứng dụng không tự tạo đơn hàng hay phiếu nhập mẫu.
 
-## Quy tắc kết nối
+Connection string được cấu hình ở API hoặc ứng dụng quản lý nội bộ. Không phân phối thông tin SQL Server cho customer app.
 
-Connection string SQL Server chỉ cấu hình ở môi trường chạy API hoặc ManagementApp. Không đưa connection string database vào CustomerApp. CustomerApp lấy URL API từ `Apps/Customer/GUI/appsettings.json`; môi trường triển khai cần HTTPS và chứng thư TLS hợp lệ. Không mở SQL Server trực tiếp ra Internet.
 
-Xem thêm [bản đồ entity theo lớp](ENTITY_LAYER_MAP.md) và hướng dẫn chạy trong [README](../README.md).
+
+
+
+

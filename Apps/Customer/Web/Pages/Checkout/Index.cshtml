@@ -1,0 +1,14 @@
+@page
+@model TrangSach.Customer.Web.Pages.Checkout.IndexModel
+<nav class="breadcrumbs"><a asp-page="/Cart/Index">Giỏ hàng</a><span>/</span><span>Thanh toán</span></nav>
+<div class="section-heading"><div><span class="eyebrow">XÁC NHẬN ĐƠN HÀNG</span><h1>Thông tin nhận hàng</h1></div></div>
+<form method="post" class="checkout-layout"><section class="panel form-stack checkout-fields"><div asp-validation-summary="ModelOnly" class="validation"></div>
+    <label asp-for="Input.ShippingAddress"></label><textarea asp-for="Input.ShippingAddress" rows="3" placeholder="Số nhà, đường, phường/xã, tỉnh/thành"></textarea><span asp-validation-for="Input.ShippingAddress" class="validation"></span>
+    <label asp-for="Input.ReceiverPhone"></label><input asp-for="Input.ReceiverPhone" autocomplete="tel" /><span asp-validation-for="Input.ReceiverPhone" class="validation"></span>
+    <label asp-for="Input.VoucherCode"></label><input asp-for="Input.VoucherCode" placeholder="Nhập mã nếu bạn có" /><span asp-validation-for="Input.VoucherCode" class="validation"></span>
+    <label asp-for="Input.PaymentMethod"></label><select asp-for="Input.PaymentMethod"><option value="CashOnDelivery">Thanh toán khi nhận hàng</option><option value="BankTransfer">Chuyển khoản (mô phỏng)</option></select>
+</section><aside class="panel order-summary"><h2>Đơn hàng của bạn</h2>
+    @foreach (var line in Model.Lines) { <div class="checkout-line"><span>@line.Title <small>× @line.Quantity</small></span><strong>@line.LineTotal.ToString("N0") ₫</strong></div> }
+    <div class="summary-total"><span>Tạm tính</span><strong>@Model.Subtotal.ToString("N0") ₫</strong></div><p class="muted small">Ưu đãi voucher sẽ được xác nhận khi đặt hàng.</p>
+    <div class="checkout-buttons"><a class="button button-light" asp-page="/Cart/Index">Quay lại giỏ</a><button class="button button-primary" type="submit">Đặt hàng</button></div>
+</aside></form>

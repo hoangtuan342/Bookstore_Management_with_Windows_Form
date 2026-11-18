@@ -1,0 +1,74 @@
+@page
+@model TrangSach.Management.Web.GUI.Pages.Admin.Reports.IndexModel
+
+<header class="report-page-heading">
+    <div>
+        <span class="eyebrow">PHÂN TÍCH KINH DOANH</span>
+        <h2>Báo cáo cửa hàng</h2>
+        <p>Theo dõi doanh thu, đơn hàng, tồn kho và hiệu quả bán hàng.</p>
+    </div>
+    @if (Model.Report is { } period)
+    {
+        <div class="report-range-badge"><span>KỲ ĐANG XEM</span><strong>@period.FromDate.ToString("dd/MM/yyyy") – @period.ToDate.ToString("dd/MM/yyyy")</strong></div>
+    }
+</header>
+
+<section class="report-control-panel">
+    <form method="get" class="report-filter-form">
+        <div class="report-date-fields">
+            <label><span>Từ ngày</span><input type="date" name="fromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" /></label>
+            <label><span>Đến ngày</span><input type="date" name="toDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" /></label>
+            <button class="button primary" type="submit">Cập nhật báo cáo</button>
+        </div>
+        <div class="report-export-actions">
+            <a class="button light" asp-page-handler="Export" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">CSV</a>
+            <a class="button light" asp-page-handler="ExportExcel" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">Excel</a>
+            <a class="button light" asp-page-handler="ExportPdf" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">PDF</a>
+        </div>
+    </form>
+    <nav class="report-quick-periods" aria-label="Chọn kỳ báo cáo nhanh">
+        <span>Kỳ nhanh</span>
+        <a asp-page="/Admin/Reports/Index" asp-route-days="7">7 ngày</a>
+        <a asp-page="/Admin/Reports/Index" asp-route-days="30">30 ngày</a>
+        <a asp-page="/Admin/Reports/Index" asp-route-days="90">90 ngày</a>
+        <a asp-page="/Admin/Reports/Index" asp-route-days="365">1 năm</a>
+        <a asp-page="/Admin/Reports/Index" asp-route-days="1825">5 năm</a>
+    </nav>
+</section>
+
+@if (Model.Report is { } r)
+{
+    <section class="report-kpi-grid" aria-label="Chỉ số tổng quan">
+        <article class="stat-card report-kpi"><span>Doanh thu thuần</span><strong>@r.Revenue.ToString("N0") ₫</strong><small>Kỳ trước: @r.PreviousPeriodRevenue.ToString("N0") ₫</small></article>
+        <article class="stat-card report-kpi"><span>Đơn hàng</span><strong>@r.TotalOrders.ToString("N0")</strong><small>@r.CompletedOrders hoàn tất · @r.PendingOrders chờ xác nhận</small></article>
+        <article class="stat-card report-kpi"><span>Giá trị đơn trung bình</span><strong>@r.AverageOrderValue.ToString("N0") ₫</strong><small>Tính trên đơn hoàn tất</small></article>
+        <article class="stat-card report-kpi"><span>Giảm giá</span><strong>@r.Discounts.ToString("N0") ₫</strong><small>Đơn hoàn tất trong kỳ</small></article>
+        <article class="stat-card report-kpi"><span>Chi nhập hàng</span><strong>@r.PurchaseSpend.ToString("N0") ₫</strong><small>Phiếu nhập đã ghi nhận</small></article>
+        <article class="stat-card report-kpi"><span>Lãi gộp ước tính</span><strong>@r.EstimatedGrossProfit.ToString("N0") ₫</strong><small>Độ phủ giá vốn @r.CostCoveragePercent.ToString("N1")%</small></article>
+    </section>
+
+    <section class="report-comparison" aria-label="So sánh với kỳ trước">
+        <div><span>Doanh thu so với kỳ trước</span><strong>@(r.RevenueChangePercent is decimal revenueChange ? revenueChange.ToString("+0.0;-0.0;0.0") + "%" : "Chưa có kỳ so sánh")</strong></div>
+        <div><span>Đơn hoàn tất so với kỳ trước</span><strong>@(r.CompletedOrdersChangePercent is decimal orderChange ? orderChange.ToString("+0.0;-0.0;0.0") + "%" : "Chưa có kỳ so sánh")</strong></div>
+    </section>
+
+    <div class="report-section-heading"><div><span class="eyebrow">BIỂU ĐỒ TRỰC QUAN</span><h2>Diễn biến và cơ cấu kinh doanh</h2></div><span>Xu hướng thời gian dùng dữ liệu 5 năm gần nhất</span></div>
+    <div class="report-chart-grid">
+        @foreach (var chart in Model.ChartPanels) { <partial name="_ReportChart" model="chart" /> }
+    </div>
+
+    <section class="panel report-details-panel"><div class="report-section-heading"><div><span class="eyebrow">TRA CỨU CHI TIẾT</span><h2>Số liệu trong kỳ đang chọn</h2></div><span>Các bảng chi tiết giữ nguyên theo bộ lọc ngày phía trên</span></div>
+        <div class="admin-columns report-detail-columns">
+            <section><h3>Sách bán chạy</h3><div class="table-wrap"><table><thead><tr><th>Sách</th><th>Số lượng</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var row in r.BestSellers) { <tr><td>@row.Title<small class="subcell">@row.BookId</small></td><td>@row.Quantity</td><td>@row.Revenue.ToString("N0") ₫</td></tr> }</tbody></table></div>
+                <h3>Doanh thu theo thể loại</h3><div class="table-wrap"><table><thead><tr><th>Thể loại</th><th>Số lượng</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var row in r.RevenueByCategory) { <tr><td>@row.Category</td><td>@row.Quantity</td><td>@row.Revenue.ToString("N0") ₫</td></tr> }</tbody></table></div></section>
+            <section><h3>Khách hàng thân thiết</h3><div class="table-wrap"><table><thead><tr><th>Khách hàng</th><th>Số đơn</th><th>Số cuốn</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var row in r.TopCustomers) { <tr><td>@row.CustomerName</td><td>@row.Orders</td><td>@row.Quantity</td><td>@row.Revenue.ToString("N0") ₫</td></tr> }</tbody></table></div>
+                <h3>Tồn kho theo thể loại</h3><div class="table-wrap"><table><thead><tr><th>Thể loại</th><th>Số sách</th><th>Tồn</th><th>Sắp hết</th></tr></thead><tbody>@foreach (var row in r.InventoryByCategory) { <tr><td>@row.Category</td><td>@row.BookCount</td><td>@row.StockQuantity</td><td>@row.LowStockBooks</td></tr> }</tbody></table></div></section>
+        </div>
+        <details><summary>Doanh thu theo tháng</summary><div class="table-wrap"><table><thead><tr><th>Năm</th><th>Tháng</th><th>Đơn</th><th>Doanh thu</th><th>Chi nhập</th><th>Lãi gộp</th></tr></thead><tbody>@foreach (var x in r.RevenueByMonth) { <tr><td>@x.Year</td><td>@x.Month</td><td>@x.Orders</td><td>@x.Revenue.ToString("N0")</td><td>@x.PurchaseSpend.ToString("N0")</td><td>@x.EstimatedGrossProfit.ToString("N0")</td></tr> }</tbody></table></div></details>
+        <details><summary>Doanh thu theo quý</summary><div class="table-wrap"><table><thead><tr><th>Năm</th><th>Quý</th><th>Đơn</th><th>Doanh thu</th><th>Chi nhập</th><th>Lãi gộp</th></tr></thead><tbody>@foreach (var x in r.RevenueByQuarter) { <tr><td>@x.Year</td><td>@x.Quarter</td><td>@x.Orders</td><td>@x.Revenue.ToString("N0")</td><td>@x.PurchaseSpend.ToString("N0")</td><td>@x.EstimatedGrossProfit.ToString("N0")</td></tr> }</tbody></table></div></details>
+        <details><summary>Doanh thu theo năm</summary><div class="table-wrap"><table><thead><tr><th>Năm</th><th>Đơn</th><th>Doanh thu</th><th>Chi nhập</th><th>Lãi gộp</th></tr></thead><tbody>@foreach (var x in r.RevenueByYear) { <tr><td>@x.Year</td><td>@x.Orders</td><td>@x.Revenue.ToString("N0")</td><td>@x.PurchaseSpend.ToString("N0")</td><td>@x.EstimatedGrossProfit.ToString("N0")</td></tr> }</tbody></table></div></details>
+        <details><summary>Doanh thu theo nhân viên / năm</summary><div class="table-wrap"><table><thead><tr><th>Năm</th><th>Nhân viên</th><th>Số đơn</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var x in r.RevenueByEmployeeYear) { <tr><td>@x.Year</td><td>@x.EmployeeName <small class="subcell">@x.EmployeeId</small></td><td>@x.Orders</td><td>@x.Revenue.ToString("N0")</td></tr> }</tbody></table></div></details>
+        <details><summary>Sản phẩm theo quý / năm</summary><div class="table-wrap"><table><thead><tr><th>Năm / quý</th><th>Sách</th><th>Số lượng</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var x in r.ProductSalesByQuarter) { <tr><td>@x.Year / Q@x.Quarter</td><td>@x.Title <small class="subcell">@x.BookId</small></td><td>@x.Quantity</td><td>@x.Revenue.ToString("N0")</td></tr> }</tbody></table></div></details>
+    </section>
+}
+else { <div class="panel">Chưa có dữ liệu báo cáo trong khoảng thời gian này.</div> }

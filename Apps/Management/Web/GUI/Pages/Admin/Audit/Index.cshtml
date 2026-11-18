@@ -1,0 +1,3 @@
+@page
+@model TrangSach.Management.Web.GUI.Pages.Admin.Audit.IndexModel
+<section class="panel"><div class="panel-head"><div><span class="eyebrow">THEO DÕI THAO TÁC</span><h2>Nhật ký hệ thống (@Model.Logs.Count)</h2></div></div><div class="table-wrap"><table><thead><tr><th>Thời điểm</th><th>Nhân viên</th><th>Vai trò</th><th>Thao tác</th><th>Khu vực</th><th>Đối tượng</th><th>Kết quả</th><th>IP</th></tr></thead><tbody>@foreach(var log in Model.Logs){<tr><td>@log.OccurredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td><td>@log.ActorName<small class="subcell">@log.ActorCode</small></td><td>@log.ActorRole</td><td>@log.Action</td><td>@log.Area</td><td>@log.Resource</td><td>@log.StatusCode</td><td>@log.IpAddress</td></tr>}</tbody></table></div></section>

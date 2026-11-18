@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>TrangSach.Management.GUI</AssemblyName>
+    <RootNamespace>TrangSach.Management.GUI</RootNamespace>
+<OutputType>WinExe</OutputType>
+    <StartupObject>TrangSach.Management.GUI.ManagementForm</StartupObject>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="TrangSach.Management.BUS" />
+    <Using Include="TrangSach.Shared.GUI" />
+    <PackageReference Include="QuestPDF" Version="2026.9.1" />
+    <ProjectReference Include="..\..\Shared\GUI\TrangSach.Shared.GUI.csproj" />
+    <ProjectReference Include="..\BUS\TrangSach.Management.BUS.csproj" />
+    <ProjectReference Include="..\..\..\Shared\DTO\TrangSach.Shared.DTO.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Security\TrangSach.Shared.Security.csproj" />
+  </ItemGroup>
+</Project>
+
+

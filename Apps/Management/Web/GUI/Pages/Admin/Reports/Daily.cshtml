@@ -1,0 +1,8 @@
+@page
+@model TrangSach.Management.Web.GUI.Pages.Admin.Reports.DailyModel
+@if (Model.Report is { } r)
+{
+    <div class="page-toolbar"><div><span class="eyebrow">CHI TIẾT BÁO CÁO</span><h2>Doanh thu theo ngày</h2><p class="muted">Từ @r.FromDate.ToString("dd/MM/yyyy") đến @r.ToDate.ToString("dd/MM/yyyy") · @r.RevenueByDayDto.Count ngày</p></div><a class="button light" asp-page="/Admin/Reports/Index" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">Quay lại báo cáo</a></div>
+    <partial name="_ReportChart" model="Model.Chart" />
+    <section class="panel"><h2>Số liệu từng ngày</h2><div class="table-wrap daily-history-table"><table><thead><tr><th>Ngày</th><th>Số đơn hoàn tất</th><th>Doanh thu</th><th>Tiền nhập hàng</th></tr></thead><tbody>@foreach (var row in r.RevenueByDayDto.OrderByDescending(x => x.Date)) { <tr><td>@row.Date.ToString("dd/MM/yyyy")</td><td>@row.Orders</td><td>@row.Revenue.ToString("N0") ₫</td><td>@row.PurchaseSpend.ToString("N0") ₫</td></tr> }</tbody></table></div></section>
+}

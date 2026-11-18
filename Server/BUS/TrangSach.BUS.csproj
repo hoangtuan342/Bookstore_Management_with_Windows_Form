@@ -1,12 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>TrangSach.BUS</AssemblyName>
+    <RootNamespace>TrangSach.BUS</RootNamespace>
+<TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Security\**\*.cs" />
+    <Using Include="TrangSach.DAO" />
     <ProjectReference Include="..\DAO\TrangSach.DAO.csproj" />
-    <ProjectReference Include="..\..\Shared\Contracts\BookStore.Contracts\BookStore.Contracts.csproj" />
+    <ProjectReference Include="..\..\Shared\DTO\TrangSach.Shared.DTO.csproj" />
+    <ProjectReference Include="..\..\Shared\Security\TrangSach.Shared.Security.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.5" />
   </ItemGroup>
 </Project>
