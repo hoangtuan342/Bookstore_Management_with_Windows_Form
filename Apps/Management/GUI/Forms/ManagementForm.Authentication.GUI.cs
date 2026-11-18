@@ -41,7 +41,11 @@ public partial class ManagementForm
     {
         var loaders = new List<(string Page, Action Load)>();
         if (StaffPermissions.CanAccess(role, "dashboard")) loaders.Add(("Tổng quan", () => LoadDashboard()));
-        if (StaffPermissions.CanAccess(role, "books")) loaders.Add(("Sách", () => LoadBooks()));
+        if (StaffPermissions.CanAccess(role, "books"))
+        {
+            loaders.Add(("Sách", () => LoadBooks()));
+            loaders.Add(("Tác giả", () => LoadAuthors()));
+        }
         if (StaffPermissions.CanAccess(role, "customers")) loaders.Add(("Khách hàng", () => LoadCustomers()));
         if (role == StaffRoles.Manager) loaders.Add(("Nhân viên", () => LoadEmployees()));
         if (StaffPermissions.CanAccess(role, "orders")) loaders.Add(("Đơn hàng", () => LoadOrders()));

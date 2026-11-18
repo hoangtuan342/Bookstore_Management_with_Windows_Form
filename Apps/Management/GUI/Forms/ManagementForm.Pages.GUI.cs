@@ -35,6 +35,16 @@ public partial class ManagementForm
                 ["import"] = ImportBooks,
                 ["export"] = () => ExportBooks(_booksGrid)
             });
+
+            var authorsPage = new AuthorsPageForm();
+            _authorsGrid = authorsPage.Grid;
+            AddManagementPage(authorsPage, new()
+            {
+                ["load"] = () => LoadAuthors(true),
+                ["add"] = () => EditAuthor(null),
+                ["edit"] = EditSelectedAuthor,
+                ["delete"] = DeleteSelectedAuthor
+            });
         }
         if (StaffPermissions.CanAccess(_role, "customers"))
         {
@@ -224,7 +234,7 @@ public partial class ManagementForm
     private static string NavigationSection(string pageTitle) => pageTitle switch
     {
         "Tổng quan" => "Tổng quan",
-        "Sách" or "Khách hàng" or "Danh mục tham chiếu" => "Danh mục",
+        "Sách" or "Tác giả" or "Khách hàng" or "Danh mục tham chiếu" => "Danh mục",
         "Báo cáo" or "Nhật ký hệ thống" => "Phân tích",
         _ => "Vận hành"
     };
@@ -233,6 +243,7 @@ public partial class ManagementForm
     {
         "Tổng quan" => "▦",
         "Sách" => "▤",
+        "Tác giả" => "✍",
         "Khách hàng" => "♙",
         "Nhân viên" => "♟",
         "Đơn hàng" => "☷",

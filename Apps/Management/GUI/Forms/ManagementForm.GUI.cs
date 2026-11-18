@@ -20,7 +20,7 @@ public partial class ManagementForm : Form
 
             var allowedPages = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                "dashboard", "books", "customers", "employees", "orders", "receipts",
+                "dashboard", "books", "authors", "customers", "employees", "orders", "receipts",
                 "reports", "references", "suppliers", "promotions", "vouchers", "audit-logs"
             };
             if (!allowedPages.Contains(args[1]))
@@ -51,6 +51,7 @@ public partial class ManagementForm : Form
     private readonly Dictionary<TabPage, Button> _navigationButtons = [];
     private DashboardPageForm? _dashboardView;
     private DataGridView _booksGrid = new();
+    private DataGridView _authorsGrid = new();
     private DataGridView _customersGrid = new();
     private DataGridView _employeesGrid = new();
     private DataGridView _ordersGrid = new();

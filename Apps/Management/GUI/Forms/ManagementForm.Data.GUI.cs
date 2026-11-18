@@ -20,6 +20,8 @@ public partial class ManagementForm
 
     private void LoadBooks(bool refresh = false) => _booksGrid.DataSource = _services.GetBooks(refresh).ToList();
 
+    private void LoadAuthors(bool refresh = false) => _authorsGrid.DataSource = _services.GetAuthors(refresh).ToList();
+
     private void LoadCustomers(bool refresh = false) => _customersGrid.DataSource = _services.GetCustomers(refresh).ToList();
 
     private void LoadEmployees(bool refresh = false) => _employeesGrid.DataSource = _services.GetEmployees(refresh).ToList();

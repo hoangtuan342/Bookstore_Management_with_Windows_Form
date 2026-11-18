@@ -198,6 +198,39 @@ public partial class ManagementForm
         LoadReferences();
     }
 
+    private void EditAuthor(ManagerAuthorDto? old)
+    {
+        var fields = new List<EditDialogField>
+        {
+            new("name", "Tên tác giả", old?.Name ?? ""),
+            new("bio", "Tiểu sử", old?.Biography ?? "")
+        };
+        var values = EditDialog.Show(this, old != null ? $"Sửa tác giả #{old.Id}" : "Thêm tác giả mới", fields);
+        if (values is null) return;
+        _services.Manager.SaveAuthor(old?.Id, new SaveAuthorDto(values["name"], EmptyToNull(values["bio"])));
+        _services.Invalidate("authors", "lookups");
+        LoadAuthors(true);
+        if (_referenceGrid.IsHandleCreated) LoadReferences(true);
+    }
+
+    private void EditSelectedAuthor()
+    {
+        var item = Selected<ManagerAuthorDto>(_authorsGrid) ?? throw new InvalidOperationException("Chọn tác giả cần sửa.");
+        EditAuthor(item);
+    }
+
+    private void DeleteSelectedAuthor()
+    {
+        var item = Selected<ManagerAuthorDto>(_authorsGrid) ?? throw new InvalidOperationException("Chọn tác giả cần xóa.");
+        if (Confirm($"Xóa tác giả {item.Name}?"))
+        {
+            _services.Manager.DeleteAuthor(item.Id);
+            _services.Invalidate("authors", "lookups");
+            LoadAuthors(true);
+            if (_referenceGrid.IsHandleCreated) LoadReferences(true);
+        }
+    }
+
     private void SaveSupplier(SupplierOptionDto? old)
     {
         var fields = new List<EditDialogField>
