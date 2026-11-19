@@ -67,7 +67,7 @@ public partial class ManagementForm
     {
         using var dialog = new SaveFileDialog { Filter = "PDF (*.pdf)|*.pdf", FileName = $"bao-cao-{report.FromDate:yyyyMMdd}-{report.ToDate:yyyyMMdd}.pdf" };
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
-        ExportPdf(report, dialog.FileName);
+        ExportPdf(report, _currentHistoryReport ?? report, dialog.FileName);
         MessageBox.Show(this, "Đã xuất báo cáo PDF.", "Xuất báo cáo", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
@@ -150,7 +150,7 @@ public partial class ManagementForm
         new ExcelWorkbookService().Write(path, sheets);
     }
 
-    private void ExportPdf(ManagerReportDto report, string path)
+    private void ExportPdf(ManagerReportDto report, ManagerReportDto history, string path)
     {
         ConfigurePdf();
         Document.Create(document => document.Page(page =>
@@ -176,16 +176,50 @@ public partial class ManagementForm
                     ["Chi nhập hàng", Money(report.PurchaseSpend)],
                     ["Lãi gộp ước tính", Money(report.EstimatedGrossProfit)]
                 ]);
+
+                var months = history.RevenueByMonth.Count > 0 ? history.RevenueByMonth : report.RevenueByMonth;
                 column.Item().Text("Doanh thu theo tháng").FontSize(12).SemiBold();
-                AddTable(column, ["Năm", "Tháng", "Đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], report.RevenueByMonth.Select(row => new[] { row.Year.ToString(), row.Month.ToString("00"), row.Orders.ToString("N0"), Money(row.Revenue), Money(row.PurchaseSpend), Money(row.EstimatedGrossProfit) }).ToArray());
+                AddTable(column, ["Năm", "Tháng", "Đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], months.Select(row => new[] { row.Year.ToString(), row.Month.ToString("00"), row.Orders.ToString("N0"), Money(row.Revenue), Money(row.PurchaseSpend), Money(row.EstimatedGrossProfit) }).ToArray());
+
+                var quarters = history.RevenueByQuarter.Count > 0 ? history.RevenueByQuarter : report.RevenueByQuarter;
                 column.Item().Text("Doanh thu theo quý").FontSize(12).SemiBold();
-                AddTable(column, ["Năm", "Quý", "Đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], report.RevenueByQuarter.Select(row => new[] { row.Year.ToString(), $"Q{row.Quarter}", row.Orders.ToString("N0"), Money(row.Revenue), Money(row.PurchaseSpend), Money(row.EstimatedGrossProfit) }).ToArray());
+                AddTable(column, ["Năm", "Quý", "Đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], quarters.Select(row => new[] { row.Year.ToString(), $"Q{row.Quarter}", row.Orders.ToString("N0"), Money(row.Revenue), Money(row.PurchaseSpend), Money(row.EstimatedGrossProfit) }).ToArray());
+
+                var years = history.RevenueByYear.Count > 0 ? history.RevenueByYear : report.RevenueByYear;
                 column.Item().Text("Doanh thu theo năm").FontSize(12).SemiBold();
-                AddTable(column, ["Năm", "Đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], report.RevenueByYear.Select(row => new[] { row.Year.ToString(), row.Orders.ToString("N0"), Money(row.Revenue), Money(row.PurchaseSpend), Money(row.EstimatedGrossProfit) }).ToArray());
+                AddTable(column, ["Năm", "Đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], years.Select(row => new[] { row.Year.ToString(), row.Orders.ToString("N0"), Money(row.Revenue), Money(row.PurchaseSpend), Money(row.EstimatedGrossProfit) }).ToArray());
+
+                var employees = history.RevenueByEmployeeYear.Count > 0 ? history.RevenueByEmployeeYear : report.RevenueByEmployeeYear;
                 column.Item().Text("Doanh thu theo nhân viên và năm").FontSize(12).SemiBold();
-                AddTable(column, ["Mã nhân viên", "Nhân viên", "Năm", "Số đơn", "Doanh thu"], report.RevenueByEmployeeYear.Select(row => new[] { row.EmployeeId, row.EmployeeName, row.Year.ToString(), row.Orders.ToString("N0"), Money(row.Revenue) }).ToArray());
+                AddTable(column, ["Mã nhân viên", "Nhân viên", "Năm", "Số đơn", "Doanh thu"], employees.Select(row => new[] { row.EmployeeId, row.EmployeeName, row.Year.ToString(), row.Orders.ToString("N0"), Money(row.Revenue) }).ToArray());
+
+                var products = history.ProductSalesByQuarter.Count > 0 ? history.ProductSalesByQuarter : report.ProductSalesByQuarter;
                 column.Item().Text("Doanh thu sản phẩm theo quý và năm").FontSize(12).SemiBold();
-                AddTable(column, ["Mã sách", "Tên sách", "Năm", "Quý", "SL", "Doanh thu"], report.ProductSalesByQuarter.Select(row => new[] { row.BookId, row.Title, row.Year.ToString(), $"Q{row.Quarter}", row.Quantity.ToString("N0"), Money(row.Revenue) }).ToArray());
+                AddTable(column, ["Mã sách", "Tên sách", "Năm", "Quý", "SL", "Doanh thu"], products.Select(row => new[] { row.BookId, row.Title, row.Year.ToString(), $"Q{row.Quarter}", row.Quantity.ToString("N0"), Money(row.Revenue) }).ToArray());
+
+                if (report.BestSellers.Count > 0)
+                {
+                    column.Item().Text("Top sách bán chạy").FontSize(12).SemiBold();
+                    AddTable(column, ["Mã sách", "Tên sách", "Số lượng bán", "Doanh thu"], report.BestSellers.Select(row => new[] { row.BookId, row.Title, row.Quantity.ToString("N0"), Money(row.Revenue) }).ToArray());
+                }
+
+                if (report.RevenueByCategory.Count > 0)
+                {
+                    column.Item().Text("Doanh thu theo thể loại").FontSize(12).SemiBold();
+                    AddTable(column, ["Thể loại", "Số lượng bán", "Doanh thu"], report.RevenueByCategory.Select(row => new[] { row.Category, row.Quantity.ToString("N0"), Money(row.Revenue) }).ToArray());
+                }
+
+                if (report.TopCustomers.Count > 0)
+                {
+                    column.Item().Text("Khách hàng mua nhiều").FontSize(12).SemiBold();
+                    AddTable(column, ["Mã khách hàng", "Tên khách hàng", "Số đơn", "Số cuốn", "Doanh thu"], report.TopCustomers.Select(row => new[] { row.CustomerId, row.CustomerName, row.Orders.ToString("N0"), row.Quantity.ToString("N0"), Money(row.Revenue) }).ToArray());
+                }
+
+                if (report.InventoryByCategory.Count > 0)
+                {
+                    column.Item().Text("Tồn kho theo thể loại").FontSize(12).SemiBold();
+                    AddTable(column, ["Thể loại", "Số đầu sách", "Tổng tồn kho", "Sắp hết", "Giá trị tồn"], report.InventoryByCategory.Select(row => new[] { row.Category, row.BookCount.ToString("N0"), row.StockQuantity.ToString("N0"), row.LowStockBooks.ToString("N0"), Money(row.StockValue) }).ToArray());
+                }
             });
             page.Footer().AlignCenter().Text(text =>
             {
