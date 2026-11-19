@@ -27,8 +27,8 @@ internal sealed class BooksPageForm : ManagementGridPageForm
         AddAction("Thêm", "add");
         AddAction("Sửa", "edit");
         AddAction("Ẩn sách", "hide");
-        AddAction("Nhập CSV", "import");
-        AddAction("Xuất CSV", "export");
+        AddAction("Nhập sách (CSV/Excel)", "import");
+        AddAction("Xuất sách (Excel/CSV)", "export");
     }
 
     protected override bool HasAdditionalFilters => ManagementGridPageForm.Value(_category) is not null

@@ -66,12 +66,26 @@ public partial class ManagementForm
     {
         var books = grid.DataSource as IEnumerable<BookItemDto>;
         if (books is null) throw new InvalidOperationException("Tải danh sách sách trước khi xuất.");
-        using var dialog = new SaveFileDialog { Filter = "Excel Workbook (*.xlsx)|*.xlsx|Excel 97-2003 (*.xls)|*.xls", FileName = "sach-trang-sach.xlsx" };
+        using var dialog = new SaveFileDialog
+        {
+            Filter = "Excel Workbook (*.xlsx)|*.xlsx|CSV (*.csv)|*.csv|Excel 97-2003 (*.xls)|*.xls",
+            FileName = "sach-trang-sach.xlsx"
+        };
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
         var rows = new List<(BookItemDto Book, ManagerBookDetailsDto Details)>();
         foreach (var book in books) rows.Add((book, _services.Manager.GetBookDetails(book.Id)));
-        _bookExcelFiles.Export(rows, dialog.FileName);
-        MessageBox.Show(this, "Đã ghi danh sách sách ra file Excel.", "Xuất dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+        var ext = Path.GetExtension(dialog.FileName);
+        if (ext.Equals(".csv", StringComparison.OrdinalIgnoreCase))
+        {
+            _bookFiles.Export(rows, dialog.FileName);
+            MessageBox.Show(this, "Đã ghi danh sách sách ra file CSV.", "Xuất dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        else
+        {
+            _bookExcelFiles.Export(rows, dialog.FileName);
+            MessageBox.Show(this, "Đã ghi danh sách sách ra file Excel.", "Xuất dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
     }
 
     private void ImportBooks()
