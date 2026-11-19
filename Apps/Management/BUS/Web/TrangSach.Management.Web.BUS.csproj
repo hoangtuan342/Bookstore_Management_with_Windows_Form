@@ -10,6 +10,5 @@
     <ProjectReference Include="..\..\..\..\Shared\DTO\TrangSach.Shared.DTO.csproj" />
     <ProjectReference Include="..\..\..\..\Shared\Security\TrangSach.Shared.Security.csproj" />
     <PackageReference Include="NPOI" Version="2.7.5" />
-    <PackageReference Include="QuestPDF" Version="2026.9.1" />
   </ItemGroup>
 </Project>

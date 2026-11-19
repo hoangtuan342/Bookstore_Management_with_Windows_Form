@@ -101,7 +101,6 @@ public partial class ManagementForm
             _reportView.PeriodSelected += days => SafeAction(() => LoadReport(days));
             _reportView.DateRangeSelected += (from, to) => SafeAction(() => LoadReport(from, to));
             _reportView.FullDailyTrendRequested += report => { using var detail = new RevenueTrendDetailForm(report); detail.ShowDialog(this); };
-            _reportView.ExportPdfRequested += report => SafeAction(() => ExportReportPdf(report));
             _reportView.ExportExcelRequested += report => SafeAction(() => ExportReportExcel(report));
             _reportView.ExportCsvRequested += report => SafeAction(() => ExportReportCsv(report));
             page.Controls.Add(_reportView);

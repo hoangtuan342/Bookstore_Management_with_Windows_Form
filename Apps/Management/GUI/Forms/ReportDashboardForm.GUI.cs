@@ -45,7 +45,6 @@ public sealed class ReportDashboardForm : Form
     private int _days=1825;
     public event Action<int>? PeriodSelected;
     public event Action<DateOnly, DateOnly>? DateRangeSelected;
-    public event Action<ManagerReportDto>? ExportPdfRequested;
     public event Action<ManagerReportDto>? ExportExcelRequested;
     public event Action<ManagerReportDto>? ExportCsvRequested;
     public event Action<ManagerReportDto>? FullDailyTrendRequested;
@@ -134,10 +133,9 @@ public sealed class ReportDashboardForm : Form
         _rangeTools.Controls.Add(_toDate);
         var apply=CreateActionButton("Thống kê kỳ này");
         apply.Click+=(_,_)=>DateRangeSelected?.Invoke(DateOnly.FromDateTime(_fromDate.Value),DateOnly.FromDateTime(_toDate.Value));
-        var pdf=CreateActionButton("Xuất PDF"); pdf.Click+=(_,_)=>{if(_report is not null)ExportPdfRequested?.Invoke(_report);};
         var excel=CreateActionButton("Xuất Excel"); excel.Click+=(_,_)=>{if(_report is not null)ExportExcelRequested?.Invoke(_report);};
         var csv=CreateActionButton("Xuất CSV"); csv.Click+=(_,_)=>{if(_report is not null)ExportCsvRequested?.Invoke(_report);};
-        _rangeTools.Controls.AddRange([apply,pdf,excel,csv]); _heading.Controls.Add(_rangeTools);
+        _rangeTools.Controls.AddRange([apply,excel,csv]); _heading.Controls.Add(_rangeTools);
     }
     private void BuildAnalysisTables()
     {

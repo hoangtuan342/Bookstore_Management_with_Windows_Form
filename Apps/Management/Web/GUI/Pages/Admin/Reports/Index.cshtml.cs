@@ -35,25 +35,18 @@ public sealed class IndexModel(ManagementWebApiClient api, ManagementSpreadsheet
     {
         var report = await LoadReportAsync(ct);
         if (report is null) return NotFound();
-        var csv = new StringBuilder("Date;Orders;Revenue;PurchaseSpend\r\n");
-        foreach (var row in report.RevenueByDayDto) csv.AppendLine(string.Join(';', row.Date.ToString("yyyy-MM-dd"), row.Orders, row.Revenue.ToString(CultureInfo.InvariantCulture), row.PurchaseSpend.ToString(CultureInfo.InvariantCulture)));
-        return File(new UTF8Encoding(true).GetBytes(csv.ToString()), "text/csv; charset=utf-8", $"bao-cao-{report.Days}-ngay.csv");
+        var history = report.Days >= 1820 ? report : await api.GetReportAsync(Token, 1825, ct) ?? report;
+        var csv = exports.CreateReportCsv(report, history);
+        return File(new UTF8Encoding(true).GetBytes(csv), "text/csv; charset=utf-8", $"bao-cao-{report.FromDate:yyyyMMdd}-{report.ToDate:yyyyMMdd}.csv");
     }
 
     public async Task<IActionResult> OnGetExportExcelAsync(CancellationToken ct)
     {
         var report = await LoadReportAsync(ct);
         if (report is null) return NotFound();
-        var bytes = exports.CreateReportWorkbook(report);
+        var history = report.Days >= 1820 ? report : await api.GetReportAsync(Token, 1825, ct) ?? report;
+        var bytes = exports.CreateReportWorkbook(report, history);
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"bao-cao-{report.FromDate:yyyyMMdd}-{report.ToDate:yyyyMMdd}.xlsx");
-    }
-
-    public async Task<IActionResult> OnGetExportPdfAsync(CancellationToken ct)
-    {
-        var report = await LoadReportAsync(ct);
-        if (report is null) return NotFound();
-        var bytes = exports.CreateReportPdf(report);
-        return File(bytes, "application/pdf", $"bao-cao-{report.FromDate:yyyyMMdd}-{report.ToDate:yyyyMMdd}.pdf");
     }
 
     public int BarHeight(decimal value) => Report?.RevenueByDayDto.Count is > 0

@@ -23,7 +23,6 @@
         <div class="report-export-actions">
             <a class="button light" asp-page-handler="Export" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">CSV</a>
             <a class="button light" asp-page-handler="ExportExcel" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">Excel</a>
-            <a class="button light" asp-page-handler="ExportPdf" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">PDF</a>
         </div>
     </form>
     <nav class="report-quick-periods" aria-label="Chọn kỳ báo cáo nhanh">
