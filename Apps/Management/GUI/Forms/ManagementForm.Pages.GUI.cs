@@ -150,6 +150,7 @@ public partial class ManagementForm
             AddManagementPage(vouchers, new()
             {
                 ["load"] = () => LoadVouchers(true),
+                ["create"] = CreateVoucher,
                 ["edit"] = EditVoucher,
                 ["delete"] = DeleteVoucher
             });

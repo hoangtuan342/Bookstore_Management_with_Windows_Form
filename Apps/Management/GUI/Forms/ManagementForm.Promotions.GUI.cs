@@ -197,6 +197,47 @@ public partial class ManagementForm
         if (Confirm($"Xóa chương trình {item.Name}?")) { _services.Manager.DeletePromotion(item.Id); LoadPromotions(true); }
     }
 
+    private void CreateVoucher()
+    {
+        var promos = _services.GetPromotions();
+        var promoOptions = new List<(string Id, string Name)> { ("", "-- Không gắn vào CTKM nào --") };
+        promoOptions.AddRange(promos.Select(p => (p.Id, $"{p.Name} ({p.Id})")));
+
+        var fields = new List<EditDialogField>
+        {
+            new("code", "Mã voucher (để trống sẽ tự sinh)", $"VCH{DateTime.UtcNow:yyMMddHHmm}"),
+            new("status", "Trạng thái voucher", "Active", VoucherStatusOptions),
+            new("expires", "Hạn dùng (yyyy-MM-dd, để trống = không hạn)", DateTime.Today.AddDays(30).ToString("yyyy-MM-dd")),
+            new("max", "Số lượt dùng tối đa", "100"),
+            new("promo", "Gắn vào CTKM", "", promoOptions),
+            new("rate", "→ % giảm giá (bắt buộc nếu chọn CTKM, 0.1-100)", "10")
+        };
+
+        var values = EditDialog.Show(this, "Thêm voucher mới", fields);
+        if (values is null) return;
+
+        var code = EmptyToNull(values["code"]);
+        var status = string.IsNullOrWhiteSpace(values["status"]) ? "Active" : values["status"].Trim();
+        DateTime? expires = DateTime.TryParse(values["expires"], out var d) ? d : null;
+        int? max = int.TryParse(values["max"], out var m) ? m : null;
+
+        var promoId = EmptyToNull(values["promo"]);
+        decimal? discountPercent = null;
+        if (!string.IsNullOrWhiteSpace(promoId))
+        {
+            if (!decimal.TryParse(values["rate"], NumberStyles.Any, CultureInfo.InvariantCulture, out var r) &&
+                !decimal.TryParse(values["rate"], out r))
+            {
+                throw new InvalidOperationException("% giảm giá qua voucher không hợp lệ.");
+            }
+            if (r is <= 0 or > 100) throw new InvalidOperationException("% giảm giá qua voucher phải từ 0.1% đến 100%.");
+            discountPercent = r;
+        }
+
+        _services.Manager.CreateVoucher(new CreateVoucherDto(code, status, expires, max, promoId, discountPercent));
+        LoadVouchers(true);
+    }
+
     private void EditVoucher()
     {
         var old = Selected<ManagerVoucherDto>(_vouchersGrid) ?? throw new InvalidOperationException("Chọn voucher.");

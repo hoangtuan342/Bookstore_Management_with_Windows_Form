@@ -87,6 +87,13 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
         return new AdminVoucherService(dao).GetAllVouchersList();
     }
 
+    public string CreateVoucher(CreateVoucherDto command)
+    {
+        EnsureAccess("promotions");
+        var dao = BookStoreDao.Create();
+        return new AdminVoucherService(dao).CreateVoucher(command);
+    }
+
     public void UpdateVoucher(string id, VoucherUpdateCommandDto command)
     {
         EnsureAccess("promotions");

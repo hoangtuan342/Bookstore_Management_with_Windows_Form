@@ -307,6 +307,43 @@ public class PromotionDao
         return new VoucherSummaryDto(v.Id, v.Status, v.Exp, v.Max, v.Used, promos, v.Orders);
     }
 
+    public void InsertVoucher(string code, string status, DateTime? expiresAt, int? maxUsageCount, string? promotionId = null, decimal? discountPercent = null)
+    {
+        using var conn = DbConnection.Open();
+        using var tx = conn.BeginTransaction();
+        try
+        {
+            var sqlVoucher = @"
+                INSERT INTO Voucher (MaVoucher, TrangThai, HanSuDung, SoLanToiDa, SoLanDaSuDung)
+                VALUES (@code, @status, @exp, @max, 0)";
+            using (var cmd = new SqlCommand(sqlVoucher, conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@code", code.ToUpperInvariant());
+                cmd.Parameters.AddWithValue("@status", status);
+                cmd.Parameters.AddWithValue("@exp", (object?)expiresAt ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@max", (object?)maxUsageCount ?? DBNull.Value);
+                cmd.ExecuteNonQuery();
+            }
+
+            if (!string.IsNullOrWhiteSpace(promotionId) && discountPercent.HasValue && discountPercent.Value > 0)
+            {
+                var sqlLink = "INSERT INTO KMTheoVoucher (MaCTKM, MaVoucher, PhanTramGiam) VALUES (@pId, @code, @pct)";
+                using var cmdLink = new SqlCommand(sqlLink, conn, tx);
+                cmdLink.Parameters.AddWithValue("@pId", promotionId);
+                cmdLink.Parameters.AddWithValue("@code", code.ToUpperInvariant());
+                cmdLink.Parameters.AddWithValue("@pct", discountPercent.Value);
+                cmdLink.ExecuteNonQuery();
+            }
+
+            tx.Commit();
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
+    }
+
     public void UpdateVoucher(string code, string status, DateTime? expiresAt, int? maxUsageCount)
     {
         using var conn = DbConnection.Open();

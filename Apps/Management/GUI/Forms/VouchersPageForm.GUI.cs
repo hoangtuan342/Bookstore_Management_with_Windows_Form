@@ -15,6 +15,7 @@ internal sealed class VouchersPageForm : ManagementGridPageForm
         AddSearchFilterControl(_status);
         AddSearchFilterControl(_validity);
         AddAction("Tải", "load");
+        AddAction("Thêm voucher", "create");
         AddAction("Cập nhật", "edit");
         AddAction("Xóa", "delete");
     }

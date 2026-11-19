@@ -14,6 +14,10 @@ public sealed class AdminVouchersController(AdminVoucherService service) : Contr
     [HttpGet]
     public List<VoucherSummaryDto> Get() => service.GetAllVouchersList();
 
+    [HttpPost]
+    public IActionResult Create(CreateVoucherDto request) =>
+        ControllerExceptionHelper.Execute(() => service.CreateVoucher(request));
+
     [HttpPut("{id}")]
     public IActionResult Update(string id, VoucherUpdateRequest request) =>
         ControllerExceptionHelper.Execute(() => service.Update(id, new VoucherUpdateCommandDto(request.Status, request.ExpiresAt, request.MaxUsageCount)));

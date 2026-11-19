@@ -29,6 +29,39 @@ namespace TrangSach.BUS
             return _vouchers;
         }
 
+        public string CreateVoucher(CreateVoucherDto command)
+        {
+            var code = string.IsNullOrWhiteSpace(command.Code)
+                ? $"VCH{DateTime.UtcNow:yyMMddHHmmss}"
+                : command.Code.Trim().ToUpperInvariant();
+
+            if (code.Length > 50)
+                throw new ArgumentException("Mã voucher không được vượt quá 50 ký tự.");
+
+            var status = string.IsNullOrWhiteSpace(command.Status) ? "Active" : command.Status.Trim();
+            if (status.Length > 30)
+                throw new ArgumentException("Trạng thái không hợp lệ.");
+
+            if (command.MaxUsageCount is < 1 or > 1000000)
+                throw new ArgumentException("Số lượt sử dụng tối đa phải từ 1 đến 1.000.000.");
+
+            if (command.DiscountPercent is <= 0 or > 100)
+                throw new ArgumentException("Phần trăm giảm giá phải từ 0.1% đến 100%.");
+
+            if (!string.IsNullOrWhiteSpace(command.PromotionId) && !command.DiscountPercent.HasValue)
+                throw new ArgumentException("Khi gắn voucher vào chương trình khuyến mãi, vui lòng nhập % giảm giá.");
+
+            var existing = dao.Promotions.FindVoucher(code);
+            if (existing != null)
+                throw new InvalidOperationException($"Mã voucher '{code}' đã tồn tại trong hệ thống.");
+
+            dao.Promotions.InsertVoucher(code, status, command.ExpiresAt, command.MaxUsageCount, command.PromotionId, command.DiscountPercent);
+
+            // Invalidate cache
+            _vouchers.Clear();
+            return code;
+        }
+
         public void Update(string id, VoucherUpdateCommandDto command)
         {
             if (string.IsNullOrWhiteSpace(command.Status) || command.Status.Trim().Length > 30

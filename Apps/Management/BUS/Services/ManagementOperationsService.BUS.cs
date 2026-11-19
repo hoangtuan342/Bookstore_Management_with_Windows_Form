@@ -54,6 +54,7 @@ public sealed class ManagementOperationsService(ManagementBusinessService dispat
     public List<ManagerVoucherDto> GetVouchers() =>
         dispatch.GetVouchers().Select(x => new ManagerVoucherDto(x.Id, x.Status, x.ExpiresAt,
             x.MaxUsageCount, x.UsageCount, x.Promotions, x.OrderCount)).ToList();
+    public string CreateVoucher(CreateVoucherDto item) => dispatch.CreateVoucher(item);
     public void UpdateVoucher(string id, UpdateVoucherDto item) =>
         dispatch.UpdateVoucher(id, new VoucherUpdateCommandDto(item.Status, item.ExpiresAt, item.MaxUsageCount));
     public void DeleteVoucher(string id) => dispatch.DeleteVoucher(id);
