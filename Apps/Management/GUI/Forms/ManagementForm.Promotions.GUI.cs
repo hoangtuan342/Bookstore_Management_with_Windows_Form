@@ -67,6 +67,48 @@ public partial class ManagementForm
         LoadPromotions(true);
     }
 
+    private void EditPromotionRules()
+    {
+        var old = Selected<ManagerPromotionDto>(_promotionsGrid) ?? throw new InvalidOperationException("Chọn chương trình khuyến mãi cần sửa quy tắc.");
+        var books = _services.GetBooks();
+        var bookRule = old.BookRules.FirstOrDefault();
+        var orderRule = old.OrderRules.FirstOrDefault();
+        var voucherRule = old.VoucherRules.FirstOrDefault();
+
+        var bookOptions = new List<(string Id, string Name)> { ("", "-- Không giảm theo sách --") };
+        bookOptions.AddRange(books.Select(b => (b.Id, $"{b.Title} ({b.Id})")));
+
+        var fields = new List<EditDialogField>
+        {
+            new("book", "1. Sách giảm giá (KMTheoSach)", bookRule?.BookId ?? "", bookOptions),
+            new("bookRate", "% giảm theo sách (0-90)", bookRule?.DiscountPercent.ToString(CultureInfo.InvariantCulture) ?? ""),
+            new("minimum", "2. Đơn tối thiểu (KMTheoHD)", orderRule?.MinimumOrderAmount.ToString(CultureInfo.InvariantCulture) ?? ""),
+            new("orderRate", "% giảm theo đơn (0-90)", orderRule?.DiscountPercent.ToString(CultureInfo.InvariantCulture) ?? ""),
+            new("voucher", "3. Mã voucher (KMTheoVoucher)", voucherRule?.VoucherId ?? ""),
+            new("voucherRate", "% giảm voucher (0-90)", voucherRule?.DiscountPercent.ToString(CultureInfo.InvariantCulture) ?? "")
+        };
+
+        var values = EditDialog.Show(this, $"Cập nhật quy tắc ưu đãi: {old.Name}", fields);
+        if (values is null) return;
+
+        decimal? dec(string key) => decimal.TryParse(values[key], NumberStyles.Number, CultureInfo.InvariantCulture, out var n) ? n : null;
+
+        var bookRules = new List<PromotionBookRuleDto>();
+        if (!string.IsNullOrWhiteSpace(values["book"]) && dec("bookRate") is { } bRate && bRate > 0)
+            bookRules.Add(new PromotionBookRuleDto(values["book"], bRate));
+
+        var orderRules = new List<PromotionOrderRuleDto>();
+        if (dec("minimum") is { } minAmount && dec("orderRate") is { } oRate && oRate > 0)
+            orderRules.Add(new PromotionOrderRuleDto(minAmount, oRate));
+
+        var voucherRules = new List<PromotionVoucherRuleDto>();
+        if (!string.IsNullOrWhiteSpace(values["voucher"]) && dec("voucherRate") is { } vRate && vRate > 0)
+            voucherRules.Add(new PromotionVoucherRuleDto(values["voucher"].Trim(), vRate));
+
+        _services.Manager.UpdatePromotionRules(old.Id, new UpdatePromotionRulesDto(bookRules, orderRules, voucherRules));
+        LoadPromotions(true);
+    }
+
     private void DeletePromotion()
     {
         var item = Selected<ManagerPromotionDto>(_promotionsGrid) ?? throw new InvalidOperationException("Chọn khuyến mãi.");

@@ -1,4 +1,24 @@
-﻿namespace TrangSach.Management.GUI;
+﻿using TrangSach.Shared.DTO;
+
+namespace TrangSach.Management.GUI;
+
+public sealed class PromotionRuleDisplayItem
+{
+    public string Type { get; set; } = string.Empty;
+    public string Target { get; set; } = string.Empty;
+    public string Condition { get; set; } = string.Empty;
+    public string Discount { get; set; } = string.Empty;
+
+    public PromotionRuleDisplayItem() { }
+
+    public PromotionRuleDisplayItem(string type, string target, string condition, string discount)
+    {
+        Type = type;
+        Target = target;
+        Condition = condition;
+        Discount = discount;
+    }
+}
 
 internal sealed class PromotionsPageForm : ManagementGridPageForm
 {
@@ -11,9 +31,48 @@ internal sealed class PromotionsPageForm : ManagementGridPageForm
         _period.SelectedValueChanged += (_, _) => RefreshFilter();
         AddSearchFilterControl(ManagementGridPageForm.FilterLabel("Thời gian"));
         AddSearchFilterControl(_period);
+
+        var detailGrid = CreateDetailGrid();
+        SetDetailsView(detailGrid, "CHI TIẾT ƯU ĐÃI · Chọn một chương trình khuyến mãi phía trên để xem các mức giảm");
+
+        Grid.SelectionChanged += (_, _) =>
+        {
+            if (Grid.CurrentRow?.DataBoundItem is not ManagerPromotionDto promo)
+            {
+                detailGrid.DataSource = null;
+                SetDetailsTitle("CHI TIẾT ƯU ĐÃI · Chọn một chương trình khuyến mãi phía trên để xem các mức giảm");
+                return;
+            }
+
+            var items = new List<PromotionRuleDisplayItem>();
+
+            // 1. Khuyến mãi theo sách
+            foreach (var b in promo.BookRules)
+            {
+                var offer = promo.BookOffers.FirstOrDefault(o => o.Contains(b.BookId, StringComparison.OrdinalIgnoreCase)) ?? b.BookId;
+                items.Add(new PromotionRuleDisplayItem("1. Giảm theo Sách (KMTheoSach)", offer, "Khi mua sách này", $"{b.DiscountPercent:0.#}%"));
+            }
+
+            // 2. Khuyến mãi theo hóa đơn
+            foreach (var o in promo.OrderRules)
+            {
+                items.Add(new PromotionRuleDisplayItem("2. Giảm theo Đơn hàng (KMTheoHD)", $"Hóa đơn từ {o.MinimumOrderAmount:N0} ₫", $"Đơn hàng đạt tối thiểu {o.MinimumOrderAmount:N0} ₫", $"{o.DiscountPercent:0.#}%"));
+            }
+
+            // 3. Khuyến mãi theo Voucher
+            foreach (var v in promo.VoucherRules)
+            {
+                items.Add(new PromotionRuleDisplayItem("3. Giảm theo Voucher (KMTheoVoucher)", $"Voucher '{v.VoucherId}'", "Khi nhập mã voucher này", $"{v.DiscountPercent:0.#}%"));
+            }
+
+            SetDetailsTitle($"CHI TIẾT ƯU ĐÃI: {promo.Name} ({promo.Id}) · Thời gian: {promo.StartsAt:dd/MM/yyyy} – {promo.EndsAt:dd/MM/yyyy} · {items.Count} quy tắc ưu đãi");
+            detailGrid.DataSource = items;
+        };
+
         AddAction("Tải", "load");
         AddAction("Tạo", "create");
         AddAction("Sửa tên/thời gian", "edit");
+        AddAction("Sửa quy tắc ưu đãi", "rules");
         AddAction("Xóa", "delete");
     }
 
@@ -21,7 +80,7 @@ internal sealed class PromotionsPageForm : ManagementGridPageForm
 
     protected override bool MatchesAdditionalFilters(object item)
     {
-        if (item is not TrangSach.Shared.DTO.ManagerPromotionDto promotion) return true;
+        if (item is not ManagerPromotionDto promotion) return true;
         var period = ManagementGridPageForm.Value(_period);
         var now = DateTime.Now;
         return period switch
@@ -33,10 +92,7 @@ internal sealed class PromotionsPageForm : ManagementGridPageForm
         };
     }
 
-    protected override IEnumerable<string?> GetAdditionalSearchValues(object item) => item is TrangSach.Shared.DTO.ManagerPromotionDto promotion
+    protected override IEnumerable<string?> GetAdditionalSearchValues(object item) => item is ManagerPromotionDto promotion
         ? promotion.BookOffers.Concat(promotion.OrderOffers).Concat(promotion.Vouchers)
         : [];
 }
-
-
-

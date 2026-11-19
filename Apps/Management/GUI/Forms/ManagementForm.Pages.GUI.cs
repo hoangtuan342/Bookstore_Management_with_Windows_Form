@@ -141,6 +141,7 @@ public partial class ManagementForm
                 ["load"] = () => LoadPromotions(true),
                 ["create"] = CreatePromotion,
                 ["edit"] = EditPromotion,
+                ["rules"] = EditPromotionRules,
                 ["delete"] = DeletePromotion
             });
 
