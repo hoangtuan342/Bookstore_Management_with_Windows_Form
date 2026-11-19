@@ -12,10 +12,16 @@ public partial class ManagementForm
         ("Inactive", "Ngưng sử dụng (Inactive)")
     };
 
+    private static readonly List<(string Id, string Name)> YesNoOptions = new()
+    {
+        ("no", "Không chọn áp dụng"),
+        ("yes", "Có chọn áp dụng")
+    };
+
     private void CreatePromotion()
     {
         var books = _services.GetBooks();
-        var bookOptions = new List<(string Id, string Name)> { ("", "-- Không áp dụng sách cụ thể --") };
+        var bookOptions = new List<(string Id, string Name)> { ("", "-- Chọn sách cần giảm --") };
         bookOptions.AddRange(books.Select(b => (b.Id, $"{b.Title} ({b.Id})")));
 
         var fields = new List<EditDialogField>
@@ -23,16 +29,25 @@ public partial class ManagementForm
             new("name", "Tên chương trình", ""),
             new("start", "Bắt đầu (yyyy-MM-dd)", DateTime.Today.ToString("yyyy-MM-dd")),
             new("end", "Kết thúc (yyyy-MM-dd)", DateTime.Today.AddDays(7).ToString("yyyy-MM-dd")),
-            new("book", "Sách giảm giá", "", bookOptions),
-            new("bookRate", "% giảm theo sách (0-90)", ""),
-            new("minimum", "Đơn tối thiểu để giảm đơn (VNĐ)", ""),
-            new("orderRate", "% giảm theo đơn (0-90)", ""),
-            new("voucher", "Mã voucher (tùy chọn)", ""),
-            new("voucherRate", "% giảm voucher (0-90)", ""),
-            new("maxUses", "Số lượt dùng voucher tối đa", "")
+
+            // Hình thức 1: Giảm theo sách
+            new("enableBook", "1. Áp dụng giảm theo Sách?", "no", YesNoOptions),
+            new("book", "→ Chọn sách giảm giá", "", bookOptions),
+            new("bookRate", "→ % giảm cho sách này (0-90)", "10"),
+
+            // Hình thức 2: Giảm theo hóa đơn
+            new("enableOrder", "2. Áp dụng giảm theo Hóa đơn?", "no", YesNoOptions),
+            new("minimum", "→ Mức đơn tối thiểu (VNĐ)", "200000"),
+            new("orderRate", "→ % giảm cho đơn hàng (0-90)", "5"),
+
+            // Hình thức 3: Giảm qua Voucher
+            new("enableVoucher", "3. Áp dụng tạo Voucher kèm theo?", "no", YesNoOptions),
+            new("voucher", "→ Mã voucher", $"KM{DateTime.UtcNow:yyMMdd}"),
+            new("voucherRate", "→ % giảm qua voucher (0-90)", "10"),
+            new("maxUses", "→ Số lượt dùng tối đa", "100")
         };
 
-        var values = EditDialog.Show(this, "Tạo chương trình khuyến mãi", fields);
+        var values = EditDialog.Show(this, "Tạo chương trình khuyến mãi mới", fields);
         if (values is null) return;
 
         if (!DateTime.TryParse(values["start"], out var start) || !DateTime.TryParse(values["end"], out var end) || end < start)
@@ -41,11 +56,56 @@ public partial class ManagementForm
         decimal? dec(string key) => decimal.TryParse(values[key], NumberStyles.Number, CultureInfo.InvariantCulture, out var n) ? n : null;
         int? integer(string key) => int.TryParse(values[key], out var n) ? n : null;
 
+        var hasBook = values["enableBook"] == "yes";
+        var hasOrder = values["enableOrder"] == "yes";
+        var hasVoucher = values["enableVoucher"] == "yes";
+
+        if (!hasBook && !hasOrder && !hasVoucher)
+            throw new InvalidOperationException("Vui lòng chọn áp dụng ít nhất một trong ba hình thức khuyến mãi (theo sách, theo hóa đơn hoặc voucher).");
+
+        string? chosenBook = null;
+        decimal? chosenBookRate = null;
+        if (hasBook)
+        {
+            chosenBook = EmptyToNull(values["book"]);
+            if (string.IsNullOrWhiteSpace(chosenBook))
+                throw new InvalidOperationException("Bạn đã chọn áp dụng giảm theo Sách, vui lòng chọn một cuốn sách từ danh sách.");
+            chosenBookRate = dec("bookRate");
+            if (chosenBookRate is null or <= 0 or > 90)
+                throw new InvalidOperationException("% giảm cho sách phải từ 0.1% đến 90%.");
+        }
+
+        decimal? chosenMinOrder = null;
+        decimal? chosenOrderRate = null;
+        if (hasOrder)
+        {
+            chosenMinOrder = dec("minimum");
+            if (chosenMinOrder is null or < 0)
+                throw new InvalidOperationException("Mức đơn tối thiểu phải là số không âm.");
+            chosenOrderRate = dec("orderRate");
+            if (chosenOrderRate is null or <= 0 or > 90)
+                throw new InvalidOperationException("% giảm cho đơn hàng phải từ 0.1% đến 90%.");
+        }
+
+        string? chosenVoucher = null;
+        decimal? chosenVoucherRate = null;
+        int? chosenMaxUses = null;
+        if (hasVoucher)
+        {
+            chosenVoucher = EmptyToNull(values["voucher"]);
+            if (string.IsNullOrWhiteSpace(chosenVoucher))
+                throw new InvalidOperationException("Bạn đã chọn áp dụng tạo Voucher, vui lòng nhập mã voucher.");
+            chosenVoucherRate = dec("voucherRate");
+            if (chosenVoucherRate is null or <= 0 or > 90)
+                throw new InvalidOperationException("% giảm qua voucher phải từ 0.1% đến 90%.");
+            chosenMaxUses = integer("maxUses");
+        }
+
         _services.Manager.CreatePromotion(new CreatePromotionDto(
             values["name"], start, end,
-            EmptyToNull(values["book"]), dec("bookRate"),
-            dec("minimum"), dec("orderRate"),
-            EmptyToNull(values["voucher"]), dec("voucherRate"), integer("maxUses")));
+            chosenBook, chosenBookRate,
+            chosenMinOrder, chosenOrderRate,
+            chosenVoucher, chosenVoucherRate, chosenMaxUses));
 
         LoadPromotions(true);
     }
@@ -75,17 +135,22 @@ public partial class ManagementForm
         var orderRule = old.OrderRules.FirstOrDefault();
         var voucherRule = old.VoucherRules.FirstOrDefault();
 
-        var bookOptions = new List<(string Id, string Name)> { ("", "-- Không giảm theo sách --") };
+        var bookOptions = new List<(string Id, string Name)> { ("", "-- Chọn sách cần giảm --") };
         bookOptions.AddRange(books.Select(b => (b.Id, $"{b.Title} ({b.Id})")));
 
         var fields = new List<EditDialogField>
         {
-            new("book", "1. Sách giảm giá (KMTheoSach)", bookRule?.BookId ?? "", bookOptions),
-            new("bookRate", "% giảm theo sách (0-90)", bookRule?.DiscountPercent.ToString(CultureInfo.InvariantCulture) ?? ""),
-            new("minimum", "2. Đơn tối thiểu (KMTheoHD)", orderRule?.MinimumOrderAmount.ToString(CultureInfo.InvariantCulture) ?? ""),
-            new("orderRate", "% giảm theo đơn (0-90)", orderRule?.DiscountPercent.ToString(CultureInfo.InvariantCulture) ?? ""),
-            new("voucher", "3. Mã voucher (KMTheoVoucher)", voucherRule?.VoucherId ?? ""),
-            new("voucherRate", "% giảm voucher (0-90)", voucherRule?.DiscountPercent.ToString(CultureInfo.InvariantCulture) ?? "")
+            new("enableBook", "1. Áp dụng giảm theo Sách?", bookRule != null ? "yes" : "no", YesNoOptions),
+            new("book", "→ Chọn sách giảm giá", bookRule?.BookId ?? "", bookOptions),
+            new("bookRate", "→ % giảm cho sách này (0-90)", bookRule?.DiscountPercent.ToString(CultureInfo.InvariantCulture) ?? "10"),
+
+            new("enableOrder", "2. Áp dụng giảm theo Hóa đơn?", orderRule != null ? "yes" : "no", YesNoOptions),
+            new("minimum", "→ Mức đơn tối thiểu (VNĐ)", orderRule?.MinimumOrderAmount.ToString(CultureInfo.InvariantCulture) ?? "200000"),
+            new("orderRate", "→ % giảm cho đơn hàng (0-90)", orderRule?.DiscountPercent.ToString(CultureInfo.InvariantCulture) ?? "5"),
+
+            new("enableVoucher", "3. Áp dụng giảm qua Voucher?", voucherRule != null ? "yes" : "no", YesNoOptions),
+            new("voucher", "→ Mã voucher", voucherRule?.VoucherId ?? $"KM{DateTime.UtcNow:yyMMdd}"),
+            new("voucherRate", "→ % giảm qua voucher (0-90)", voucherRule?.DiscountPercent.ToString(CultureInfo.InvariantCulture) ?? "10")
         };
 
         var values = EditDialog.Show(this, $"Cập nhật quy tắc ưu đãi: {old.Name}", fields);
@@ -94,16 +159,33 @@ public partial class ManagementForm
         decimal? dec(string key) => decimal.TryParse(values[key], NumberStyles.Number, CultureInfo.InvariantCulture, out var n) ? n : null;
 
         var bookRules = new List<PromotionBookRuleDto>();
-        if (!string.IsNullOrWhiteSpace(values["book"]) && dec("bookRate") is { } bRate && bRate > 0)
-            bookRules.Add(new PromotionBookRuleDto(values["book"], bRate));
+        if (values["enableBook"] == "yes")
+        {
+            var bookId = EmptyToNull(values["book"]);
+            if (string.IsNullOrWhiteSpace(bookId)) throw new InvalidOperationException("Vui lòng chọn sách giảm giá.");
+            var bRate = dec("bookRate");
+            if (bRate is null or <= 0 or > 90) throw new InvalidOperationException("% giảm cho sách không hợp lệ.");
+            bookRules.Add(new PromotionBookRuleDto(bookId, bRate.Value));
+        }
 
         var orderRules = new List<PromotionOrderRuleDto>();
-        if (dec("minimum") is { } minAmount && dec("orderRate") is { } oRate && oRate > 0)
-            orderRules.Add(new PromotionOrderRuleDto(minAmount, oRate));
+        if (values["enableOrder"] == "yes")
+        {
+            var min = dec("minimum") ?? throw new InvalidOperationException("Mức đơn tối thiểu không hợp lệ.");
+            var oRate = dec("orderRate");
+            if (oRate is null or <= 0 or > 90) throw new InvalidOperationException("% giảm cho đơn hàng không hợp lệ.");
+            orderRules.Add(new PromotionOrderRuleDto(min, oRate.Value));
+        }
 
         var voucherRules = new List<PromotionVoucherRuleDto>();
-        if (!string.IsNullOrWhiteSpace(values["voucher"]) && dec("voucherRate") is { } vRate && vRate > 0)
-            voucherRules.Add(new PromotionVoucherRuleDto(values["voucher"].Trim(), vRate));
+        if (values["enableVoucher"] == "yes")
+        {
+            var vCode = EmptyToNull(values["voucher"]);
+            if (string.IsNullOrWhiteSpace(vCode)) throw new InvalidOperationException("Mã voucher không được để trống.");
+            var vRate = dec("voucherRate");
+            if (vRate is null or <= 0 or > 90) throw new InvalidOperationException("% giảm cho voucher không hợp lệ.");
+            voucherRules.Add(new PromotionVoucherRuleDto(vCode, vRate.Value));
+        }
 
         _services.Manager.UpdatePromotionRules(old.Id, new UpdatePromotionRulesDto(bookRules, orderRules, voucherRules));
         LoadPromotions(true);
