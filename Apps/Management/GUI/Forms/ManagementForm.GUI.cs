@@ -57,6 +57,8 @@ public partial class ManagementForm : Form
     private DataGridView _ordersGrid = new();
     private DataGridView _receiptsGrid = new();
     private ReportDashboardForm? _reportView;
+    private ManagerReportDto? _currentReport;
+    private ManagerReportDto? _currentHistoryReport;
     private DataGridView _logsGrid = new();
     private DataGridView _referenceGrid = new();
     private DataGridView _suppliersGrid = new();

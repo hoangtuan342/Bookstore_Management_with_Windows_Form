@@ -46,6 +46,8 @@ public partial class ManagementForm
         _reportView.SetLoading(days);
         var report = _services.Manager.GetReport(days);
         var history = days >= 1820 ? report : _services.Manager.GetReport(1825);
+        _currentReport = report;
+        _currentHistoryReport = history;
         _reportView.ShowReport(report, history);
     }
 
@@ -56,6 +58,8 @@ public partial class ManagementForm
         _reportView.SetLoading(fromDate, toDate);
         var report = _services.Manager.GetReport(fromDate, toDate);
         var history = (toDate.DayNumber - fromDate.DayNumber + 1) >= 1820 ? report : _services.Manager.GetReport(1825);
+        _currentReport = report;
+        _currentHistoryReport = history;
         _reportView.ShowReport(report, history);
     }
 
@@ -71,36 +75,77 @@ public partial class ManagementForm
     {
         using var dialog = new SaveFileDialog { Filter = "Excel Workbook (*.xlsx)|*.xlsx|Excel 97-2003 (*.xls)|*.xls", FileName = $"bao-cao-{report.FromDate:yyyyMMdd}-{report.ToDate:yyyyMMdd}.xlsx" };
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
-        ExportExcel(report, dialog.FileName);
-        MessageBox.Show(this, "Đã xuất báo cáo Excel với các trang tổng quan, theo tháng, nhân viên và sản phẩm.", "Xuất báo cáo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        ExportExcel(report, _currentHistoryReport ?? report, dialog.FileName);
+        MessageBox.Show(this, "Đã xuất báo cáo Excel với đầy đủ các trang tổng quan, theo ngày, tháng, quý, năm, nhân viên, sản phẩm bán chạy, thể loại, khách hàng và tồn kho.", "Xuất báo cáo", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void ExportReportCsv(ManagerReportDto report)
     {
         using var dialog = new SaveFileDialog { Filter = "CSV (*.csv)|*.csv", FileName = $"bao-cao-{report.FromDate:yyyyMMdd}-{report.ToDate:yyyyMMdd}.csv" };
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
-        var csv = new System.Text.StringBuilder("Ngày;Đơn;Doanh thu;Chi nhập\r\n");
+        var csv = new System.Text.StringBuilder("Mục báo cáo;Cột 1;Cột 2;Cột 3;Cột 4;Cột 5;Cột 6\r\n");
+
+        csv.AppendLine("1. TỔNG QUAN;;;;;");
+        csv.AppendLine($"Từ ngày;{report.FromDate:dd/MM/yyyy};Đến ngày;{report.ToDate:dd/MM/yyyy};;");
+        csv.AppendLine($"Doanh thu đơn hoàn tất;{report.Revenue.ToString(CultureInfo.InvariantCulture)};Tổng đơn;{report.TotalOrders};Đơn hoàn tất;{report.CompletedOrders}");
+        csv.AppendLine($"Chi nhập hàng;{report.PurchaseSpend.ToString(CultureInfo.InvariantCulture)};Lãi gộp ước tính;{report.EstimatedGrossProfit.ToString(CultureInfo.InvariantCulture)};Giá trị TB/đơn;{report.AverageOrderValue.ToString(CultureInfo.InvariantCulture)}");
+        csv.AppendLine();
+
+        csv.AppendLine("2. DOANH THU THEO NGÀY;Ngày;Số đơn;Doanh thu;Chi nhập;");
         foreach (var row in report.RevenueByDayDto.OrderBy(x => x.Date))
-            csv.Append(row.Date.ToString("yyyy-MM-dd")).Append(';')
-                .Append(row.Orders.ToString(CultureInfo.InvariantCulture)).Append(';')
-                .Append(row.Revenue.ToString(CultureInfo.InvariantCulture)).Append(';')
-                .Append(row.PurchaseSpend.ToString(CultureInfo.InvariantCulture)).Append("\r\n");
+        {
+            csv.AppendLine(string.Join(';', "Theo ngày", row.Date.ToString("yyyy-MM-dd"), row.Orders.ToString(CultureInfo.InvariantCulture), row.Revenue.ToString(CultureInfo.InvariantCulture), row.PurchaseSpend.ToString(CultureInfo.InvariantCulture), ""));
+        }
+        csv.AppendLine();
+
+        csv.AppendLine("3. TOP SÁCH BÁN CHẠY;Mã sách;Tên sách;Số lượng bán;Doanh thu;");
+        foreach (var row in report.BestSellers)
+        {
+            csv.AppendLine(string.Join(';', "Bán chạy", row.BookId, row.Title.Replace(';', ','), row.Quantity.ToString(CultureInfo.InvariantCulture), row.Revenue.ToString(CultureInfo.InvariantCulture), ""));
+        }
+        csv.AppendLine();
+
+        csv.AppendLine("4. DOANH THU THEO THỂ LOẠI;Thể loại;Số lượng bán;Doanh thu;;");
+        foreach (var row in report.RevenueByCategory)
+        {
+            csv.AppendLine(string.Join(';', "Thể loại", row.Category.Replace(';', ','), row.Quantity.ToString(CultureInfo.InvariantCulture), row.Revenue.ToString(CultureInfo.InvariantCulture), "", ""));
+        }
+        csv.AppendLine();
+
+        csv.AppendLine("5. KHÁCH HÀNG MUA NHIỀU;Mã KH;Tên khách hàng;Số đơn;Số cuốn;Doanh thu");
+        foreach (var row in report.TopCustomers)
+        {
+            csv.AppendLine(string.Join(';', "Khách hàng", row.CustomerId, row.CustomerName.Replace(';', ','), row.Orders.ToString(CultureInfo.InvariantCulture), row.Quantity.ToString(CultureInfo.InvariantCulture), row.Revenue.ToString(CultureInfo.InvariantCulture)));
+        }
+        csv.AppendLine();
+
+        csv.AppendLine("6. TỒN KHO THEO THỂ LOẠI;Thể loại;Số đầu sách;Tổng tồn kho;Sách sắp hết;Giá trị tồn");
+        foreach (var row in report.InventoryByCategory)
+        {
+            csv.AppendLine(string.Join(';', "Tồn kho", row.Category.Replace(';', ','), row.BookCount.ToString(CultureInfo.InvariantCulture), row.StockQuantity.ToString(CultureInfo.InvariantCulture), row.LowStockBooks.ToString(CultureInfo.InvariantCulture), row.StockValue.ToString(CultureInfo.InvariantCulture)));
+        }
+
         File.WriteAllText(dialog.FileName, csv.ToString(), new System.Text.UTF8Encoding(true));
-        MessageBox.Show(this, "Đã xuất báo cáo CSV.", "Xuất báo cáo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        MessageBox.Show(this, "Đã xuất báo cáo CSV toàn diện.", "Xuất báo cáo", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private static bool _pdfConfigured;
 
-    private void ExportExcel(ManagerReportDto report, string path)
+    private void ExportExcel(ManagerReportDto report, ManagerReportDto history, string path)
     {
         var sheets = new List<ExcelSheetData>
         {
             new ExcelSheetData("Tong quan", BuildSummary(report)),
-            new ExcelSheetData("Theo thang", [ ["Năm", "Tháng", "Số đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], .. report.RevenueByMonth.Select(row => new object?[] { row.Year, row.Month, row.Orders, row.Revenue, row.PurchaseSpend, row.EstimatedGrossProfit }) ]),
-            new ExcelSheetData("Theo quy", [ ["Năm", "Quý", "Số đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], .. report.RevenueByQuarter.Select(row => new object?[] { row.Year, row.Quarter, row.Orders, row.Revenue, row.PurchaseSpend, row.EstimatedGrossProfit }) ]),
-            new ExcelSheetData("Theo nam", [ ["Năm", "Số đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], .. report.RevenueByYear.Select(row => new object?[] { row.Year, row.Orders, row.Revenue, row.PurchaseSpend, row.EstimatedGrossProfit }) ]),
-            new ExcelSheetData("Theo nhan vien", [ ["Mã nhân viên", "Nhân viên", "Năm", "Số đơn", "Doanh thu"], .. report.RevenueByEmployeeYear.Select(row => new object?[] { row.EmployeeId, row.EmployeeName, row.Year, row.Orders, row.Revenue }) ]),
-            new ExcelSheetData("Theo san pham", [ ["Mã sách", "Tên sách", "Năm", "Quý", "Số lượng", "Doanh thu"], .. report.ProductSalesByQuarter.Select(row => new object?[] { row.BookId, row.Title, row.Year, row.Quarter, row.Quantity, row.Revenue }) ])
+            new ExcelSheetData("Theo ngay", [ ["Ngày", "Số đơn hoàn tất", "Doanh thu bán", "Tiền nhập hàng"], .. report.RevenueByDayDto.OrderBy(x => x.Date).Select(row => new object?[] { row.Date.ToString("yyyy-MM-dd"), row.Orders, row.Revenue, row.PurchaseSpend }) ]),
+            new ExcelSheetData("Theo thang", [ ["Năm", "Tháng", "Số đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], .. (history.RevenueByMonth.Count > 0 ? history.RevenueByMonth : report.RevenueByMonth).Select(row => new object?[] { row.Year, row.Month, row.Orders, row.Revenue, row.PurchaseSpend, row.EstimatedGrossProfit }) ]),
+            new ExcelSheetData("Theo quy", [ ["Năm", "Quý", "Số đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], .. (history.RevenueByQuarter.Count > 0 ? history.RevenueByQuarter : report.RevenueByQuarter).Select(row => new object?[] { row.Year, row.Quarter, row.Orders, row.Revenue, row.PurchaseSpend, row.EstimatedGrossProfit }) ]),
+            new ExcelSheetData("Theo nam", [ ["Năm", "Số đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], .. (history.RevenueByYear.Count > 0 ? history.RevenueByYear : report.RevenueByYear).Select(row => new object?[] { row.Year, row.Orders, row.Revenue, row.PurchaseSpend, row.EstimatedGrossProfit }) ]),
+            new ExcelSheetData("Theo nhan vien", [ ["Mã nhân viên", "Nhân viên", "Năm", "Số đơn", "Doanh thu"], .. (history.RevenueByEmployeeYear.Count > 0 ? history.RevenueByEmployeeYear : report.RevenueByEmployeeYear).Select(row => new object?[] { row.EmployeeId, row.EmployeeName, row.Year, row.Orders, row.Revenue }) ]),
+            new ExcelSheetData("Theo san pham", [ ["Mã sách", "Tên sách", "Năm", "Quý", "Số lượng", "Doanh thu"], .. (history.ProductSalesByQuarter.Count > 0 ? history.ProductSalesByQuarter : report.ProductSalesByQuarter).Select(row => new object?[] { row.BookId, row.Title, row.Year, row.Quarter, row.Quantity, row.Revenue }) ]),
+            new ExcelSheetData("Sach ban chay", [ ["Mã sách", "Tên sách", "Số lượng bán", "Doanh thu"], .. report.BestSellers.Select(row => new object?[] { row.BookId, row.Title, row.Quantity, row.Revenue }) ]),
+            new ExcelSheetData("The loai", [ ["Thể loại", "Số lượng bán", "Doanh thu"], .. report.RevenueByCategory.Select(row => new object?[] { row.Category, row.Quantity, row.Revenue }) ]),
+            new ExcelSheetData("Khach hang", [ ["Mã khách hàng", "Tên khách hàng", "Số đơn", "Số cuốn", "Doanh thu"], .. report.TopCustomers.Select(row => new object?[] { row.CustomerId, row.CustomerName, row.Orders, row.Quantity, row.Revenue }) ]),
+            new ExcelSheetData("Ton kho", [ ["Thể loại", "Số đầu sách", "Tổng tồn kho", "Sách sắp hết", "Giá trị tồn kho"], .. report.InventoryByCategory.Select(row => new object?[] { row.Category, row.BookCount, row.StockQuantity, row.LowStockBooks, row.StockValue }) ])
         };
         new ExcelWorkbookService().Write(path, sheets);
     }
