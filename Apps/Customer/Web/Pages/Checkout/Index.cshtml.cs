@@ -12,12 +12,31 @@ public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
     [BindProperty] public CheckoutInput Input { get; set; } = new();
     public List<StoreCartLineDto> Lines { get; private set; } = [];
     public decimal Subtotal => Lines.Sum(line => line.LineTotal);
+    public AccountProfileDto? CustomerProfile { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
         await LoadAsync(ct);
         ViewData["Title"] = "Thanh toán";
         if (Lines.Count == 0) { TempData["Notice"] = "Giỏ hàng đang trống."; return RedirectToPage("/Cart/Index"); }
+
+        try
+        {
+            CustomerProfile = await api.GetProfileAsync(RequireApiToken(), ct);
+            if (CustomerProfile is not null)
+            {
+                if (string.IsNullOrWhiteSpace(Input.ReceiverPhone) && !string.IsNullOrWhiteSpace(CustomerProfile.PhoneNumber))
+                {
+                    Input.ReceiverPhone = CustomerProfile.PhoneNumber;
+                }
+                if (string.IsNullOrWhiteSpace(Input.ShippingAddress) && !string.IsNullOrWhiteSpace(CustomerProfile.Address))
+                {
+                    Input.ShippingAddress = CustomerProfile.Address;
+                }
+            }
+        }
+        catch { }
+
         return Page();
     }
 

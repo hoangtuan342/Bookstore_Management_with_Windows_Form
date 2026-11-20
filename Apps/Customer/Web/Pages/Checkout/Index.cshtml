@@ -3,8 +3,15 @@
 <nav class="breadcrumbs"><a asp-page="/Cart/Index">Giỏ hàng</a><span>/</span><span>Thanh toán</span></nav>
 <div class="section-heading"><div><span class="eyebrow">XÁC NHẬN ĐƠN HÀNG</span><h1>Thông tin nhận hàng</h1></div></div>
 <form method="post" class="checkout-layout"><section class="panel form-stack checkout-fields"><div asp-validation-summary="ModelOnly" class="validation"></div>
-    <label asp-for="Input.ShippingAddress"></label><textarea asp-for="Input.ShippingAddress" rows="3" placeholder="Số nhà, đường, phường/xã, tỉnh/thành"></textarea><span asp-validation-for="Input.ShippingAddress" class="validation"></span>
-    <label asp-for="Input.ReceiverPhone"></label><input asp-for="Input.ReceiverPhone" autocomplete="tel" /><span asp-validation-for="Input.ReceiverPhone" class="validation"></span>
+    @if (Model.CustomerProfile is not null && (!string.IsNullOrWhiteSpace(Model.CustomerProfile.PhoneNumber) || !string.IsNullOrWhiteSpace(Model.CustomerProfile.Address)))
+    {
+        <div style="background:#f4f7f4; border:1px solid #d9e6d9; border-radius:6px; padding:10px 14px; font-size:13px; color:#2d4734; display:flex; justify-content:space-between; align-items:center;">
+            <span>💡 Hệ thống đã tự động điền thông tin từ hồ sơ của bạn (<strong>@Model.CustomerProfile.FullName</strong>).</span>
+            <button type="button" class="text-button" style="color:#2d4734; text-decoration:underline; font-size:12px;" onclick="applyProfileData('@(Model.CustomerProfile.PhoneNumber?.Replace("'", "\\'"))', '@(Model.CustomerProfile.Address?.Replace("'", "\\'"))')">Điền lại thông tin</button>
+        </div>
+    }
+    <label asp-for="Input.ShippingAddress"></label><textarea asp-for="Input.ShippingAddress" id="shippingAddressInput" rows="3" placeholder="Số nhà, đường, phường/xã, tỉnh/thành"></textarea><span asp-validation-for="Input.ShippingAddress" class="validation"></span>
+    <label asp-for="Input.ReceiverPhone"></label><input asp-for="Input.ReceiverPhone" id="receiverPhoneInput" autocomplete="tel" /><span asp-validation-for="Input.ReceiverPhone" class="validation"></span>
     <label asp-for="Input.VoucherCode"></label><input asp-for="Input.VoucherCode" placeholder="Nhập mã nếu bạn có" /><span asp-validation-for="Input.VoucherCode" class="validation"></span>
     <label asp-for="Input.PaymentMethod"></label><select asp-for="Input.PaymentMethod"><option value="CashOnDelivery">Thanh toán khi nhận hàng</option><option value="BankTransfer">Chuyển khoản (mô phỏng)</option></select>
 </section><aside class="panel order-summary"><h2>Đơn hàng của bạn</h2>
@@ -12,3 +19,10 @@
     <div class="summary-total"><span>Tạm tính</span><strong>@Model.Subtotal.ToString("N0") ₫</strong></div><p class="muted small">Ưu đãi voucher sẽ được xác nhận khi đặt hàng.</p>
     <div class="checkout-buttons"><a class="button button-light" asp-page="/Cart/Index">Quay lại giỏ</a><button class="button button-primary" type="submit">Đặt hàng</button></div>
 </aside></form>
+
+<script>
+    function applyProfileData(phone, address) {
+        if (phone) document.getElementById('receiverPhoneInput').value = phone;
+        if (address) document.getElementById('shippingAddressInput').value = address;
+    }
+</script>
