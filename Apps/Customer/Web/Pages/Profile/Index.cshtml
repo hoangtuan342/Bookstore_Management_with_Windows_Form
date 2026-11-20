@@ -1,5 +1,45 @@
 @page
 @model TrangSach.Customer.Web.Pages.Profile.IndexModel
-<section class="panel profile-panel"><span class="eyebrow">TÀI KHOẢN CỦA BẠN</span><h1>Hồ sơ cá nhân</h1><p class="muted">Thông tin tài khoản và liên hệ đang được sử dụng cho đơn hàng.</p>
-<dl class="profile-details"><dt>Họ và tên</dt><dd>@Model.Profile?.FullName</dd><dt>Tên đăng nhập</dt><dd>@Model.Profile?.UserName</dd><dt>Email</dt><dd>@Model.Profile?.Email</dd><dt>Số điện thoại</dt><dd>@(string.IsNullOrWhiteSpace(Model.Profile?.PhoneNumber) ? "Chưa cập nhật" : Model.Profile.PhoneNumber)</dd><dt>Địa chỉ</dt><dd>@(string.IsNullOrWhiteSpace(Model.Profile?.Address) ? "Chưa cập nhật" : Model.Profile.Address)</dd></dl>
-<a class="button button-primary" asp-page="/Orders/Index">Đơn hàng của tôi</a></section>
+<section class="panel profile-panel">
+    <span class="eyebrow">TÀI KHOẢN CỦA BẠN</span>
+    <h1>Hồ sơ cá nhân</h1>
+    <p class="muted">Thông tin tài khoản và liên hệ đang được sử dụng cho việc đặt hàng.</p>
+
+    <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap: 32px; margin-top: 24px; align-items: start;">
+        <div>
+            <h2>Thông tin tài khoản</h2>
+            <dl class="profile-details" style="margin-top: 14px;">
+                <dt>Tên đăng nhập</dt>
+                <dd>@Model.Profile?.UserName</dd>
+                <dt>Email</dt>
+                <dd>@Model.Profile?.Email</dd>
+                <dt>Mã khách hàng</dt>
+                <dd><code>@Model.Profile?.ProfileId</code></dd>
+            </dl>
+            <div style="margin-top: 24px;">
+                <a class="button button-light" asp-page="/Orders/Index">Xem đơn hàng của tôi</a>
+            </div>
+        </div>
+
+        <div style="background: #fafbfa; border: 1px solid #e3e8e2; border-radius: 8px; padding: 20px;">
+            <h2>Cập nhật thông tin nhận hàng</h2>
+            <p class="muted small" style="margin-bottom: 16px;">Thông tin này sẽ được điền tự động khi bạn tiến hành thanh toán giỏ hàng.</p>
+            <form method="post" class="form-stack">
+                <div asp-validation-summary="ModelOnly" class="validation"></div>
+                <label asp-for="Input.FullName"></label>
+                <input asp-for="Input.FullName" placeholder="Họ và tên của bạn" />
+                <span asp-validation-for="Input.FullName" class="validation"></span>
+
+                <label asp-for="Input.PhoneNumber"></label>
+                <input asp-for="Input.PhoneNumber" autocomplete="tel" placeholder="Số điện thoại nhận hàng" />
+                <span asp-validation-for="Input.PhoneNumber" class="validation"></span>
+
+                <label asp-for="Input.Address"></label>
+                <textarea asp-for="Input.Address" rows="3" placeholder="Địa chỉ nhận hàng mặc định (số nhà, tên đường, phường/xã...)"></textarea>
+                <span asp-validation-for="Input.Address" class="validation"></span>
+
+                <button class="button button-primary" type="submit" style="margin-top: 8px;">Lưu thay đổi</button>
+            </form>
+        </div>
+    </div>
+</section>

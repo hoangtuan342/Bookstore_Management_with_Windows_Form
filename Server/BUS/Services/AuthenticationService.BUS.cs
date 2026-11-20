@@ -120,6 +120,17 @@ namespace TrangSach.BUS
             return profile;
         }
 
+        public AccountProfileDto UpdateCustomerProfile(int accountId, string fullName, string? phoneNumber, string? address)
+        {
+            if (string.IsNullOrWhiteSpace(fullName) || fullName.Trim().Length < 2)
+            {
+                throw new ArgumentException("Họ và tên không hợp lệ.");
+            }
+
+            dao.Users.UpdateCustomerProfile(accountId, fullName, phoneNumber, address);
+            return GetCurrentUser(accountId);
+        }
+
         public bool IsTokenValid(int accountId, string? tokenRole)
         {
             var acc = dao.Users.FindAccountForTokenValidation(accountId);

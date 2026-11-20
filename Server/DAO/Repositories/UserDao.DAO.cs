@@ -298,6 +298,26 @@ public class UserDao
             r.IsDBNull(6) ? null : r.GetString(6));
     }
 
+    public void UpdateCustomerProfile(int accountId, string fullName, string? phoneNumber, string? address)
+    {
+        using var conn = DbConnection.Open();
+        var sql = @"
+            IF EXISTS (SELECT 1 FROM KH WHERE IDTaiKhoan = @accId)
+            BEGIN
+                UPDATE KH
+                SET HoTen = @name,
+                    SoDienThoai = @phone,
+                    DiaChiGiaoHang = @addr
+                WHERE IDTaiKhoan = @accId;
+            END";
+        using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@accId", accountId);
+        cmd.Parameters.AddWithValue("@name", fullName.Trim());
+        cmd.Parameters.AddWithValue("@phone", (object?)phoneNumber?.Trim() ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@addr", (object?)address?.Trim() ?? DBNull.Value);
+        cmd.ExecuteNonQuery();
+    }
+
     public bool ExistsUserNameOrEmail(string userName, string email, int? excludeId = null)
     {
         using var conn = DbConnection.Open();

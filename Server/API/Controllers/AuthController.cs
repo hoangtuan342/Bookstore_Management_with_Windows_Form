@@ -110,6 +110,25 @@ public sealed class AuthController(AuthenticationService service, IConfiguration
         }
     }
 
+    [Authorize, HttpPut("me")]
+    public IActionResult UpdateProfile(UpdateProfileRequest request)
+    {
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id)) return Unauthorized();
+        try
+        {
+            var updated = service.UpdateCustomerProfile(id, request.FullName, request.PhoneNumber, request.Address);
+            return Ok(updated);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     private static RegisterAccountCommandDto ToCommand(RegisterRequest request) =>
         new(request.UserName, request.Email, request.Password, request.FullName, request.PhoneNumber);
 

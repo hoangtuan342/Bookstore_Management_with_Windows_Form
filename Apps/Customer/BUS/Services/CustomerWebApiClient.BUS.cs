@@ -30,6 +30,9 @@ public sealed class CustomerWebApiClient(HttpClient httpClient)
     public Task<AccountProfileDto?> GetProfileAsync(string token, CancellationToken ct = default) =>
         GetAsync<AccountProfileDto>("api/auth/me", token, ct);
 
+    public Task<AccountProfileDto?> UpdateProfileAsync(string token, string fullName, string? phoneNumber, string? address, CancellationToken ct = default) =>
+        SendAsync<AccountProfileDto>(HttpMethod.Put, "api/auth/me", new { fullName, phoneNumber, address }, token, ct);
+
     public async Task<List<StoreCartLineDto>> GetCartAsync(string token, CancellationToken ct = default) =>
         await GetAsync<List<StoreCartLineDto>>("api/cart", token, ct) ?? [];
 

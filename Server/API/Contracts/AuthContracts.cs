@@ -17,6 +17,13 @@ public sealed class LoginRequest
     [Required] public string Password { get; init; } = string.Empty;
 }
 
+public sealed class UpdateProfileRequest
+{
+    [Required, StringLength(180, MinimumLength = 2)] public string FullName { get; init; } = string.Empty;
+    [StringLength(30)] public string? PhoneNumber { get; init; }
+    [StringLength(500)] public string? Address { get; init; }
+}
+
 public sealed record AuthResponse(string AccessToken, DateTime ExpiresAtUtc, string UserName, string Role, string? CustomerId);
 
 
