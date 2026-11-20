@@ -67,7 +67,10 @@ public partial class ManagementForm
         foreach (var (page, load) in loaders)
         {
             try { load(); }
-            catch (Exception ex) { failures.Add($"{page}: {ex.Message}"); }
+            catch (Exception ex)
+            {
+                failures.Add($"{page} (Lỗi: {ex.GetType().Name}): {ex.Message}\nStackTrace:\n{ex.StackTrace}");
+            }
         }
 
         if (failures.Count > 0)
