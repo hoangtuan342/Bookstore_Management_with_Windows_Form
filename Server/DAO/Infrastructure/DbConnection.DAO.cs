@@ -31,6 +31,29 @@ public static class DbConnection
     public static void TestConnection()
     {
         using var conn = Open();
+        EnsureDatabaseSchema(conn);
+    }
+
+    private static void EnsureDatabaseSchema(SqlConnection conn)
+    {
+        try
+        {
+            // Tự động kiểm tra và thêm cột NgaySinh vào bảng KH nếu chưa tồn tại
+            var checkColumnSql = @"
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE object_id = OBJECT_ID(N'dbo.KH') AND name = 'NgaySinh'
+                )
+                BEGIN
+                    ALTER TABLE dbo.KH ADD NgaySinh DATE NULL;
+                END";
+            using var cmd = new SqlCommand(checkColumnSql, conn);
+            cmd.ExecuteNonQuery();
+        }
+        catch
+        {
+            // Bỏ qua nếu không có quyền DDL hoặc cột đã có
+        }
     }
 
     public static int ExecuteNonQuery(string sql, SqlParameter[]? parameters = null, SqlTransaction? tx = null)

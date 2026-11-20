@@ -120,7 +120,8 @@ public class UserDao
         using var conn = DbConnection.Open();
         var sql = @"
             SELECT kh.MaKH, kh.HoTen, kh.SoDienThoai, kh.DiaChiGiaoHang,
-                   tk.IDTaiKhoan, tk.TenDangNhap, tk.Email, ISNULL(tk.TrangThai, N'Active')
+                   tk.IDTaiKhoan, tk.TenDangNhap, tk.Email, ISNULL(tk.TrangThai, N'Active'),
+                   kh.NgaySinh
             FROM KH kh
             LEFT JOIN TaiKhoan tk ON kh.IDTaiKhoan = tk.IDTaiKhoan
             ORDER BY kh.HoTen";
@@ -128,21 +129,43 @@ public class UserDao
         using var r = cmd.ExecuteReader();
         while (r.Read())
         {
+            var birthDate = r.IsDBNull(8) ? (DateOnly?)null : DateOnly.FromDateTime(r.GetDateTime(8));
             list.Add(new ManagerCustomerDto(
-                r.GetString(0), r.GetString(1), r.IsDBNull(2) ? "" : r.GetString(2), r.IsDBNull(3) ? "" : r.GetString(3),
+                r.GetString(0), r.GetString(1), birthDate, r.IsDBNull(2) ? "" : r.GetString(2), r.IsDBNull(3) ? "" : r.GetString(3),
                 r.IsDBNull(4) ? (int?)null : r.GetInt32(4), r.IsDBNull(5) ? "" : r.GetString(5), r.IsDBNull(6) ? "" : r.GetString(6), r.GetString(7)));
         }
         return list;
     }
 
-    public void InsertCustomer(string id, string fullName, string? phoneNumber, string? shippingAddress, int? accountId)
+    public void InsertCustomer(string id, string fullName, DateOnly? birthDate, string? phoneNumber, string? shippingAddress, int? accountId)
     {
         using var conn = DbConnection.Open();
-        var sql = @"INSERT INTO KH (MaKH, HoTen, SoDienThoai, DiaChiGiaoHang, IDTaiKhoan)
-                    VALUES (@id, @name, @phone, @addr, @accId)";
+        var sql = @"INSERT INTO KH (MaKH, HoTen, NgaySinh, SoDienThoai, DiaChiGiaoHang, IDTaiKhoan)
+                    VALUES (@id, @name, @birth, @phone, @addr, @accId)";
         using var cmd = new SqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("@id", id);
         cmd.Parameters.AddWithValue("@name", fullName.Trim());
+        cmd.Parameters.AddWithValue("@birth", birthDate.HasValue ? birthDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
+        cmd.Parameters.AddWithValue("@phone", (object?)phoneNumber ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@addr", (object?)shippingAddress ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@accId", (object?)accountId ?? DBNull.Value);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void InsertCustomer(string id, string fullName, string? phoneNumber, string? shippingAddress, int? accountId)
+    {
+        InsertCustomer(id, fullName, null, phoneNumber, shippingAddress, accountId);
+    }
+
+    public void UpdateCustomer(string id, string fullName, DateOnly? birthDate, string? phoneNumber, string? shippingAddress, int? accountId)
+    {
+        using var conn = DbConnection.Open();
+        var sql = @"UPDATE KH SET HoTen = @name, NgaySinh = @birth, SoDienThoai = @phone, DiaChiGiaoHang = @addr, IDTaiKhoan = @accId
+                    WHERE MaKH = @id";
+        using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.Parameters.AddWithValue("@name", fullName.Trim());
+        cmd.Parameters.AddWithValue("@birth", birthDate.HasValue ? birthDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
         cmd.Parameters.AddWithValue("@phone", (object?)phoneNumber ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@addr", (object?)shippingAddress ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@accId", (object?)accountId ?? DBNull.Value);
@@ -151,16 +174,7 @@ public class UserDao
 
     public void UpdateCustomer(string id, string fullName, string? phoneNumber, string? shippingAddress, int? accountId)
     {
-        using var conn = DbConnection.Open();
-        var sql = @"UPDATE KH SET HoTen = @name, SoDienThoai = @phone, DiaChiGiaoHang = @addr, IDTaiKhoan = @accId
-                    WHERE MaKH = @id";
-        using var cmd = new SqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("@id", id);
-        cmd.Parameters.AddWithValue("@name", fullName.Trim());
-        cmd.Parameters.AddWithValue("@phone", (object?)phoneNumber ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@addr", (object?)shippingAddress ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@accId", (object?)accountId ?? DBNull.Value);
-        cmd.ExecuteNonQuery();
+        UpdateCustomer(id, fullName, null, phoneNumber, shippingAddress, accountId);
     }
 
     public void DeleteCustomer(string id, int? accountId)

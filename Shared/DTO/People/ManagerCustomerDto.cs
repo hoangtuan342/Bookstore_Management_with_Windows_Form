@@ -5,6 +5,7 @@ namespace TrangSach.Shared.DTO
     {
         public string Id { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
+        public DateOnly? BirthDate { get; set; }
         public string? PhoneNumber { get; set; }
         public string? Address { get; set; }
         public int? AccountId { get; set; }
@@ -17,9 +18,15 @@ namespace TrangSach.Shared.DTO
         }
 
         public ManagerCustomerDto(string id, string fullName, string? phoneNumber, string? address, int? accountId, string? userName, string? email, string? accountStatus)
+            : this(id, fullName, null, phoneNumber, address, accountId, userName, email, accountStatus)
+        {
+        }
+
+        public ManagerCustomerDto(string id, string fullName, DateOnly? birthDate, string? phoneNumber, string? address, int? accountId, string? userName, string? email, string? accountStatus)
         {
             this.Id = id;
             this.FullName = fullName;
+            this.BirthDate = birthDate;
             this.PhoneNumber = phoneNumber;
             this.Address = address;
             this.AccountId = accountId;

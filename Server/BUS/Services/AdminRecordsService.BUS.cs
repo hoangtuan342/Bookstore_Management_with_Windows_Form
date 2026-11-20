@@ -221,10 +221,10 @@ namespace TrangSach.BUS
             }
 
             var id = !string.IsNullOrWhiteSpace(command.Id) ? command.Id.Trim() : $"KH{Convert.ToHexString(RandomNumberGenerator.GetBytes(5))}";
-            dao.Users.InsertCustomer(id, command.FullName.Trim(), command.PhoneNumber?.Trim(), command.Address?.Trim(), accountId);
+            dao.Users.InsertCustomer(id, command.FullName.Trim(), command.BirthDate, command.PhoneNumber?.Trim(), command.Address?.Trim(), accountId);
 
             _customers.Add(new ManagerCustomerDto(
-                id, command.FullName.Trim(), command.PhoneNumber?.Trim() ?? "", command.Address?.Trim() ?? "",
+                id, command.FullName.Trim(), command.BirthDate, command.PhoneNumber?.Trim() ?? "", command.Address?.Trim() ?? "",
                 accountId, command.UserName?.Trim() ?? "", command.Email?.Trim() ?? "", command.AccountStatus ?? "Active"));
 
             return id;
@@ -261,9 +261,10 @@ namespace TrangSach.BUS
                 accountId = dao.Users.CreateAccount(command.UserName.Trim(), command.Email!.Trim(), hash, roleId ?? 2, command.AccountStatus ?? "Active");
             }
 
-            dao.Users.UpdateCustomer(id, command.FullName.Trim(), command.PhoneNumber?.Trim(), command.Address?.Trim(), accountId);
+            dao.Users.UpdateCustomer(id, command.FullName.Trim(), command.BirthDate, command.PhoneNumber?.Trim(), command.Address?.Trim(), accountId);
 
             cached.FullName = command.FullName.Trim();
+            cached.BirthDate = command.BirthDate;
             cached.PhoneNumber = command.PhoneNumber?.Trim() ?? "";
             cached.Address = command.Address?.Trim() ?? "";
             cached.AccountId = accountId;

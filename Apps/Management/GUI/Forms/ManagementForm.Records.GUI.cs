@@ -20,6 +20,7 @@ public partial class ManagementForm
         {
             new("id", "Mã khách hàng", old?.Id ?? "(Tự động sinh khi để trống)", null, isReadOnly: old != null),
             new("name", "Họ và tên", old?.FullName ?? ""),
+            new("birth", "Ngày sinh (yyyy-MM-dd)", old?.BirthDate?.ToString("yyyy-MM-dd") ?? ""),
             new("phone", "Số điện thoại", old?.PhoneNumber ?? ""),
             new("address", "Địa chỉ", old?.Address ?? ""),
             new("user", "Tên đăng nhập", old?.UserName ?? ""),
@@ -34,9 +35,12 @@ public partial class ManagementForm
         var idInput = old is null ? EmptyToNull(values["id"]) : old.Id;
         if (idInput != null && idInput.Contains("Tự động", StringComparison.OrdinalIgnoreCase)) idInput = null;
 
+        DateOnly? birth = DateOnly.TryParse(values["birth"], out var date) ? date : null;
+
         _services.Manager.SaveCustomer(old?.Id, new SaveCustomerDto(
             idInput,
             values["name"],
+            birth,
             EmptyToNull(values["phone"]),
             EmptyToNull(values["address"]),
             EmptyToNull(values["user"]),

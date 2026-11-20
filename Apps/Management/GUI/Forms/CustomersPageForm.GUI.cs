@@ -36,11 +36,17 @@ internal sealed class CustomersPageForm : ManagementGridPageForm
 
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.Id), "Mã khách hàng");
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.FullName), "Họ và tên");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.BirthDate), "Ngày sinh");
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.PhoneNumber), "Số điện thoại");
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.Address), "Địa chỉ");
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.UserName), "Tên đăng nhập");
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.Email), "Email");
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.AccountStatus), "Trạng thái tài khoản");
+
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerCustomerDto.BirthDate)] is { } birthCol)
+            {
+                birthCol.DefaultCellStyle.Format = "dd/MM/yyyy";
+            }
 
             if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerCustomerDto.AccountId)] is { } accIdCol)
             {
