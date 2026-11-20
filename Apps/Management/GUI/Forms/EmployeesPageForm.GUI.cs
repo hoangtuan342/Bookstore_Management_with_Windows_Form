@@ -22,6 +22,52 @@ internal sealed class EmployeesPageForm : ManagementGridPageForm
         AddAction("Xóa", "delete");
     }
 
+    protected override void OnGridDataBound()
+    {
+        base.OnGridDataBound();
+        try
+        {
+            void SetHeader(string propertyName, string headerText)
+            {
+                if (Grid.Columns[propertyName] is { } col)
+                {
+                    col.HeaderText = headerText;
+                }
+            }
+
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.Id), "Mã nhân viên");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.LastName), "Họ lót");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.FirstName), "Tên");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.BirthDate), "Ngày sinh");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.Address), "Địa chỉ");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.RoleName), "Chức vụ");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.BaseSalary), "Lương cơ bản (VNĐ)");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.AccountStatus), "Trạng thái hồ sơ");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.LoginStatus), "Quyền truy cập");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.UserName), "Tên tài khoản");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.Email), "Email");
+
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.BaseSalary)] is { } salCol)
+            {
+                salCol.DefaultCellStyle.Format = "N0";
+                salCol.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            }
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.BirthDate)] is { } birthCol)
+            {
+                birthCol.DefaultCellStyle.Format = "dd/MM/yyyy";
+            }
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.AvatarPath)] is { } avaCol)
+            {
+                avaCol.Visible = false;
+            }
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.AccountId)] is { } accIdCol)
+            {
+                accIdCol.Visible = false;
+            }
+        }
+        catch { }
+    }
+
     protected override bool HasAdditionalFilters => ManagementGridPageForm.Value(_employment) is not null
         || ManagementGridPageForm.Value(_role) is not null || ManagementGridPageForm.Value(_login) is not null;
 

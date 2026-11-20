@@ -25,6 +25,32 @@ internal sealed class ReceiptsPageForm : ManagementGridPageForm
         AddSearchFilterControl(ManagementGridPageForm.FilterLabel("Đến"));
         AddSearchFilterControl(_toDate);
         var detailGrid = CreateDetailGrid();
+        detailGrid.DataBindingComplete += (_, _) =>
+        {
+            try
+            {
+                if (detailGrid.Columns["BookId"] is { } bId) bId.HeaderText = "Mã sách";
+                if (detailGrid.Columns["BookTitle"] is { } title) title.HeaderText = "Tên sách";
+                if (detailGrid.Columns["Quantity"] is { } qty)
+                {
+                    qty.HeaderText = "Số lượng nhập";
+                    qty.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                }
+                if (detailGrid.Columns["UnitCost"] is { } cost)
+                {
+                    cost.HeaderText = "Giá vốn (VNĐ)";
+                    cost.DefaultCellStyle.Format = "N0";
+                    cost.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                }
+                if (detailGrid.Columns["LineTotal"] is { } total)
+                {
+                    total.HeaderText = "Thành tiền (VNĐ)";
+                    total.DefaultCellStyle.Format = "N0";
+                    total.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                }
+            }
+            catch { }
+        };
         SetDetailsView(detailGrid, "CHI TIẾT PHIẾU NHẬP · Chọn phiếu phía trên để xem các mặt hàng");
         Grid.SelectionChanged += (_, _) =>
         {
@@ -41,6 +67,46 @@ internal sealed class ReceiptsPageForm : ManagementGridPageForm
         AddAction("Tải", "load");
         AddAction("Tạo phiếu nhập", "create");
         AddAction("Đảo phiếu", "cancel");
+    }
+
+    protected override void OnGridDataBound()
+    {
+        base.OnGridDataBound();
+        try
+        {
+            void SetHeader(string propertyName, string headerText)
+            {
+                if (Grid.Columns[propertyName] is { } col)
+                {
+                    col.HeaderText = headerText;
+                }
+            }
+
+            SetHeader(nameof(ManagerReceiptDto.Id), "Mã phiếu nhập");
+            SetHeader(nameof(ManagerReceiptDto.CreatedAt), "Ngày nhập");
+            SetHeader(nameof(ManagerReceiptDto.SupplierName), "Nhà cung cấp");
+            SetHeader(nameof(ManagerReceiptDto.Status), "Trạng thái");
+            SetHeader(nameof(ManagerReceiptDto.TotalAmount), "Tổng tiền nhập (VNĐ)");
+
+            if (Grid.Columns[nameof(ManagerReceiptDto.CreatedAt)] is { } createdCol)
+            {
+                createdCol.DefaultCellStyle.Format = "dd/MM/yyyy HH:mm";
+            }
+            if (Grid.Columns[nameof(ManagerReceiptDto.TotalAmount)] is { } totalCol)
+            {
+                totalCol.DefaultCellStyle.Format = "N0";
+                totalCol.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            }
+            if (Grid.Columns[nameof(ManagerReceiptDto.SupplierId)] is { } supIdCol)
+            {
+                supIdCol.Visible = false;
+            }
+            if (Grid.Columns[nameof(ManagerReceiptDto.Lines)] is { } linesCol)
+            {
+                linesCol.Visible = false;
+            }
+        }
+        catch { }
     }
 
     protected override bool HasAdditionalFilters => ManagementGridPageForm.Value(_status) is not null

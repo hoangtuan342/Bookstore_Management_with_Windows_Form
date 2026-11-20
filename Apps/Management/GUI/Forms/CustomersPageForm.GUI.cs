@@ -21,6 +21,35 @@ internal sealed class CustomersPageForm : ManagementGridPageForm
         AddAction("Xóa", "delete");
     }
 
+    protected override void OnGridDataBound()
+    {
+        base.OnGridDataBound();
+        try
+        {
+            void SetHeader(string propertyName, string headerText)
+            {
+                if (Grid.Columns[propertyName] is { } col)
+                {
+                    col.HeaderText = headerText;
+                }
+            }
+
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.Id), "Mã khách hàng");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.FullName), "Họ và tên");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.PhoneNumber), "Số điện thoại");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.Address), "Địa chỉ");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.UserName), "Tên đăng nhập");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.Email), "Email");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerCustomerDto.AccountStatus), "Trạng thái tài khoản");
+
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerCustomerDto.AccountId)] is { } accIdCol)
+            {
+                accIdCol.Visible = false;
+            }
+        }
+        catch { }
+    }
+
     protected override bool HasAdditionalFilters => ManagementGridPageForm.Value(_accountStatus) is not null
         || ManagementGridPageForm.Value(_account) is not null;
     protected override bool MatchesAdditionalFilters(object item)

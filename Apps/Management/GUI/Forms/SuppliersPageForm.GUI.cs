@@ -17,6 +17,26 @@ internal sealed class SuppliersPageForm : ManagementGridPageForm
         AddAction("Xóa", "delete");
     }
 
+    protected override void OnGridDataBound()
+    {
+        base.OnGridDataBound();
+        try
+        {
+            void SetHeader(string propertyName, string headerText)
+            {
+                if (Grid.Columns[propertyName] is { } col)
+                {
+                    col.HeaderText = headerText;
+                }
+            }
+
+            SetHeader(nameof(TrangSach.Shared.DTO.SupplierOptionDto.Id), "Mã nhà cung cấp");
+            SetHeader(nameof(TrangSach.Shared.DTO.SupplierOptionDto.Name), "Tên nhà cung cấp");
+            SetHeader(nameof(TrangSach.Shared.DTO.SupplierOptionDto.PhoneNumber), "Số điện thoại");
+        }
+        catch { }
+    }
+
     protected override bool HasAdditionalFilters => ManagementGridPageForm.Value(_phone) is not null;
     protected override bool MatchesAdditionalFilters(object item) => item is not TrangSach.Shared.DTO.SupplierOptionDto supplier
         || ManagementGridPageForm.Value(_phone) switch

@@ -21,6 +21,38 @@ internal sealed class AuditLogsPageForm : ManagementGridPageForm
         AddAction("Tải nhật ký", "load");
     }
 
+    protected override void OnGridDataBound()
+    {
+        base.OnGridDataBound();
+        try
+        {
+            void SetHeader(string propertyName, string headerText)
+            {
+                if (Grid.Columns[propertyName] is { } col)
+                {
+                    col.HeaderText = headerText;
+                }
+            }
+
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerAuditLogDto.Id), "Mã bản ghi");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerAuditLogDto.OccurredAt), "Thời gian ghi");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerAuditLogDto.ActorName), "Người thao tác");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerAuditLogDto.ActorCode), "Mã người dùng");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerAuditLogDto.ActorRole), "Vai trò");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerAuditLogDto.Action), "Hành động");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerAuditLogDto.Area), "Chức năng");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerAuditLogDto.Resource), "Tài nguyên / Đối tượng");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerAuditLogDto.StatusCode), "Trạng thái HTTP");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerAuditLogDto.IpAddress), "Địa chỉ IP");
+
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerAuditLogDto.OccurredAt)] is { } timeCol)
+            {
+                timeCol.DefaultCellStyle.Format = "dd/MM/yyyy HH:mm:ss";
+            }
+        }
+        catch { }
+    }
+
     protected override bool HasAdditionalFilters => ManagementGridPageForm.Value(_area) is not null || _from.Checked || _to.Checked;
 
     protected override bool MatchesAdditionalFilters(object item)

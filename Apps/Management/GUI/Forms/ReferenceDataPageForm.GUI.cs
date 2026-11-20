@@ -16,6 +16,27 @@ internal sealed class ReferenceDataPageForm : ManagementGridPageForm
         AddAction("Sửa", "edit");
         AddAction("Xóa", "delete");
     }
+
+    protected override void OnGridDataBound()
+    {
+        base.OnGridDataBound();
+        try
+        {
+            void SetHeader(string propertyName, string headerText)
+            {
+                if (Grid.Columns[propertyName] is { } col)
+                {
+                    col.HeaderText = headerText;
+                }
+            }
+
+            SetHeader("Id", "Mã");
+            SetHeader("Name", "Tên");
+            SetHeader("Address", "Địa chỉ");
+            SetHeader("Biography", "Tiểu sử");
+        }
+        catch { }
+    }
 }
 
 

@@ -33,6 +33,21 @@ internal sealed class PromotionsPageForm : ManagementGridPageForm
         AddSearchFilterControl(_period);
 
         var detailGrid = CreateDetailGrid();
+        detailGrid.DataBindingComplete += (_, _) =>
+        {
+            try
+            {
+                if (detailGrid.Columns["Type"] is { } t) t.HeaderText = "Hình thức ưu đãi";
+                if (detailGrid.Columns["Target"] is { } tg) tg.HeaderText = "Đối tượng áp dụng";
+                if (detailGrid.Columns["Condition"] is { } cd) cd.HeaderText = "Điều kiện áp dụng";
+                if (detailGrid.Columns["Discount"] is { } dc)
+                {
+                    dc.HeaderText = "Mức giảm";
+                    dc.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                }
+            }
+            catch { }
+        };
         SetDetailsView(detailGrid, "CHI TIẾT ƯU ĐÃI · Chọn một chương trình khuyến mãi phía trên để xem các mức giảm");
 
         Grid.SelectionChanged += (_, _) =>
@@ -74,6 +89,42 @@ internal sealed class PromotionsPageForm : ManagementGridPageForm
         AddAction("Sửa tên/thời gian", "edit");
         AddAction("Sửa quy tắc ưu đãi", "rules");
         AddAction("Xóa", "delete");
+    }
+
+    protected override void OnGridDataBound()
+    {
+        base.OnGridDataBound();
+        try
+        {
+            void SetHeader(string propertyName, string headerText)
+            {
+                if (Grid.Columns[propertyName] is { } col)
+                {
+                    col.HeaderText = headerText;
+                }
+            }
+
+            SetHeader(nameof(ManagerPromotionDto.Id), "Mã khuyến mãi");
+            SetHeader(nameof(ManagerPromotionDto.Name), "Tên chương trình");
+            SetHeader(nameof(ManagerPromotionDto.StartsAt), "Bắt đầu");
+            SetHeader(nameof(ManagerPromotionDto.EndsAt), "Kết thúc");
+
+            if (Grid.Columns[nameof(ManagerPromotionDto.StartsAt)] is { } startCol)
+            {
+                startCol.DefaultCellStyle.Format = "dd/MM/yyyy HH:mm";
+            }
+            if (Grid.Columns[nameof(ManagerPromotionDto.EndsAt)] is { } endCol)
+            {
+                endCol.DefaultCellStyle.Format = "dd/MM/yyyy HH:mm";
+            }
+            if (Grid.Columns[nameof(ManagerPromotionDto.BookOffers)] is { } boCol) boCol.Visible = false;
+            if (Grid.Columns[nameof(ManagerPromotionDto.OrderOffers)] is { } ooCol) ooCol.Visible = false;
+            if (Grid.Columns[nameof(ManagerPromotionDto.Vouchers)] is { } vcCol) vcCol.Visible = false;
+            if (Grid.Columns[nameof(ManagerPromotionDto.BookRules)] is { } brCol) brCol.Visible = false;
+            if (Grid.Columns[nameof(ManagerPromotionDto.OrderRules)] is { } orCol) orCol.Visible = false;
+            if (Grid.Columns[nameof(ManagerPromotionDto.VoucherRules)] is { } vrCol) vrCol.Visible = false;
+        }
+        catch { }
     }
 
     protected override bool HasAdditionalFilters => ManagementGridPageForm.Value(_period) is not null;

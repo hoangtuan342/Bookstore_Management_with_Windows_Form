@@ -20,6 +20,50 @@ internal sealed class VouchersPageForm : ManagementGridPageForm
         AddAction("Xóa", "delete");
     }
 
+    protected override void OnGridDataBound()
+    {
+        base.OnGridDataBound();
+        try
+        {
+            void SetHeader(string propertyName, string headerText)
+            {
+                if (Grid.Columns[propertyName] is { } col)
+                {
+                    col.HeaderText = headerText;
+                }
+            }
+
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerVoucherDto.Id), "Mã Voucher");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerVoucherDto.Status), "Trạng thái");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerVoucherDto.ExpiresAt), "Hạn sử dụng");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerVoucherDto.MaxUsageCount), "Số lượt tối đa");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerVoucherDto.UsageCount), "Đã sử dụng");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerVoucherDto.OrderCount), "Số đơn áp dụng");
+
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerVoucherDto.ExpiresAt)] is { } expCol)
+            {
+                expCol.DefaultCellStyle.Format = "dd/MM/yyyy HH:mm";
+            }
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerVoucherDto.MaxUsageCount)] is { } maxCol)
+            {
+                maxCol.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            }
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerVoucherDto.UsageCount)] is { } useCol)
+            {
+                useCol.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            }
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerVoucherDto.OrderCount)] is { } ordCol)
+            {
+                ordCol.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            }
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerVoucherDto.Promotions)] is { } promoCol)
+            {
+                promoCol.Visible = false;
+            }
+        }
+        catch { }
+    }
+
     protected override bool HasAdditionalFilters => ManagementGridPageForm.Value(_status) is not null
         || ManagementGridPageForm.Value(_validity) is not null;
 

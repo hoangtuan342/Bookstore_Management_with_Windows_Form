@@ -40,6 +40,32 @@ internal sealed class OrdersPageForm : ManagementGridPageForm
         AddSearchFilterControl(_toDate);
 
         var detailGrid = CreateDetailGrid();
+        detailGrid.DataBindingComplete += (_, _) =>
+        {
+            try
+            {
+                if (detailGrid.Columns["BookId"] is { } bId) bId.HeaderText = "Mã sách";
+                if (detailGrid.Columns["Title"] is { } title) title.HeaderText = "Tên sách";
+                if (detailGrid.Columns["Quantity"] is { } qty)
+                {
+                    qty.HeaderText = "Số lượng";
+                    qty.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                }
+                if (detailGrid.Columns["UnitPrice"] is { } price)
+                {
+                    price.HeaderText = "Đơn giá (VNĐ)";
+                    price.DefaultCellStyle.Format = "N0";
+                    price.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                }
+                if (detailGrid.Columns["LineTotal"] is { } total)
+                {
+                    total.HeaderText = "Thành tiền (VNĐ)";
+                    total.DefaultCellStyle.Format = "N0";
+                    total.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                }
+            }
+            catch { }
+        };
         SetDetailsView(detailGrid, "CHI TIẾT ĐƠN HÀNG · Chọn một đơn phía trên để xem các mặt hàng");
         Grid.SelectionChanged += (_, _) =>
         {
@@ -59,6 +85,52 @@ internal sealed class OrdersPageForm : ManagementGridPageForm
         AddAction("Đổi trạng thái", "status");
         AddAction("Sửa thông tin", "edit");
         AddAction("Hủy đơn", "cancel");
+    }
+
+    protected override void OnGridDataBound()
+    {
+        base.OnGridDataBound();
+        try
+        {
+            void SetHeader(string propertyName, string headerText)
+            {
+                if (Grid.Columns[propertyName] is { } col)
+                {
+                    col.HeaderText = headerText;
+                }
+            }
+
+            SetHeader(nameof(ManagerOrderRowDto.Id), "Mã đơn hàng");
+            SetHeader(nameof(ManagerOrderRowDto.CreatedAt), "Ngày lập");
+            SetHeader(nameof(ManagerOrderRowDto.CustomerName), "Khách hàng");
+            SetHeader(nameof(ManagerOrderRowDto.EmployeeName), "Nhân viên lập");
+            SetHeader(nameof(ManagerOrderRowDto.ReceiverPhone), "SĐT nhận hàng");
+            SetHeader(nameof(ManagerOrderRowDto.ShippingAddress), "Địa chỉ giao hàng");
+            SetHeader(nameof(ManagerOrderRowDto.PaymentMethod), "Phương thức TT");
+            SetHeader(nameof(ManagerOrderRowDto.PaymentStatus), "Trạng thái TT");
+            SetHeader(nameof(ManagerOrderRowDto.OrderStatus), "Trạng thái đơn");
+            SetHeader(nameof(ManagerOrderRowDto.ItemCount), "Số mặt hàng");
+            SetHeader(nameof(ManagerOrderRowDto.TotalAmount), "Tổng tiền (VNĐ)");
+
+            if (Grid.Columns[nameof(ManagerOrderRowDto.CreatedAt)] is { } createdCol)
+            {
+                createdCol.DefaultCellStyle.Format = "dd/MM/yyyy HH:mm";
+            }
+            if (Grid.Columns[nameof(ManagerOrderRowDto.ItemCount)] is { } countCol)
+            {
+                countCol.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            }
+            if (Grid.Columns[nameof(ManagerOrderRowDto.TotalAmount)] is { } totalCol)
+            {
+                totalCol.DefaultCellStyle.Format = "N0";
+                totalCol.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            }
+            if (Grid.Columns[nameof(ManagerOrderRowDto.Lines)] is { } linesCol)
+            {
+                linesCol.Visible = false;
+            }
+        }
+        catch { }
     }
 
     protected override bool HasAdditionalFilters =>
