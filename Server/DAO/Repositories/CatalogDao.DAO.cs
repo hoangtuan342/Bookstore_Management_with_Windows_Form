@@ -45,7 +45,13 @@ public class CatalogDao
         using var conn = DbConnection.Open();
         var sql = @"
             SELECT s.MaSach, s.TenSach,
-                   ISNULL((SELECT TOP 1 tg.TenTacGia FROM TacGiaSach tgs JOIN TacGia tg ON tgs.IDTacGia = tg.IDTacGia WHERE tgs.MaSach = s.MaSach ORDER BY tg.TenTacGia), N'Chưa cập nhật') AS TacGia,
+                   ISNULL(
+                       (SELECT STRING_AGG(CAST(tg.TenTacGia AS NVARCHAR(MAX)), N', ')
+                        FROM TacGiaSach tgs
+                        JOIN TacGia tg ON tgs.IDTacGia = tg.IDTacGia
+                        WHERE tgs.MaSach = s.MaSach),
+                       N'Chưa cập nhật'
+                   ) AS TacGia,
                    ISNULL(ls.TenLoai, N'Chưa phân loại') AS TheLoai,
                    ISNULL(s.DGBan, 0) AS DGBan,
                    ISNULL(s.TrangThai, 1) AS TrangThai,
@@ -267,6 +273,26 @@ public class CatalogDao
         using var cmd = new SqlCommand("SELECT IDTacGia, TenTacGia, TieuSu FROM TacGia ORDER BY TenTacGia", conn);
         using var r = cmd.ExecuteReader();
         while (r.Read()) list.Add(new ManagerAuthorDto(r.GetInt32(0), r.GetString(1), r.IsDBNull(2) ? null : r.GetString(2)));
+        return list;
+    }
+
+    public List<ManagerAuthorDto> GetAuthorsByBookId(string bookId)
+    {
+        var list = new List<ManagerAuthorDto>();
+        using var conn = DbConnection.Open();
+        var sql = @"
+            SELECT tg.IDTacGia, tg.TenTacGia, tg.TieuSu
+            FROM TacGiaSach tgs
+            JOIN TacGia tg ON tgs.IDTacGia = tg.IDTacGia
+            WHERE tgs.MaSach = @bookId
+            ORDER BY tg.TenTacGia";
+        using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@bookId", bookId);
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            list.Add(new ManagerAuthorDto(r.GetInt32(0), r.GetString(1), r.IsDBNull(2) ? null : r.GetString(2)));
+        }
         return list;
     }
 

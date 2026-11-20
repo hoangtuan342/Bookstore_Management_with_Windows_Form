@@ -1,4 +1,6 @@
-﻿namespace TrangSach.Management.GUI;
+﻿using TrangSach.Shared.DTO;
+
+namespace TrangSach.Management.GUI;
 
 internal sealed class BooksPageForm : ManagementGridPageForm
 {
@@ -8,7 +10,7 @@ internal sealed class BooksPageForm : ManagementGridPageForm
     private readonly NumericUpDown _minimumPrice = CreatePriceFilter();
     private readonly NumericUpDown _maximumPrice = CreatePriceFilter();
 
-    public BooksPageForm() : base("Sách")
+    public BooksPageForm(Func<string, List<ManagerAuthorDto>>? authorLookup = null) : base("Sách")
     {
         SetSearchPlaceholder("Tên sách, tác giả, mã sách, thể loại...");
         _category.SelectedValueChanged += (_, _) => RefreshFilter();
@@ -23,6 +25,34 @@ internal sealed class BooksPageForm : ManagementGridPageForm
         AddSearchFilterControl(_minimumPrice);
         AddSearchFilterControl(ManagementGridPageForm.FilterLabel("đến"));
         AddSearchFilterControl(_maximumPrice);
+
+        var detailGrid = CreateDetailGrid();
+        detailGrid.DataBindingComplete += (_, _) =>
+        {
+            try
+            {
+                if (detailGrid.Columns["Id"] is { } idCol) idCol.HeaderText = "Mã tác giả";
+                if (detailGrid.Columns["Name"] is { } nameCol) nameCol.HeaderText = "Tên tác giả";
+                if (detailGrid.Columns["Biography"] is { } bioCol) bioCol.HeaderText = "Tiểu sử";
+            }
+            catch { }
+        };
+        SetDetailsView(detailGrid, "CHI TIẾT TÁC GIẢ · Chọn một cuốn sách phía trên để xem danh sách tác giả");
+
+        Grid.SelectionChanged += (_, _) =>
+        {
+            if (Grid.CurrentRow?.DataBoundItem is not TrangSach.Shared.DTO.BookItemDto book)
+            {
+                detailGrid.DataSource = null;
+                SetDetailsTitle("CHI TIẾT TÁC GIẢ · Chọn một cuốn sách phía trên để xem danh sách tác giả");
+                return;
+            }
+
+            var authors = authorLookup?.Invoke(book.Id) ?? new List<ManagerAuthorDto>();
+            SetDetailsTitle($"CHI TIẾT SÁCH: {book.Title} ({book.Id}) · Tồn kho: {book.AvailableStock:N0} · {authors.Count} tác giả");
+            detailGrid.DataSource = authors;
+        };
+
         AddAction("Tải", "load");
         AddAction("Thêm", "add");
         AddAction("Sửa", "edit");

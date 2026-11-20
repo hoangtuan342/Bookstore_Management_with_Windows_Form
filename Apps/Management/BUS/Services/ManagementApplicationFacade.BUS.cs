@@ -45,6 +45,8 @@ public sealed class ManagementApplicationFacade : IDisposable
         ReadCached("categories", () => Manager.GetCategories(), refresh);
     public List<ManagerAuthorDto> GetAuthors(bool refresh = false) =>
         ReadCached("authors", () => Manager.GetAuthors(), refresh);
+    public List<ManagerAuthorDto> GetAuthorsByBookId(string bookId) =>
+        Manager.GetAuthorsByBookId(bookId);
     public List<ManagerPublisherDto> GetPublishers(bool refresh = false) =>
         ReadCached("publishers", () => Manager.GetPublishers(), refresh);
 

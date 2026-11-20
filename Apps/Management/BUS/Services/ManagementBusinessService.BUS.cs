@@ -262,6 +262,12 @@ public sealed class ManagementBusinessService(ManagementSessionService session, 
         return CreateAdminRecordsService(dao).GetAllAuthorsList();
     }
 
+    public List<ManagerAuthorDto> GetAuthorsByBookId(string bookId)
+    {
+        var dao = BookStoreDao.Create();
+        return dao.Catalog.GetAuthorsByBookId(bookId);
+    }
+
     public List<ManagerPublisherDto> GetManagerPublishers()
     {
         EnsureAccess("records");

@@ -17,6 +17,7 @@ public sealed class ManagementOperationsService(ManagementBusinessService dispat
     public void DeleteCategory(string id) => dispatch.DeleteManagerCategory(id);
 
     public List<ManagerAuthorDto> GetAuthors() => dispatch.GetManagerAuthors();
+    public List<ManagerAuthorDto> GetAuthorsByBookId(string bookId) => dispatch.GetAuthorsByBookId(bookId);
     public void SaveAuthor(int? id, SaveAuthorDto item) { if (id is null) dispatch.CreateManagerAuthor(item); else dispatch.UpdateManagerAuthor(id.Value, item); }
     public void DeleteAuthor(int id) => dispatch.DeleteManagerAuthor(id);
 

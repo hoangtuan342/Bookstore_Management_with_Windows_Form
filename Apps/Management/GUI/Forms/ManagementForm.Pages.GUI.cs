@@ -24,7 +24,7 @@ public partial class ManagementForm
         }
         if (StaffPermissions.CanAccess(_role, "books"))
         {
-            var page = new BooksPageForm();
+            var page = new BooksPageForm(bookId => _services.GetAuthorsByBookId(bookId));
             _booksGrid = page.Grid;
             AddManagementPage(page, new()
             {
