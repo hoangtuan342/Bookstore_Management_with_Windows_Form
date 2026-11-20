@@ -194,7 +194,11 @@ internal class ManagementGridPageForm : Form
             var rows = (Grid.DataSource as System.Collections.IEnumerable)?.Cast<object>().ToList() ?? [];
             OnDataSourceRefreshed(rows);
         };
-        Grid.DataBindingComplete += (_, _) => ApplyQuickFilter();
+        Grid.DataBindingComplete += (_, _) =>
+        {
+            OnGridDataBound();
+            ApplyQuickFilter();
+        };
         _searchTools.Controls.AddRange([searchLabel, _search, _rowCount]);
         _toolbar.Controls.Add(_actions, 0, 0);
         _toolbar.SetRowSpan(_actions, 2);
@@ -251,6 +255,7 @@ internal class ManagementGridPageForm : Form
     protected virtual bool MatchesAdditionalFilters(object item) => true;
     protected virtual IEnumerable<string?> GetAdditionalSearchValues(object item) => [];
     protected virtual void OnDataSourceRefreshed(List<object> rows) { }
+    protected virtual void OnGridDataBound() { }
 
     protected void SetDetailsView(Control details, string initialMessage)
     {

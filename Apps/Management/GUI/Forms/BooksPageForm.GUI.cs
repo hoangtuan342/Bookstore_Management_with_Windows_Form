@@ -29,20 +29,24 @@ internal sealed class BooksPageForm : ManagementGridPageForm
         AddAction("Ẩn sách", "hide");
         AddAction("Nhập sách (CSV/Excel)", "import");
         AddAction("Xuất sách (Excel/CSV)", "export");
+    }
 
-        Grid.DataBindingComplete += (_, _) => ConfigureBookGridColumns();
+    protected override void OnGridDataBound()
+    {
+        base.OnGridDataBound();
+        ConfigureBookGridColumns();
     }
 
     private void ConfigureBookGridColumns()
     {
         if (Grid.Columns.Count == 0) return;
 
-        void SetHeader(string propertyName, string headerText, int? width = null)
+        void SetHeader(string propertyName, string headerText, int? minWidth = null)
         {
             if (Grid.Columns[propertyName] is { } col)
             {
                 col.HeaderText = headerText;
-                if (width.HasValue) col.Width = width.Value;
+                if (minWidth.HasValue) col.MinimumWidth = minWidth.Value;
             }
         }
 
