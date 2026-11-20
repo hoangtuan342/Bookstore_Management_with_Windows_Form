@@ -6,7 +6,7 @@ internal sealed class AuthorsPageForm : ManagementGridPageForm
     {
         SetSearchPlaceholder("Tìm theo tên tác giả, tiểu sử...");
         AddAction("Tải", "load");
-        AddAction("Thêm tác giả", "add");
+        AddAction("Thêm", "add");
         AddAction("Sửa", "edit");
         AddAction("Xóa", "delete");
     }

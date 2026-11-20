@@ -49,7 +49,8 @@ public class CatalogDao
                    ISNULL(ls.TenLoai, N'Chưa phân loại') AS TheLoai,
                    s.DGBan, s.TrangThai, s.MoTa, s.SLCo,
                    ISNULL(nxb.TenNhaXuatBan, N'Chưa cập nhật') AS NXB,
-                   s.CoverImagePath, s.ISBN
+                   s.CoverImagePath, s.ISBN,
+                   ISNULL(s.DVTinh, N'Cuốn') AS DVTinh
             FROM Sach s
             LEFT JOIN LoaiSach ls ON s.MaLoai = ls.MaLoai
             LEFT JOIN NhaXuatBan nxb ON s.IDNhaXuatBan = nxb.IDNhaXuatBan
@@ -59,9 +60,10 @@ public class CatalogDao
         while (r.Read())
         {
             var isActive = r.GetBoolean(5);
+            var unit = r.IsDBNull(11) ? "Cuốn" : r.GetString(11);
             list.Add(new BookItemDto(
                 r.GetString(0), r.GetString(1), r.GetString(2), r.GetString(3),
-                r.GetDecimal(4), "cover-sage",
+                r.GetDecimal(4), unit,
                 isActive ? "ĐANG BÁN" : "ĐÃ ẨN",
                 r.IsDBNull(6) ? "" : r.GetString(6),
                 r.GetInt32(7),

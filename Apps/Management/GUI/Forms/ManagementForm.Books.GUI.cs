@@ -17,11 +17,24 @@ public partial class ManagementForm
 
         var authorHint = string.Join(", ", lookups.Authors.Take(5).Select(a => $"{a.Id}: {a.Name}"));
 
+        var unitOptions = new List<(string Id, string Name)>
+        {
+            ("Cuốn", "Cuốn"),
+            ("Quyển", "Quyển"),
+            ("Bộ", "Bộ"),
+            ("Tập", "Tập")
+        };
+        var currentUnit = string.IsNullOrWhiteSpace(old?.Unit) ? "Cuốn" : old.Unit;
+        if (!unitOptions.Any(u => string.Equals(u.Id, currentUnit, StringComparison.OrdinalIgnoreCase)))
+        {
+            unitOptions.Add((currentUnit, currentUnit));
+        }
+
         var fields = new List<EditDialogField>
         {
             new("title", "Tên sách", old?.Title ?? ""),
             new("price", "Giá bán (VNĐ)", old?.SalePrice.ToString(CultureInfo.InvariantCulture) ?? "0"),
-            new("unit", "Đơn vị tính", old?.Unit ?? "Quyển"),
+            new("unit", "Đơn vị tính", currentUnit, unitOptions),
             new("category", "Thể loại", old?.CategoryId ?? lookups.Categories.FirstOrDefault()?.Id ?? "", categoryOptions),
             new("publisher", "Nhà xuất bản", old?.PublisherId?.ToString() ?? "", publisherOptions),
             new("authors", $"Mã tác giả ({authorHint}...)", string.Join(",", old?.AuthorIds ?? [])),

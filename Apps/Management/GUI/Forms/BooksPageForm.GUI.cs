@@ -29,6 +29,21 @@ internal sealed class BooksPageForm : ManagementGridPageForm
         AddAction("Ẩn sách", "hide");
         AddAction("Nhập sách (CSV/Excel)", "import");
         AddAction("Xuất sách (Excel/CSV)", "export");
+
+        Grid.DataBindingComplete += (_, _) => ConfigureBookGridColumns();
+    }
+
+    private void ConfigureBookGridColumns()
+    {
+        if (Grid.Columns[nameof(TrangSach.Shared.DTO.BookItemDto.CoverStyle)] is { } coverCol)
+        {
+            coverCol.HeaderText = "Đơn vị tính";
+            coverCol.Width = 100;
+        }
+        if (Grid.Columns[nameof(TrangSach.Shared.DTO.BookItemDto.Price)] is { } priceCol)
+        {
+            priceCol.DefaultCellStyle.Format = "N0";
+        }
     }
 
     protected override bool HasAdditionalFilters => ManagementGridPageForm.Value(_category) is not null
