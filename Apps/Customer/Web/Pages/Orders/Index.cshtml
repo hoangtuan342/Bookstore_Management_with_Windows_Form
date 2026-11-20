@@ -10,7 +10,45 @@ else
     <section class="panel order-list">
     @foreach (var order in Model.Orders)
     {
-        <article class="order-row"><div><span class="eyebrow">MÃ ĐƠN</span><h3>@order.Id</h3><p class="muted">@order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · @order.Lines.Sum(line => line.Quantity) cuốn</p></div><div><span class="status-pill">@order.Status</span><p class="muted">@PaymentName(order.PaymentMethod) · @order.PaymentStatus</p></div><strong class="price">@order.TotalAmount.ToString("N0") ₫</strong><a class="button button-light" asp-page="/Orders/Details" asp-route-id="@order.Id">Xem đơn hàng</a>@if(order.Status is "Pending" or "Confirmed"){<form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Hủy đơn @order.Id?')"><input type="hidden" name="id" value="@order.Id"/><button class="button button-light" type="submit">Hủy đơn</button></form>}</article>
+        <article class="order-row" style="display:grid; grid-template-columns: 1.2fr 1fr auto auto; gap:20px; align-items:center; padding:18px 0; border-bottom:1px solid var(--line);">
+            <div>
+                <span class="eyebrow">MÃ ĐƠN</span>
+                <h3><a asp-page="/Orders/Details" asp-route-id="@order.Id" style="color:inherit; text-decoration:none;">@order.Id</a></h3>
+                <p class="muted">@order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · @order.Lines.Sum(line => line.Quantity) cuốn</p>
+                <div style="display:flex; gap:6px; margin-top:8px; align-items:center;">
+                    @foreach (var line in order.Lines.Take(4))
+                    {
+                        if (!string.IsNullOrWhiteSpace(line.CoverImagePath))
+                        {
+                            <img src="@line.CoverImagePath" alt="@line.Title" title="@line.Title (x@line.Quantity)" style="width:32px; height:44px; object-fit:cover; border-radius:3px; border:1px solid #e2e8e0;" />
+                        }
+                        else
+                        {
+                            <div class="mini-cover" title="@line.Title" style="width:32px; height:44px; font-size:9px;">TS</div>
+                        }
+                    }
+                    @if (order.Lines.Count > 4)
+                    {
+                        <span style="font-size:11px; color:var(--muted); background:#f0f3ef; padding:3px 6px; border-radius:3px;">+@(order.Lines.Count - 4)</span>
+                    }
+                </div>
+            </div>
+            <div>
+                <span class="status-pill">@order.Status</span>
+                <p class="muted" style="margin-top:6px;">@PaymentName(order.PaymentMethod) · @order.PaymentStatus</p>
+            </div>
+            <strong class="price">@order.TotalAmount.ToString("N0") ₫</strong>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <a class="button button-light" asp-page="/Orders/Details" asp-route-id="@order.Id">Xem chi tiết</a>
+                @if (order.Status is "Pending" or "Confirmed")
+                {
+                    <form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Hủy đơn @order.Id?')">
+                        <input type="hidden" name="id" value="@order.Id" />
+                        <button class="button button-light" style="width:100%; color:var(--danger);" type="submit">Hủy đơn</button>
+                    </form>
+                }
+            </div>
+        </article>
     }
     </section>
 }

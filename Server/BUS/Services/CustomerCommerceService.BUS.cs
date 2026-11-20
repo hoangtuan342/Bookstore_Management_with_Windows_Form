@@ -26,7 +26,7 @@ namespace TrangSach.BUS
             {
                 decimal discount = discounts.ContainsKey(x.BookId) ? discounts[x.BookId] : 0;
                 var unit = BookPricingService.ApplyDiscount(x.SalePrice, discount);
-                return new StoreCartLineDto(x.BookId, x.Title, x.Author, unit, x.Quantity, x.AvailableStock, unit * x.Quantity);
+                return new StoreCartLineDto(x.BookId, x.Title, x.Author, unit, x.Quantity, x.AvailableStock, unit * x.Quantity, x.CoverImagePath);
             }).ToList();
         }
 
@@ -144,7 +144,7 @@ namespace TrangSach.BUS
             {
                 decimal discount = discounts.ContainsKey(x.BookId) ? discounts[x.BookId] : 0;
                 var unit = BookPricingService.ApplyDiscount(x.SalePrice, discount);
-                return new StoreOrderLineDto(x.BookId, x.Title, x.Quantity, unit, unit * x.Quantity);
+                return new StoreOrderLineDto(x.BookId, x.Title, x.Quantity, unit, unit * x.Quantity, x.CoverImagePath);
             }).ToList();
 
             var orderDto = new StoreOrderDto(

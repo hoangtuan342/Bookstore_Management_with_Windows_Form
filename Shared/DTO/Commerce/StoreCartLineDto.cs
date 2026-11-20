@@ -10,12 +10,13 @@ namespace TrangSach.Shared.DTO
         public int Quantity { get; set; }
         public int AvailableStock { get; set; }
         public decimal LineTotal { get; set; }
+        public string? CoverImagePath { get; set; }
 
         public StoreCartLineDto()
         {
         }
 
-        public StoreCartLineDto(string bookId, string title, string author, decimal unitPrice, int quantity, int availableStock, decimal lineTotal)
+        public StoreCartLineDto(string bookId, string title, string author, decimal unitPrice, int quantity, int availableStock, decimal lineTotal, string? coverImagePath = null)
         {
             this.BookId = bookId;
             this.Title = title;
@@ -24,6 +25,7 @@ namespace TrangSach.Shared.DTO
             this.Quantity = quantity;
             this.AvailableStock = availableStock;
             this.LineTotal = lineTotal;
+            this.CoverImagePath = coverImagePath;
         }
     }
 }

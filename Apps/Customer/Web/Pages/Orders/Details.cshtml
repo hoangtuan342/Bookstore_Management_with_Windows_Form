@@ -4,7 +4,28 @@
 {
     <nav class="breadcrumbs"><a asp-page="/Orders/Index">Đơn hàng</a><span>/</span><span>@order.Id</span></nav>
     <div class="section-heading"><div><span class="eyebrow">ĐẶT LÚC @order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span><h1>Đơn hàng @order.Id</h1></div><span class="status-pill">@order.Status</span></div>
-    <div class="checkout-layout"><section class="panel"><h2>Sản phẩm</h2>@foreach (var line in order.Lines) { <article class="order-product"><div><h3>@line.Title</h3><p class="muted">@line.UnitPrice.ToString("N0") ₫ × @line.Quantity</p></div><strong>@line.LineTotal.ToString("N0") ₫</strong></article> }</section>
+    <div class="checkout-layout">
+        <section class="panel">
+            <h2>Sản phẩm</h2>
+            @foreach (var line in order.Lines)
+            {
+                <article class="order-product" style="display:flex; align-items:center; gap:16px;">
+                    @if (!string.IsNullOrWhiteSpace(line.CoverImagePath))
+                    {
+                        <img src="@line.CoverImagePath" alt="@line.Title" style="width: 48px; height: 64px; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.12);" />
+                    }
+                    else
+                    {
+                        <div class="mini-cover" style="width: 48px; height: 64px; font-size:11px;">TS</div>
+                    }
+                    <div style="flex:1;">
+                        <h3><a asp-page="/Books/Details" asp-route-id="@line.BookId" style="color: inherit; text-decoration: none;">@line.Title</a></h3>
+                        <p class="muted">@line.UnitPrice.ToString("N0") ₫ × @line.Quantity</p>
+                    </div>
+                    <strong>@line.LineTotal.ToString("N0") ₫</strong>
+                </article>
+            }
+        </section>
         <aside class="panel order-summary"><h2>Thông tin đơn hàng</h2><p><strong>Người nhận:</strong> @order.ReceiverPhone</p><p><strong>Địa chỉ:</strong> @order.ShippingAddress</p><p><strong>Phương thức:</strong> @PaymentName(order.PaymentMethod)</p><p><strong>Thanh toán:</strong> @order.PaymentStatus</p><div class="summary-row"><span>Giảm giá</span><strong>−@order.DiscountAmount.ToString("N0") ₫</strong></div><div class="summary-total"><span>Tổng thanh toán</span><strong>@order.TotalAmount.ToString("N0") ₫</strong></div><a class="button button-light button-wide" asp-page="/Orders/Index">Quay lại đơn hàng</a></aside>
     </div>
 }

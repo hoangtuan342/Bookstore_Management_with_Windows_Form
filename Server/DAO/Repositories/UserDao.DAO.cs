@@ -440,15 +440,15 @@ public class UserDao
         cmd.ExecuteNonQuery();
     }
 
-    public List<(string BookId, string Title, string Author, decimal SalePrice, int AvailableStock, int Quantity)>
+    public List<(string BookId, string Title, string Author, decimal SalePrice, int AvailableStock, int Quantity, string? CoverImagePath)>
         GetCustomerCart(string customerId)
     {
-        var list = new List<(string, string, string, decimal, int, int)>();
+        var list = new List<(string, string, string, decimal, int, int, string?)>();
         using var conn = DbConnection.Open();
         var sql = @"
             SELECT gh.MaSach, s.TenSach,
                    ISNULL((SELECT TOP 1 tg.TenTacGia FROM TacGiaSach tgs JOIN TacGia tg ON tgs.IDTacGia = tg.IDTacGia WHERE tgs.MaSach = s.MaSach ORDER BY tg.TenTacGia), N'Chưa cập nhật'),
-                   s.DGBan, s.SLCo, gh.SoLuong
+                   s.DGBan, s.SLCo, gh.SoLuong, s.CoverImagePath
             FROM GioHang gh
             JOIN Sach s ON gh.MaSach = s.MaSach
             WHERE gh.MaKH = @cusId";
@@ -457,7 +457,8 @@ public class UserDao
         using var r = cmd.ExecuteReader();
         while (r.Read())
         {
-            list.Add((r.GetString(0), r.GetString(1), r.GetString(2), r.GetDecimal(3), r.GetInt32(4), r.GetInt32(5)));
+            var cover = r.IsDBNull(6) ? null : r.GetString(6);
+            list.Add((r.GetString(0), r.GetString(1), r.GetString(2), r.GetDecimal(3), r.GetInt32(4), r.GetInt32(5), cover));
         }
         return list;
     }

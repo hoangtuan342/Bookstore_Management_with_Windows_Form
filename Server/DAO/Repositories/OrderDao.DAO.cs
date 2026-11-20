@@ -285,7 +285,7 @@ public class OrderDao
         {
             var lines = new List<StoreOrderLineDto>();
             using var cmdLines = new SqlCommand(@"
-                SELECT c.MaSach, ISNULL(s.TenSach, N'Chưa rõ'), c.SL, c.DG, c.ThanhTien
+                SELECT c.MaSach, ISNULL(s.TenSach, N'Chưa rõ'), c.SL, c.DG, c.ThanhTien, s.CoverImagePath
                 FROM CTHD c
                 LEFT JOIN Sach s ON c.MaSach = s.MaSach
                 WHERE c.MaHD = @id", conn);
@@ -293,7 +293,8 @@ public class OrderDao
             using var rLines = cmdLines.ExecuteReader();
             while (rLines.Read())
             {
-                lines.Add(new StoreOrderLineDto(rLines.GetString(0), rLines.GetString(1), rLines.GetInt32(2), rLines.GetDecimal(3), rLines.GetDecimal(4)));
+                var cover = rLines.IsDBNull(5) ? null : rLines.GetString(5);
+                lines.Add(new StoreOrderLineDto(rLines.GetString(0), rLines.GetString(1), rLines.GetInt32(2), rLines.GetDecimal(3), rLines.GetDecimal(4), cover));
             }
             rLines.Close();
 
@@ -326,7 +327,7 @@ public class OrderDao
 
         var lines = new List<StoreOrderLineDto>();
         using var cmdLines = new SqlCommand(@"
-            SELECT c.MaSach, ISNULL(s.TenSach, N'Chưa rõ'), c.SL, c.DG, c.ThanhTien
+            SELECT c.MaSach, ISNULL(s.TenSach, N'Chưa rõ'), c.SL, c.DG, c.ThanhTien, s.CoverImagePath
             FROM CTHD c
             LEFT JOIN Sach s ON c.MaSach = s.MaSach
             WHERE c.MaHD = @id", conn);
@@ -334,7 +335,8 @@ public class OrderDao
         using var rLines = cmdLines.ExecuteReader();
         while (rLines.Read())
         {
-            lines.Add(new StoreOrderLineDto(rLines.GetString(0), rLines.GetString(1), rLines.GetInt32(2), rLines.GetDecimal(3), rLines.GetDecimal(4)));
+            var cover = rLines.IsDBNull(5) ? null : rLines.GetString(5);
+            lines.Add(new StoreOrderLineDto(rLines.GetString(0), rLines.GetString(1), rLines.GetInt32(2), rLines.GetDecimal(3), rLines.GetDecimal(4), cover));
         }
 
         return new StoreOrderDto(
