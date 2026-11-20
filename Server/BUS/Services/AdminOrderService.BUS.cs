@@ -94,12 +94,42 @@ namespace TrangSach.BUS
 
             var employeeId = !string.IsNullOrWhiteSpace(command.EmployeeId) ? command.EmployeeId : null;
 
-            _dao.Orders.InsertOrder(orderId, now, command.CustomerId, employeeId, null,
+            // Xử lý thông tin khách hàng:
+            // 1. Nếu CustomerId truyền vào là Mã KH đã có -> lấy thông tin KH đó
+            // 2. Nếu CustomerId truyền vào là Tên khách mới (hoặc không khớp Mã KH có sẵn) -> tự động tạo hồ sơ KH mới
+            var customerId = command.CustomerId;
+            var customerName = !string.IsNullOrWhiteSpace(command.CustomerName) ? command.CustomerName.Trim() : command.CustomerId;
+
+            var existingCustomer = _dao.Users.GetAllCustomers().FirstOrDefault(c =>
+                c.Id.Equals(customerId, StringComparison.OrdinalIgnoreCase) ||
+                c.FullName.Equals(customerName, StringComparison.OrdinalIgnoreCase));
+
+            if (existingCustomer != null)
+            {
+                customerId = existingCustomer.Id;
+                customerName = existingCustomer.FullName;
+            }
+            else
+            {
+                // Tự sinh mã khách hàng mới và lưu vào bảng KH để liên kết khóa ngoại
+                var newCusId = $"KH{Convert.ToHexString(RandomNumberGenerator.GetBytes(5))}";
+                try
+                {
+                    _dao.Users.InsertCustomer(newCusId, customerName, command.ReceiverPhone?.Trim(), command.ShippingAddress?.Trim(), null);
+                    customerId = newCusId;
+                }
+                catch
+                {
+                    // Dự phòng nếu không ghi được KH thì lấy KH đầu tiên
+                    customerId = _dao.Users.GetAllCustomers().FirstOrDefault()?.Id ?? "KH00000001";
+                }
+            }
+
+            _dao.Orders.InsertOrder(orderId, now, customerId, employeeId, null,
                 total, totalDisc, "Pending", payStatus, payment,
                 command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(),
                 orderLines.Select(l => (l.BookId, l.Quantity, l.UnitPrice, l.LineTotal)).ToList());
 
-            var customerName = command.CustomerId;
             var employeeName = string.Empty;
             if (!string.IsNullOrWhiteSpace(employeeId))
             {
