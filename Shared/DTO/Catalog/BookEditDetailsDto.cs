@@ -12,12 +12,27 @@ namespace TrangSach.Shared.DTO
         public List<int> AuthorIds { get; set; } = new List<int>();
         public bool IsActive { get; set; }
         public string Description { get; set; } = "";
+        public string? CoverImagePath { get; set; } = "";
+        public string? Isbn { get; set; } = "";
+        public int AvailableStock { get; set; } = 0;
 
         public BookEditDetailsDto()
         {
         }
 
-        public BookEditDetailsDto(string id, string title, decimal salePrice, string unit, string categoryId, int? publisherId, List<int> authorIds, bool isActive, string description = "")
+        public BookEditDetailsDto(
+            string id,
+            string title,
+            decimal salePrice,
+            string unit,
+            string categoryId,
+            int? publisherId,
+            List<int> authorIds,
+            bool isActive,
+            string description = "",
+            string? coverImagePath = "",
+            string? isbn = "",
+            int availableStock = 0)
         {
             this.Id = id;
             this.Title = title;
@@ -28,6 +43,9 @@ namespace TrangSach.Shared.DTO
             this.AuthorIds = authorIds;
             this.IsActive = isActive;
             this.Description = description;
+            this.CoverImagePath = coverImagePath;
+            this.Isbn = isbn;
+            this.AvailableStock = availableStock;
         }
     }
 }

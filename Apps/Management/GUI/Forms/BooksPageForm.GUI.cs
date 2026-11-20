@@ -35,14 +35,38 @@ internal sealed class BooksPageForm : ManagementGridPageForm
 
     private void ConfigureBookGridColumns()
     {
-        if (Grid.Columns[nameof(TrangSach.Shared.DTO.BookItemDto.CoverStyle)] is { } coverCol)
+        if (Grid.Columns.Count == 0) return;
+
+        void SetHeader(string propertyName, string headerText, int? width = null)
         {
-            coverCol.HeaderText = "Đơn vị tính";
-            coverCol.Width = 100;
+            if (Grid.Columns[propertyName] is { } col)
+            {
+                col.HeaderText = headerText;
+                if (width.HasValue) col.Width = width.Value;
+            }
         }
+
+        SetHeader(nameof(TrangSach.Shared.DTO.BookItemDto.Id), "Mã sách", 85);
+        SetHeader(nameof(TrangSach.Shared.DTO.BookItemDto.Title), "Tên sách", 180);
+        SetHeader(nameof(TrangSach.Shared.DTO.BookItemDto.Author), "Tác giả", 130);
+        SetHeader(nameof(TrangSach.Shared.DTO.BookItemDto.Category), "Thể loại", 110);
+        SetHeader(nameof(TrangSach.Shared.DTO.BookItemDto.Price), "Giá bán (VNĐ)", 100);
+        SetHeader(nameof(TrangSach.Shared.DTO.BookItemDto.CoverStyle), "Đơn vị tính", 95);
+        SetHeader(nameof(TrangSach.Shared.DTO.BookItemDto.Label), "Trạng thái", 100);
+        SetHeader(nameof(TrangSach.Shared.DTO.BookItemDto.AvailableStock), "Tồn kho", 80);
+        SetHeader(nameof(TrangSach.Shared.DTO.BookItemDto.Publisher), "Nhà xuất bản", 130);
+        SetHeader(nameof(TrangSach.Shared.DTO.BookItemDto.Isbn), "ISBN", 110);
+        SetHeader(nameof(TrangSach.Shared.DTO.BookItemDto.CoverImagePath), "Ảnh bìa", 110);
+        SetHeader(nameof(TrangSach.Shared.DTO.BookItemDto.Description), "Mô tả", 180);
+
         if (Grid.Columns[nameof(TrangSach.Shared.DTO.BookItemDto.Price)] is { } priceCol)
         {
             priceCol.DefaultCellStyle.Format = "N0";
+            priceCol.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+        }
+        if (Grid.Columns[nameof(TrangSach.Shared.DTO.BookItemDto.AvailableStock)] is { } stockCol)
+        {
+            stockCol.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
         }
     }
 

@@ -32,7 +32,20 @@ public sealed class IndexModel(ManagementWebApiClient api, ManagementSpreadsheet
         if (!string.IsNullOrWhiteSpace(id))
         {
             var old = await api.GetBookForEditAsync(Token, id, ct);
-            if (old is not null) Input = new BookInput { Id = old.Id, Title = old.Title, Description = old.Description, SalePrice = old.SalePrice, Unit = old.Unit, CategoryId = old.CategoryId, PublisherId = old.PublisherId?.ToString(CultureInfo.InvariantCulture) ?? "", AuthorIds = string.Join(',', old.AuthorIds), IsActive = old.IsActive };
+            if (old is not null) Input = new BookInput
+            {
+                Id = old.Id,
+                Title = old.Title,
+                Description = old.Description,
+                SalePrice = old.SalePrice,
+                Unit = old.Unit,
+                CategoryId = old.CategoryId,
+                PublisherId = old.PublisherId?.ToString(CultureInfo.InvariantCulture) ?? "",
+                AuthorIds = string.Join(',', old.AuthorIds),
+                Isbn = old.Isbn ?? "",
+                CoverImagePath = old.CoverImagePath ?? "",
+                IsActive = old.IsActive
+            };
         }
         ViewData["Title"] = "Quản lý sách";
     }
@@ -44,7 +57,17 @@ public sealed class IndexModel(ManagementWebApiClient api, ManagementSpreadsheet
         {
             var authors = Input.AuthorIds.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(value => int.TryParse(value, out var id) ? id : throw new InvalidOperationException("Mã tác giả phải là số, cách nhau bằng dấu phẩy.")).ToList();
             int? publisher = int.TryParse(Input.PublisherId, out var publisherId) ? publisherId : null;
-            var command = new BookManagementCommandDto(Input.Title.Trim(), Input.SalePrice, Input.Unit.Trim(), Input.CategoryId.Trim(), publisher, authors, Input.Description.Trim());
+            var command = new BookManagementCommandDto(
+                Input.Title.Trim(),
+                Input.SalePrice,
+                Input.Unit.Trim(),
+                Input.CategoryId.Trim(),
+                publisher,
+                authors,
+                Input.Description.Trim(),
+                Input.CoverImagePath?.Trim(),
+                Input.Isbn?.Trim(),
+                Input.IsActive);
             if (string.IsNullOrWhiteSpace(Input.Id))
             {
                 var created = await api.CreateBookAsync(Token, command, ct);
@@ -182,6 +205,8 @@ public sealed class IndexModel(ManagementWebApiClient api, ManagementSpreadsheet
         [Required, StringLength(20), Display(Name = "Mã thể loại")] public string CategoryId { get; set; } = "";
         public string? PublisherId { get; set; }
         public string AuthorIds { get; set; } = "";
+        [StringLength(50), Display(Name = "Mã ISBN")] public string? Isbn { get; set; } = "";
+        [StringLength(500), Display(Name = "Đường dẫn ảnh bìa")] public string? CoverImagePath { get; set; } = "";
         public bool IsActive { get; set; } = true;
     }
 }

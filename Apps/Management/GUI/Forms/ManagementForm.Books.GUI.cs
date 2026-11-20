@@ -30,6 +30,13 @@ public partial class ManagementForm
             unitOptions.Add((currentUnit, currentUnit));
         }
 
+        var statusOptions = new List<(string Id, string Name)>
+        {
+            ("true", "ĐANG BÁN"),
+            ("false", "ĐÃ ẨN")
+        };
+        var currentStatus = (old?.IsActive ?? true) ? "true" : "false";
+
         var fields = new List<EditDialogField>
         {
             new("title", "Tên sách", old?.Title ?? ""),
@@ -38,6 +45,9 @@ public partial class ManagementForm
             new("category", "Thể loại", old?.CategoryId ?? lookups.Categories.FirstOrDefault()?.Id ?? "", categoryOptions),
             new("publisher", "Nhà xuất bản", old?.PublisherId?.ToString() ?? "", publisherOptions),
             new("authors", $"Mã tác giả ({authorHint}...)", string.Join(",", old?.AuthorIds ?? [])),
+            new("isbn", "Mã ISBN", old?.Isbn ?? ""),
+            new("coverImagePath", "Đường dẫn ảnh bìa", old?.CoverImagePath ?? ""),
+            new("status", "Trạng thái bán", currentStatus, statusOptions),
             new("description", "Mô tả sách", old?.Description ?? "")
         };
 
@@ -57,7 +67,18 @@ public partial class ManagementForm
             .ToList();
 
         int? publisherId = int.TryParse(values["publisher"], out var pub) && pub > 0 ? pub : null;
-        var book = new CreateManagerBookDto(values["title"], price, values["unit"], values["category"], publisherId, authorIds, values["description"]);
+        var isActive = values["status"] == "true";
+        var book = new CreateManagerBookDto(
+            values["title"],
+            price,
+            values["unit"],
+            values["category"],
+            publisherId,
+            authorIds,
+            values["description"],
+            values["coverImagePath"],
+            values["isbn"],
+            isActive);
         if (id is null) _services.Manager.CreateBook(book); else _services.Manager.UpdateBook(id, book);
         LoadBooks(true);
     }

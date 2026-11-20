@@ -46,5 +46,5 @@ public sealed class AdminBooksController(AdminBookService service) : ControllerB
         ControllerExceptionHelper.Execute(() => service.SetVisibility(id, new BookVisibilityCommandDto(request.IsActive)));
 
     private static BookManagementCommandDto ToCommand(BookManagementRequest request) =>
-        new(request.Title, request.SalePrice, request.Unit, request.CategoryId, request.PublisherId, request.AuthorIds, request.Description);
+        new(request.Title, request.SalePrice, request.Unit, request.CategoryId, request.PublisherId, request.AuthorIds, request.Description, request.CoverImagePath, request.Isbn, request.IsActive);
 }

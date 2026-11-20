@@ -66,7 +66,7 @@ public sealed class ManagementOperationsService(ManagementBusinessService dispat
     {
         var details = dispatch.GetManagerBookDetails(id);
         return new ManagerBookDetailsDto(details.Id, details.Title, details.SalePrice, details.Unit, details.CategoryId,
-            details.PublisherId, details.AuthorIds, details.IsActive, details.Description);
+            details.PublisherId, details.AuthorIds, details.IsActive, details.Description, details.CoverImagePath, details.Isbn, details.AvailableStock);
     }
     public void UpdateBook(string id, CreateManagerBookDto book) => dispatch.UpdateManagerBook(id, ToBookCommand(book));
     public void HideBook(string id) => dispatch.HideManagerBook(id);
@@ -81,5 +81,5 @@ public sealed class ManagementOperationsService(ManagementBusinessService dispat
         receipt.Lines.Select(x => new ReceiptLineCommandDto(x.BookId, x.Quantity, x.UnitCost)).ToList());
 
     private static BookManagementCommandDto ToBookCommand(CreateManagerBookDto item) => new(
-        item.Title, item.SalePrice, item.Unit, item.CategoryId, item.PublisherId, item.AuthorIds, item.Description);
+        item.Title, item.SalePrice, item.Unit, item.CategoryId, item.PublisherId, item.AuthorIds, item.Description, item.CoverImagePath, item.Isbn, item.IsActive);
 }

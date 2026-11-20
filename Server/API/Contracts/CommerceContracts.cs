@@ -71,6 +71,12 @@ public sealed class BookManagementRequest
 
     [StringLength(4000)]
     public string Description { get; init; } = string.Empty;
+
+    public string? CoverImagePath { get; init; } = string.Empty;
+
+    public string? Isbn { get; init; } = string.Empty;
+
+    public bool IsActive { get; init; } = true;
 }
 
 public sealed class UpdateOrderStatusRequest

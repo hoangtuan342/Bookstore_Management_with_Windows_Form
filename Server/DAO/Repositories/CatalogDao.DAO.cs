@@ -47,9 +47,13 @@ public class CatalogDao
             SELECT s.MaSach, s.TenSach,
                    ISNULL((SELECT TOP 1 tg.TenTacGia FROM TacGiaSach tgs JOIN TacGia tg ON tgs.IDTacGia = tg.IDTacGia WHERE tgs.MaSach = s.MaSach ORDER BY tg.TenTacGia), N'Chưa cập nhật') AS TacGia,
                    ISNULL(ls.TenLoai, N'Chưa phân loại') AS TheLoai,
-                   s.DGBan, s.TrangThai, s.MoTa, s.SLCo,
+                   ISNULL(s.DGBan, 0) AS DGBan,
+                   ISNULL(s.TrangThai, 1) AS TrangThai,
+                   ISNULL(s.MoTa, N'') AS MoTa,
+                   ISNULL(s.SLCo, 0) AS SLCo,
                    ISNULL(nxb.TenNhaXuatBan, N'Chưa cập nhật') AS NXB,
-                   s.CoverImagePath, s.ISBN,
+                   ISNULL(s.CoverImagePath, N'') AS CoverImagePath,
+                   ISNULL(s.ISBN, N'') AS ISBN,
                    ISNULL(s.DVTinh, N'Cuốn') AS DVTinh
             FROM Sach s
             LEFT JOIN LoaiSach ls ON s.MaLoai = ls.MaLoai
@@ -59,17 +63,28 @@ public class CatalogDao
         using var r = cmd.ExecuteReader();
         while (r.Read())
         {
-            var isActive = r.GetBoolean(5);
+            var id = r.IsDBNull(0) ? "" : r.GetString(0);
+            var title = r.IsDBNull(1) ? "" : r.GetString(1);
+            var author = r.IsDBNull(2) ? "Chưa cập nhật" : r.GetString(2);
+            var category = r.IsDBNull(3) ? "Chưa phân loại" : r.GetString(3);
+            var price = r.IsDBNull(4) ? 0m : r.GetDecimal(4);
+            var isActive = !r.IsDBNull(5) && r.GetBoolean(5);
+            var desc = r.IsDBNull(6) ? "" : r.GetString(6);
+            var stock = r.IsDBNull(7) ? 0 : r.GetInt32(7);
+            var pub = r.IsDBNull(8) ? "Chưa cập nhật" : r.GetString(8);
+            var cover = r.IsDBNull(9) ? "" : r.GetString(9);
+            var isbn = r.IsDBNull(10) ? "" : r.GetString(10);
             var unit = r.IsDBNull(11) ? "Cuốn" : r.GetString(11);
+
             list.Add(new BookItemDto(
-                r.GetString(0), r.GetString(1), r.GetString(2), r.GetString(3),
-                r.GetDecimal(4), unit,
+                id, title, author, category,
+                price, unit,
                 isActive ? "ĐANG BÁN" : "ĐÃ ẨN",
-                r.IsDBNull(6) ? "" : r.GetString(6),
-                r.GetInt32(7),
-                r.GetString(8),
-                r.IsDBNull(9) ? "" : r.GetString(9),
-                r.IsDBNull(10) ? "" : r.GetString(10)));
+                desc,
+                stock,
+                pub,
+                cover,
+                isbn));
         }
         return list;
     }
@@ -77,20 +92,23 @@ public class CatalogDao
     public BookEditDetailsDto? GetBookForEdit(string id)
     {
         using var conn = DbConnection.Open();
-        var sql = "SELECT MaSach, TenSach, DGBan, DVTinh, MaLoai, IDNhaXuatBan, TrangThai, MoTa FROM Sach WHERE MaSach = @id";
+        var sql = "SELECT MaSach, TenSach, DGBan, DVTinh, MaLoai, IDNhaXuatBan, TrangThai, MoTa, CoverImagePath, ISBN, SLCo FROM Sach WHERE MaSach = @id";
         using var cmd = new SqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("@id", id);
         using var r = cmd.ExecuteReader();
         if (!r.Read()) return null;
 
-        var bookId = r.GetString(0);
-        var title = r.GetString(1);
-        var price = r.GetDecimal(2);
-        var unit = r.GetString(3);
-        var categoryId = r.GetString(4);
+        var bookId = r.IsDBNull(0) ? "" : r.GetString(0);
+        var title = r.IsDBNull(1) ? "" : r.GetString(1);
+        var price = r.IsDBNull(2) ? 0m : r.GetDecimal(2);
+        var unit = r.IsDBNull(3) ? "Cuốn" : r.GetString(3);
+        var categoryId = r.IsDBNull(4) ? "" : r.GetString(4);
         var publisherId = r.IsDBNull(5) ? (int?)null : r.GetInt32(5);
-        var isActive = r.GetBoolean(6);
+        var isActive = !r.IsDBNull(6) && r.GetBoolean(6);
         var desc = r.IsDBNull(7) ? "" : r.GetString(7);
+        var coverImagePath = r.IsDBNull(8) ? "" : r.GetString(8);
+        var isbn = r.IsDBNull(9) ? "" : r.GetString(9);
+        var stock = r.IsDBNull(10) ? 0 : r.GetInt32(10);
         r.Close();
 
         var authorIds = new List<int>();
@@ -99,7 +117,7 @@ public class CatalogDao
         using var rAuthors = cmdAuthors.ExecuteReader();
         while (rAuthors.Read()) authorIds.Add(rAuthors.GetInt32(0));
 
-        return new BookEditDetailsDto(bookId, title, price, unit, categoryId, publisherId, authorIds, isActive, desc);
+        return new BookEditDetailsDto(bookId, title, price, unit, categoryId, publisherId, authorIds, isActive, desc, coverImagePath, isbn, stock);
     }
 
     public void InsertBook(string id, BookManagementCommandDto cmdDto)
@@ -108,17 +126,20 @@ public class CatalogDao
         using var tx = conn.BeginTransaction();
         try
         {
-            var sql = @"INSERT INTO Sach (MaSach, TenSach, MoTa, ISBN, SLCo, DGBan, TrangThai, DVTinh, MaLoai, IDNhaXuatBan)
-                        VALUES (@id, @title, @desc, '', 0, @price, 1, @unit, @catId, @pubId)";
+            var sql = @"INSERT INTO Sach (MaSach, TenSach, MoTa, ISBN, SLCo, DGBan, TrangThai, DVTinh, MaLoai, IDNhaXuatBan, CoverImagePath)
+                        VALUES (@id, @title, @desc, @isbn, 0, @price, @status, @unit, @catId, @pubId, @cover)";
             using (var cmd = new SqlCommand(sql, conn, tx))
             {
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.Parameters.AddWithValue("@title", cmdDto.Title.Trim());
                 cmd.Parameters.AddWithValue("@desc", (object?)cmdDto.Description?.Trim() ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@isbn", (object?)cmdDto.Isbn?.Trim() ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@price", cmdDto.SalePrice);
-                cmd.Parameters.AddWithValue("@unit", cmdDto.Unit.Trim());
+                cmd.Parameters.AddWithValue("@status", cmdDto.IsActive);
+                cmd.Parameters.AddWithValue("@unit", string.IsNullOrWhiteSpace(cmdDto.Unit) ? "Cuốn" : cmdDto.Unit.Trim());
                 cmd.Parameters.AddWithValue("@catId", cmdDto.CategoryId);
                 cmd.Parameters.AddWithValue("@pubId", (object?)cmdDto.PublisherId ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@cover", (object?)cmdDto.CoverImagePath?.Trim() ?? DBNull.Value);
                 cmd.ExecuteNonQuery();
             }
 
@@ -141,17 +162,21 @@ public class CatalogDao
         using var tx = conn.BeginTransaction();
         try
         {
-            var sql = @"UPDATE Sach SET TenSach = @title, MoTa = @desc, DGBan = @price, DVTinh = @unit, MaLoai = @catId, IDNhaXuatBan = @pubId
+            var sql = @"UPDATE Sach SET TenSach = @title, MoTa = @desc, DGBan = @price, DVTinh = @unit,
+                                       MaLoai = @catId, IDNhaXuatBan = @pubId, ISBN = @isbn, CoverImagePath = @cover, TrangThai = @status
                         WHERE MaSach = @id";
             using (var cmd = new SqlCommand(sql, conn, tx))
             {
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.Parameters.AddWithValue("@title", cmdDto.Title.Trim());
                 cmd.Parameters.AddWithValue("@desc", (object?)cmdDto.Description?.Trim() ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@isbn", (object?)cmdDto.Isbn?.Trim() ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@price", cmdDto.SalePrice);
-                cmd.Parameters.AddWithValue("@unit", cmdDto.Unit.Trim());
+                cmd.Parameters.AddWithValue("@unit", string.IsNullOrWhiteSpace(cmdDto.Unit) ? "Cuốn" : cmdDto.Unit.Trim());
                 cmd.Parameters.AddWithValue("@catId", cmdDto.CategoryId);
                 cmd.Parameters.AddWithValue("@pubId", (object?)cmdDto.PublisherId ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@cover", (object?)cmdDto.CoverImagePath?.Trim() ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@status", cmdDto.IsActive);
                 cmd.ExecuteNonQuery();
             }
 
