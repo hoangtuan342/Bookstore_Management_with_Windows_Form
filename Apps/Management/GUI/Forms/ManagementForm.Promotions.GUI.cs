@@ -21,93 +21,13 @@ public partial class ManagementForm
     private void CreatePromotion()
     {
         var books = _services.GetBooks();
-        var bookOptions = new List<(string Id, string Name)> { ("", "-- Chọn sách cần giảm --") };
-        bookOptions.AddRange(books.Select(b => (b.Id, $"{b.Title} ({b.Id})")));
 
-        var fields = new List<EditDialogField>
+        using var editor = new PromotionEditorForm(books);
+        if (editor.ShowDialog(this) == DialogResult.OK && editor.ResultDto != null)
         {
-            new("name", "Tên chương trình", ""),
-            new("start", "Bắt đầu (yyyy-MM-dd)", DateTime.Today.ToString("yyyy-MM-dd")),
-            new("end", "Kết thúc (yyyy-MM-dd)", DateTime.Today.AddDays(7).ToString("yyyy-MM-dd")),
-
-            // Hình thức 1: Giảm theo sách
-            new("enableBook", "1. Áp dụng giảm theo Sách?", "no", YesNoOptions),
-            new("book", "→ Chọn sách giảm giá", "", bookOptions),
-            new("bookRate", "→ % giảm cho sách này (0-90)", "10"),
-
-            // Hình thức 2: Giảm theo hóa đơn
-            new("enableOrder", "2. Áp dụng giảm theo Hóa đơn?", "no", YesNoOptions),
-            new("minimum", "→ Mức đơn tối thiểu (VNĐ)", "200000"),
-            new("orderRate", "→ % giảm cho đơn hàng (0-90)", "5"),
-
-            // Hình thức 3: Giảm qua Voucher
-            new("enableVoucher", "3. Áp dụng tạo Voucher kèm theo?", "no", YesNoOptions),
-            new("voucher", "→ Mã voucher", $"KM{DateTime.UtcNow:yyMMdd}"),
-            new("voucherRate", "→ % giảm qua voucher (0-90)", "10"),
-            new("maxUses", "→ Số lượt dùng tối đa", "100")
-        };
-
-        var values = EditDialog.Show(this, "Tạo chương trình khuyến mãi mới", fields);
-        if (values is null) return;
-
-        if (!DateTime.TryParse(values["start"], out var start) || !DateTime.TryParse(values["end"], out var end) || end < start)
-            throw new InvalidOperationException("Ngày bắt đầu hoặc kết thúc khuyến mãi không hợp lệ.");
-
-        decimal? dec(string key) => decimal.TryParse(values[key], NumberStyles.Number, CultureInfo.InvariantCulture, out var n) ? n : null;
-        int? integer(string key) => int.TryParse(values[key], out var n) ? n : null;
-
-        var hasBook = values["enableBook"] == "yes";
-        var hasOrder = values["enableOrder"] == "yes";
-        var hasVoucher = values["enableVoucher"] == "yes";
-
-        if (!hasBook && !hasOrder && !hasVoucher)
-            throw new InvalidOperationException("Vui lòng chọn áp dụng ít nhất một trong ba hình thức khuyến mãi (theo sách, theo hóa đơn hoặc voucher).");
-
-        string? chosenBook = null;
-        decimal? chosenBookRate = null;
-        if (hasBook)
-        {
-            chosenBook = EmptyToNull(values["book"]);
-            if (string.IsNullOrWhiteSpace(chosenBook))
-                throw new InvalidOperationException("Bạn đã chọn áp dụng giảm theo Sách, vui lòng chọn một cuốn sách từ danh sách.");
-            chosenBookRate = dec("bookRate");
-            if (chosenBookRate is null or <= 0 or > 90)
-                throw new InvalidOperationException("% giảm cho sách phải từ 0.1% đến 90%.");
+            _services.Manager.CreatePromotion(editor.ResultDto);
+            LoadPromotions(true);
         }
-
-        decimal? chosenMinOrder = null;
-        decimal? chosenOrderRate = null;
-        if (hasOrder)
-        {
-            chosenMinOrder = dec("minimum");
-            if (chosenMinOrder is null or < 0)
-                throw new InvalidOperationException("Mức đơn tối thiểu phải là số không âm.");
-            chosenOrderRate = dec("orderRate");
-            if (chosenOrderRate is null or <= 0 or > 90)
-                throw new InvalidOperationException("% giảm cho đơn hàng phải từ 0.1% đến 90%.");
-        }
-
-        string? chosenVoucher = null;
-        decimal? chosenVoucherRate = null;
-        int? chosenMaxUses = null;
-        if (hasVoucher)
-        {
-            chosenVoucher = EmptyToNull(values["voucher"]);
-            if (string.IsNullOrWhiteSpace(chosenVoucher))
-                throw new InvalidOperationException("Bạn đã chọn áp dụng tạo Voucher, vui lòng nhập mã voucher.");
-            chosenVoucherRate = dec("voucherRate");
-            if (chosenVoucherRate is null or <= 0 or > 90)
-                throw new InvalidOperationException("% giảm qua voucher phải từ 0.1% đến 90%.");
-            chosenMaxUses = integer("maxUses");
-        }
-
-        _services.Manager.CreatePromotion(new CreatePromotionDto(
-            values["name"], start, end,
-            chosenBook, chosenBookRate,
-            chosenMinOrder, chosenOrderRate,
-            chosenVoucher, chosenVoucherRate, chosenMaxUses));
-
-        LoadPromotions(true);
     }
 
     private void EditPromotion()

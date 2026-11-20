@@ -14,6 +14,10 @@ namespace TrangSach.Shared.DTO
         public decimal? VoucherDiscountPercent { get; set; }
         public int? VoucherMaxUses { get; set; }
 
+        public List<PromotionBookRuleDto>? BookRules { get; set; }
+        public List<PromotionOrderRuleDto>? OrderRules { get; set; }
+        public List<PromotionVoucherRuleDto>? VoucherRules { get; set; }
+
         public CreatePromotionDto()
         {
         }
@@ -30,6 +34,19 @@ namespace TrangSach.Shared.DTO
             this.VoucherCode = voucherCode;
             this.VoucherDiscountPercent = voucherDiscountPercent;
             this.VoucherMaxUses = voucherMaxUses;
+        }
+
+        public CreatePromotionDto(string name, DateTime startsAt, DateTime endsAt,
+            List<PromotionBookRuleDto>? bookRules,
+            List<PromotionOrderRuleDto>? orderRules,
+            List<PromotionVoucherRuleDto>? voucherRules)
+        {
+            this.Name = name;
+            this.StartsAt = startsAt;
+            this.EndsAt = endsAt;
+            this.BookRules = bookRules;
+            this.OrderRules = orderRules;
+            this.VoucherRules = voucherRules;
         }
     }
 }

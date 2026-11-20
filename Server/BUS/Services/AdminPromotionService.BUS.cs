@@ -60,6 +60,18 @@ namespace TrangSach.BUS
                 voucherRule = (command.VoucherCode.Trim(), command.VoucherDiscountPercent.Value, command.VoucherMaxUses);
 
             dao.Promotions.InsertPromotion(id, command.Name.Trim(), command.StartsAt, command.EndsAt, bookRule, orderRule, voucherRule);
+
+            // Nếu truyền danh sách quy tắc chi tiết phong phú (Master-Detail)
+            if ((command.BookRules != null && command.BookRules.Count > 0) ||
+                (command.OrderRules != null && command.OrderRules.Count > 0) ||
+                (command.VoucherRules != null && command.VoucherRules.Count > 0))
+            {
+                dao.Promotions.UpdatePromotionRules(id,
+                    command.BookRules ?? new List<PromotionBookRuleDto>(),
+                    command.OrderRules ?? new List<PromotionOrderRuleDto>(),
+                    command.VoucherRules ?? new List<PromotionVoucherRuleDto>());
+            }
+
             _promotions = dao.Promotions.GetAllPromotions();
             return id;
         }
