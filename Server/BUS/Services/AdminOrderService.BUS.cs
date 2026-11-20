@@ -92,14 +92,23 @@ namespace TrangSach.BUS
             var orderId = $"HD{now:yyyyMMddHHmmss}{Convert.ToHexString(RandomNumberGenerator.GetBytes(3))}";
             var payStatus = payment == "CashOnDelivery" ? "Unpaid" : "AwaitingPayment";
 
-            _dao.Orders.InsertOrder(orderId, now, command.CustomerId, null, null,
+            var employeeId = !string.IsNullOrWhiteSpace(command.EmployeeId) ? command.EmployeeId : null;
+
+            _dao.Orders.InsertOrder(orderId, now, command.CustomerId, employeeId, null,
                 total, totalDisc, "Pending", payStatus, payment,
                 command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(),
                 orderLines.Select(l => (l.BookId, l.Quantity, l.UnitPrice, l.LineTotal)).ToList());
 
             var customerName = command.CustomerId;
+            var employeeName = string.Empty;
+            if (!string.IsNullOrWhiteSpace(employeeId))
+            {
+                var emp = _dao.Users.GetAllEmployees().FirstOrDefault(e => e.Id == employeeId);
+                if (emp != null) employeeName = $"{emp.LastName} {emp.FirstName}".Trim();
+            }
+
             var newRow = new ManagerOrderRowDto(orderId, now, "Pending", payStatus, payment, total,
-                customerName, string.Empty, command.ReceiverPhone, command.ShippingAddress, command.Lines.Sum(l => l.Quantity),
+                customerName, employeeName, command.ReceiverPhone, command.ShippingAddress, command.Lines.Sum(l => l.Quantity),
                 orderLines.Select(l =>
                 {
                     var book = books.First(b => b.BookId == l.BookId);
@@ -159,12 +168,18 @@ namespace TrangSach.BUS
                 var totalDisc = itemDisc + orderDisc;
 
                 _dao.Orders.UpdateOrderFull(id, command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(), payment, paymentStatus,
-                    total, totalDisc, orderLines.Select(l => (l.BookId, l.Quantity, l.UnitPrice, l.LineTotal)).ToList());
+                    total, totalDisc, orderLines.Select(l => (l.BookId, l.Quantity, l.UnitPrice, l.LineTotal)).ToList(), command.EmployeeId);
 
                 cached.ShippingAddress = command.ShippingAddress;
                 cached.ReceiverPhone = command.ReceiverPhone;
                 cached.PaymentMethod = payment;
                 cached.PaymentStatus = paymentStatus;
+                if (!string.IsNullOrWhiteSpace(command.EmployeeId))
+                {
+                    var emp = _dao.Users.GetAllEmployees().FirstOrDefault(e => e.Id == command.EmployeeId);
+                    if (emp != null) cached.EmployeeName = $"{emp.LastName} {emp.FirstName}".Trim();
+                }
+                if (!string.IsNullOrWhiteSpace(command.CustomerName)) cached.CustomerName = command.CustomerName;
                 cached.TotalAmount = total;
                 cached.ItemCount = command.Lines.Sum(l => l.Quantity);
                 cached.Lines = orderLines.Select(l =>
@@ -175,10 +190,16 @@ namespace TrangSach.BUS
             }
             else
             {
-                _dao.Orders.UpdateOrderInfo(id, command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(), payment);
+                _dao.Orders.UpdateOrderInfo(id, command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(), payment, command.EmployeeId);
                 cached.ShippingAddress = command.ShippingAddress;
                 cached.ReceiverPhone = command.ReceiverPhone;
                 cached.PaymentMethod = payment;
+                if (!string.IsNullOrWhiteSpace(command.EmployeeId))
+                {
+                    var emp = _dao.Users.GetAllEmployees().FirstOrDefault(e => e.Id == command.EmployeeId);
+                    if (emp != null) cached.EmployeeName = $"{emp.LastName} {emp.FirstName}".Trim();
+                }
+                if (!string.IsNullOrWhiteSpace(command.CustomerName)) cached.CustomerName = command.CustomerName;
                 if (!string.IsNullOrWhiteSpace(command.PaymentStatus))
                 {
                     cached.PaymentStatus = command.PaymentStatus;

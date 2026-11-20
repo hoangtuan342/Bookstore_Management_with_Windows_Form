@@ -66,12 +66,13 @@ public partial class ManagementForm
     private void CreateOrder()
     {
         var customers = _services.GetCustomers();
+        var employees = _services.GetEmployees();
         var books = _services.GetBooks();
 
         if (customers.Count == 0) throw new InvalidOperationException("Chưa có khách hàng nào. Hãy thêm khách hàng trước.");
         if (books.Count == 0) throw new InvalidOperationException("Chưa có sách nào trong danh mục.");
 
-        using var editor = new OrderEditorForm(customers, books);
+        using var editor = new OrderEditorForm(customers, employees, books);
         if (editor.ShowDialog(this) == DialogResult.OK && editor.ResultCreateDto != null)
         {
             _services.Manager.CreateOrder(editor.ResultCreateDto);
@@ -84,9 +85,10 @@ public partial class ManagementForm
     {
         var order = Selected<ManagerOrderRowDto>(_ordersGrid) ?? throw new InvalidOperationException("Chọn đơn hàng cần sửa.");
         var customers = _services.GetCustomers();
+        var employees = _services.GetEmployees();
         var books = _services.GetBooks();
 
-        using var editor = new OrderEditorForm(customers, books, order);
+        using var editor = new OrderEditorForm(customers, employees, books, order);
         if (editor.ShowDialog(this) == DialogResult.OK && editor.ResultUpdateDto != null)
         {
             _services.Manager.UpdateOrder(order.Id, editor.ResultUpdateDto);

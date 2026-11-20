@@ -137,20 +137,21 @@ public class OrderDao
         cmd.ExecuteNonQuery();
     }
 
-    public void UpdateOrderInfo(string orderId, string shippingAddress, string receiverPhone, string paymentMethod)
+    public void UpdateOrderInfo(string orderId, string shippingAddress, string receiverPhone, string paymentMethod, string? employeeId = null)
     {
         using var conn = DbConnection.Open();
-        var sql = "UPDATE HD SET DiaChiGiaoHang = @addr, SDTNhanHang = @phone, PhuongThucThanhToan = @pm WHERE MaHD = @id";
+        var sql = "UPDATE HD SET DiaChiGiaoHang = @addr, SDTNhanHang = @phone, PhuongThucThanhToan = @pm, MaNV = ISNULL(@emp, MaNV) WHERE MaHD = @id";
         using var cmd = new SqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("@id", orderId);
         cmd.Parameters.AddWithValue("@addr", shippingAddress);
         cmd.Parameters.AddWithValue("@phone", receiverPhone);
         cmd.Parameters.AddWithValue("@pm", paymentMethod);
+        cmd.Parameters.AddWithValue("@emp", (object?)employeeId ?? DBNull.Value);
         cmd.ExecuteNonQuery();
     }
 
     public void UpdateOrderFull(string orderId, string shippingAddress, string receiverPhone, string paymentMethod, string paymentStatus,
-        decimal total, decimal discount, List<(string BookId, int Qty, decimal Price, decimal LineTotal)> lines)
+        decimal total, decimal discount, List<(string BookId, int Qty, decimal Price, decimal LineTotal)> lines, string? employeeId = null)
     {
         using var conn = DbConnection.Open();
         using var tx = conn.BeginTransaction();
@@ -183,7 +184,8 @@ public class OrderDao
                     PhuongThucThanhToan = @pm,
                     TrangThaiThanhToan = @ps,
                     TongTien = @tot,
-                    TongGiamGia = @disc
+                    TongGiamGia = @disc,
+                    MaNV = ISNULL(@emp, MaNV)
                 WHERE MaHD = @id", conn, tx))
             {
                 cmdUpdateOrder.Parameters.AddWithValue("@id", orderId);
@@ -193,6 +195,7 @@ public class OrderDao
                 cmdUpdateOrder.Parameters.AddWithValue("@ps", paymentStatus);
                 cmdUpdateOrder.Parameters.AddWithValue("@tot", total);
                 cmdUpdateOrder.Parameters.AddWithValue("@disc", discount);
+                cmdUpdateOrder.Parameters.AddWithValue("@emp", (object?)employeeId ?? DBNull.Value);
                 cmdUpdateOrder.ExecuteNonQuery();
             }
 
