@@ -34,6 +34,13 @@ public partial class ManagementForm
         LoadOrders(true);
     }
 
+    private void PrintSelectedOrderInvoice()
+    {
+        var item = Selected<ManagerOrderRowDto>(_ordersGrid) ?? throw new InvalidOperationException("Vui lòng chọn đơn hàng cần in hóa đơn.");
+        using var invoiceForm = new OrderInvoicePrintForm(item);
+        invoiceForm.ShowDialog(this);
+    }
+
     private void CancelSelectedOrder()
     {
         var item = Selected<ManagerOrderRowDto>(_ordersGrid) ?? throw new InvalidOperationException("Chọn đơn hàng cần hủy.");

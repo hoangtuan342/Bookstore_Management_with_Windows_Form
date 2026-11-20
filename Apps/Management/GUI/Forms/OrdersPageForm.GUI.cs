@@ -55,6 +55,7 @@ internal sealed class OrdersPageForm : ManagementGridPageForm
         };
         AddAction("Tải", "load");
         AddAction("Tạo đơn", "create");
+        AddAction("In hóa đơn", "print");
         AddAction("Đổi trạng thái", "status");
         AddAction("Sửa thông tin", "edit");
         AddAction("Hủy đơn", "cancel");

@@ -77,8 +77,9 @@ public partial class ManagementForm
             AddManagementPage(page, new()
             {
                 ["load"] = () => LoadOrders(true),
-                ["status"] = ChangeOrderStatus,
                 ["create"] = CreateOrder,
+                ["print"] = PrintSelectedOrderInvoice,
+                ["status"] = ChangeOrderStatus,
                 ["edit"] = EditSelectedOrder,
                 ["cancel"] = CancelSelectedOrder
             });
