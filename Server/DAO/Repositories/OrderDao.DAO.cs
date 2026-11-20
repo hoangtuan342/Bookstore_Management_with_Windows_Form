@@ -137,6 +137,95 @@ public class OrderDao
         cmd.ExecuteNonQuery();
     }
 
+    public void UpdateOrderInfo(string orderId, string shippingAddress, string receiverPhone, string paymentMethod)
+    {
+        using var conn = DbConnection.Open();
+        var sql = "UPDATE HD SET DiaChiGiaoHang = @addr, SDTNhanHang = @phone, PhuongThucThanhToan = @pm WHERE MaHD = @id";
+        using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@id", orderId);
+        cmd.Parameters.AddWithValue("@addr", shippingAddress);
+        cmd.Parameters.AddWithValue("@phone", receiverPhone);
+        cmd.Parameters.AddWithValue("@pm", paymentMethod);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void UpdateOrderFull(string orderId, string shippingAddress, string receiverPhone, string paymentMethod, string paymentStatus,
+        decimal total, decimal discount, List<(string BookId, int Qty, decimal Price, decimal LineTotal)> lines)
+    {
+        using var conn = DbConnection.Open();
+        using var tx = conn.BeginTransaction();
+        try
+        {
+            // 1. Phục hồi số lượng tồn kho của các sách cũ trong CTHD
+            using (var cmdRestore = new SqlCommand(@"
+                UPDATE s
+                SET s.SLCo = s.SLCo + c.SL
+                FROM Sach s
+                JOIN CTHD c ON s.MaSach = c.MaSach
+                WHERE c.MaHD = @id", conn, tx))
+            {
+                cmdRestore.Parameters.AddWithValue("@id", orderId);
+                cmdRestore.ExecuteNonQuery();
+            }
+
+            // 2. Xóa các dòng CTHD cũ
+            using (var cmdDelLines = new SqlCommand("DELETE FROM CTHD WHERE MaHD = @id", conn, tx))
+            {
+                cmdDelLines.Parameters.AddWithValue("@id", orderId);
+                cmdDelLines.ExecuteNonQuery();
+            }
+
+            // 3. Cập nhật thông tin đơn hàng
+            using (var cmdUpdateOrder = new SqlCommand(@"
+                UPDATE HD
+                SET DiaChiGiaoHang = @addr,
+                    SDTNhanHang = @phone,
+                    PhuongThucThanhToan = @pm,
+                    TrangThaiThanhToan = @ps,
+                    TongTien = @tot,
+                    TongGiamGia = @disc
+                WHERE MaHD = @id", conn, tx))
+            {
+                cmdUpdateOrder.Parameters.AddWithValue("@id", orderId);
+                cmdUpdateOrder.Parameters.AddWithValue("@addr", shippingAddress);
+                cmdUpdateOrder.Parameters.AddWithValue("@phone", receiverPhone);
+                cmdUpdateOrder.Parameters.AddWithValue("@pm", paymentMethod);
+                cmdUpdateOrder.Parameters.AddWithValue("@ps", paymentStatus);
+                cmdUpdateOrder.Parameters.AddWithValue("@tot", total);
+                cmdUpdateOrder.Parameters.AddWithValue("@disc", discount);
+                cmdUpdateOrder.ExecuteNonQuery();
+            }
+
+            // 4. Thêm các dòng CTHD mới và trừ kho tương ứng
+            foreach (var line in lines)
+            {
+                using (var cmdLine = new SqlCommand("INSERT INTO CTHD (MaHD, MaSach, SL, DG, ThanhTien) VALUES (@id, @bookId, @qty, @dg, @tt)", conn, tx))
+                {
+                    cmdLine.Parameters.AddWithValue("@id", orderId);
+                    cmdLine.Parameters.AddWithValue("@bookId", line.BookId);
+                    cmdLine.Parameters.AddWithValue("@qty", line.Qty);
+                    cmdLine.Parameters.AddWithValue("@dg", line.Price);
+                    cmdLine.Parameters.AddWithValue("@tt", line.LineTotal);
+                    cmdLine.ExecuteNonQuery();
+                }
+
+                using (var cmdStock = new SqlCommand("UPDATE Sach SET SLCo = CASE WHEN SLCo >= @qty THEN SLCo - @qty ELSE 0 END WHERE MaSach = @bookId", conn, tx))
+                {
+                    cmdStock.Parameters.AddWithValue("@qty", line.Qty);
+                    cmdStock.Parameters.AddWithValue("@bookId", line.BookId);
+                    cmdStock.ExecuteNonQuery();
+                }
+            }
+
+            tx.Commit();
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
+    }
+
     public void RestoreStock(string orderId)
     {
         using var conn = DbConnection.Open();

@@ -131,64 +131,13 @@ public partial class ManagementForm
     {
         var old = Selected<ManagerPromotionDto>(_promotionsGrid) ?? throw new InvalidOperationException("Chọn chương trình khuyến mãi cần sửa quy tắc.");
         var books = _services.GetBooks();
-        var bookRule = old.BookRules.FirstOrDefault();
-        var orderRule = old.OrderRules.FirstOrDefault();
-        var voucherRule = old.VoucherRules.FirstOrDefault();
 
-        var bookOptions = new List<(string Id, string Name)> { ("", "-- Chọn sách cần giảm --") };
-        bookOptions.AddRange(books.Select(b => (b.Id, $"{b.Title} ({b.Id})")));
-
-        var fields = new List<EditDialogField>
+        using var editor = new PromotionRulesEditorForm(old, books);
+        if (editor.ShowDialog(this) == DialogResult.OK && editor.ResultDto != null)
         {
-            new("enableBook", "1. Áp dụng giảm theo Sách?", bookRule != null ? "yes" : "no", YesNoOptions),
-            new("book", "→ Chọn sách giảm giá", bookRule?.BookId ?? "", bookOptions),
-            new("bookRate", "→ % giảm cho sách này (0-90)", bookRule?.DiscountPercent.ToString(CultureInfo.InvariantCulture) ?? "10"),
-
-            new("enableOrder", "2. Áp dụng giảm theo Hóa đơn?", orderRule != null ? "yes" : "no", YesNoOptions),
-            new("minimum", "→ Mức đơn tối thiểu (VNĐ)", orderRule?.MinimumOrderAmount.ToString(CultureInfo.InvariantCulture) ?? "200000"),
-            new("orderRate", "→ % giảm cho đơn hàng (0-90)", orderRule?.DiscountPercent.ToString(CultureInfo.InvariantCulture) ?? "5"),
-
-            new("enableVoucher", "3. Áp dụng giảm qua Voucher?", voucherRule != null ? "yes" : "no", YesNoOptions),
-            new("voucher", "→ Mã voucher", voucherRule?.VoucherId ?? $"KM{DateTime.UtcNow:yyMMdd}"),
-            new("voucherRate", "→ % giảm qua voucher (0-90)", voucherRule?.DiscountPercent.ToString(CultureInfo.InvariantCulture) ?? "10")
-        };
-
-        var values = EditDialog.Show(this, $"Cập nhật quy tắc ưu đãi: {old.Name}", fields);
-        if (values is null) return;
-
-        decimal? dec(string key) => decimal.TryParse(values[key], NumberStyles.Number, CultureInfo.InvariantCulture, out var n) ? n : null;
-
-        var bookRules = new List<PromotionBookRuleDto>();
-        if (values["enableBook"] == "yes")
-        {
-            var bookId = EmptyToNull(values["book"]);
-            if (string.IsNullOrWhiteSpace(bookId)) throw new InvalidOperationException("Vui lòng chọn sách giảm giá.");
-            var bRate = dec("bookRate");
-            if (bRate is null or <= 0 or > 90) throw new InvalidOperationException("% giảm cho sách không hợp lệ.");
-            bookRules.Add(new PromotionBookRuleDto(bookId, bRate.Value));
+            _services.Manager.UpdatePromotionRules(old.Id, editor.ResultDto);
+            LoadPromotions(true);
         }
-
-        var orderRules = new List<PromotionOrderRuleDto>();
-        if (values["enableOrder"] == "yes")
-        {
-            var min = dec("minimum") ?? throw new InvalidOperationException("Mức đơn tối thiểu không hợp lệ.");
-            var oRate = dec("orderRate");
-            if (oRate is null or <= 0 or > 90) throw new InvalidOperationException("% giảm cho đơn hàng không hợp lệ.");
-            orderRules.Add(new PromotionOrderRuleDto(min, oRate.Value));
-        }
-
-        var voucherRules = new List<PromotionVoucherRuleDto>();
-        if (values["enableVoucher"] == "yes")
-        {
-            var vCode = EmptyToNull(values["voucher"]);
-            if (string.IsNullOrWhiteSpace(vCode)) throw new InvalidOperationException("Mã voucher không được để trống.");
-            var vRate = dec("voucherRate");
-            if (vRate is null or <= 0 or > 90) throw new InvalidOperationException("% giảm cho voucher không hợp lệ.");
-            voucherRules.Add(new PromotionVoucherRuleDto(vCode, vRate.Value));
-        }
-
-        _services.Manager.UpdatePromotionRules(old.Id, new UpdatePromotionRulesDto(bookRules, orderRules, voucherRules));
-        LoadPromotions(true);
     }
 
     private void DeletePromotion()

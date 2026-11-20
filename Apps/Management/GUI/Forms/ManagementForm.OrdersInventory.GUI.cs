@@ -51,31 +51,16 @@ public partial class ManagementForm
         var lookups = GetLookups();
         var books = _services.GetBooks();
 
-        var supplierOptions = lookups.Suppliers.Select(s => (s.Id, $"{s.Name} ({s.Id})")).ToList();
-        var bookOptions = books.Select(b => (b.Id, $"{b.Title} (Tồn: {b.AvailableStock})")).ToList();
+        if (lookups.Suppliers.Count == 0) throw new InvalidOperationException("Chưa có nhà cung cấp nào. Hãy tạo nhà cung cấp trước.");
+        if (books.Count == 0) throw new InvalidOperationException("Chưa có sách nào trong danh mục. Hãy tạo sách trước.");
 
-        if (supplierOptions.Count == 0) throw new InvalidOperationException("Chưa có nhà cung cấp nào. Hãy tạo nhà cung cấp trước.");
-        if (bookOptions.Count == 0) throw new InvalidOperationException("Chưa có sách nào trong danh mục. Hãy tạo sách trước.");
-
-        var fields = new List<EditDialogField>
+        using var editor = new ReceiptEditorForm(lookups.Suppliers.ToList(), books);
+        if (editor.ShowDialog(this) == DialogResult.OK && editor.ResultReceiptDto != null)
         {
-            new("supplier", "Nhà cung cấp", supplierOptions.First().Id, supplierOptions),
-            new("book", "Sản phẩm sách", bookOptions.First().Id, bookOptions),
-            new("quantity", "Số lượng nhập", "1"),
-            new("cost", "Giá nhập mỗi quyển (VNĐ)", "0")
-        };
-
-        var values = EditDialog.Show(this, "Tạo phiếu nhập kho", fields);
-        if (values is null) return;
-
-        if (!int.TryParse(values["quantity"], out var quantity) || quantity <= 0)
-            throw new InvalidOperationException("Số lượng nhập phải là số nguyên dương lớn hơn 0.");
-        if (!decimal.TryParse(values["cost"], NumberStyles.Number, CultureInfo.InvariantCulture, out var cost) || cost < 0)
-            throw new InvalidOperationException("Giá nhập phải là số không âm.");
-
-        _services.Manager.CreateReceipt(new CreateReceiptDto(values["supplier"], [new CreateReceiptLineDto(values["book"], quantity, cost)]));
-        LoadReceipts(true);
-        LoadBooks(true);
+            _services.Manager.CreateReceipt(editor.ResultReceiptDto);
+            LoadReceipts(true);
+            LoadBooks(true);
+        }
     }
 
     private void CreateOrder()
@@ -83,47 +68,30 @@ public partial class ManagementForm
         var customers = _services.GetCustomers();
         var books = _services.GetBooks();
 
-        var customerOptions = customers.Select(c => (c.Id, $"{c.FullName} ({c.PhoneNumber ?? c.Id})")).ToList();
-        var bookOptions = books.Where(b => b.AvailableStock > 0).Select(b => (b.Id, $"{b.Title} - {b.Price:N0}₫ (Tồn: {b.AvailableStock})")).ToList();
+        if (customers.Count == 0) throw new InvalidOperationException("Chưa có khách hàng nào. Hãy thêm khách hàng trước.");
+        if (books.Count == 0) throw new InvalidOperationException("Chưa có sách nào trong danh mục.");
 
-        if (customerOptions.Count == 0) throw new InvalidOperationException("Chưa có khách hàng nào. Hãy thêm khách hàng trước.");
-        if (bookOptions.Count == 0) throw new InvalidOperationException("Hiện tại không có sách nào còn tồn kho để tạo đơn hàng.");
-
-        var firstCustomer = customers.First();
-
-        var fields = new List<EditDialogField>
+        using var editor = new OrderEditorForm(customers, books);
+        if (editor.ShowDialog(this) == DialogResult.OK && editor.ResultCreateDto != null)
         {
-            new("customer", "Khách hàng", firstCustomer.Id, customerOptions),
-            new("book", "Sách đặt mua", bookOptions.First().Id, bookOptions),
-            new("quantity", "Số lượng mua", "1"),
-            new("address", "Địa chỉ giao hàng", firstCustomer.Address ?? "Nhận tại quầy"),
-            new("phone", "Điện thoại nhận hàng", firstCustomer.PhoneNumber ?? "0900000000"),
-            new("payment", "Phương thức thanh toán", "CashOnDelivery", PaymentMethodOptions)
-        };
-
-        var values = EditDialog.Show(this, "Tạo đơn hàng tại quầy", fields);
-        if (values is null) return;
-
-        if (!int.TryParse(values["quantity"], out var quantity) || quantity <= 0)
-            throw new InvalidOperationException("Số lượng đặt phải là số nguyên dương.");
-
-        _services.Manager.CreateOrder(new CreateAdminOrderDto(values["customer"], values["address"], values["phone"], values["payment"], [new CreateAdminOrderLineDto(values["book"], quantity)]));
-        LoadOrders(true);
-        LoadBooks(true);
+            _services.Manager.CreateOrder(editor.ResultCreateDto);
+            LoadOrders(true);
+            LoadBooks(true);
+        }
     }
 
     private void EditSelectedOrder()
     {
         var order = Selected<ManagerOrderRowDto>(_ordersGrid) ?? throw new InvalidOperationException("Chọn đơn hàng cần sửa.");
-        var fields = new List<EditDialogField>
+        var customers = _services.GetCustomers();
+        var books = _services.GetBooks();
+
+        using var editor = new OrderEditorForm(customers, books, order);
+        if (editor.ShowDialog(this) == DialogResult.OK && editor.ResultUpdateDto != null)
         {
-            new("address", "Địa chỉ giao hàng", order.ShippingAddress),
-            new("phone", "Điện thoại nhận hàng", order.ReceiverPhone),
-            new("payment", "Phương thức thanh toán", order.PaymentMethod, PaymentMethodOptions)
-        };
-        var values = EditDialog.Show(this, $"Sửa đơn hàng {order.Id}", fields);
-        if (values is null) return;
-        _services.Manager.UpdateOrder(order.Id, new UpdateAdminOrderDto(values["address"], values["phone"], values["payment"]));
-        LoadOrders(true);
+            _services.Manager.UpdateOrder(order.Id, editor.ResultUpdateDto);
+            LoadOrders(true);
+            LoadBooks(true);
+        }
     }
 }

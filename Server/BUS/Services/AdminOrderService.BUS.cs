@@ -116,9 +116,75 @@ namespace TrangSach.BUS
             var cached = _orders.FirstOrDefault(x => x.Id == id);
             if (cached == null) throw new KeyNotFoundException("Không tìm thấy đơn hàng.");
 
-            cached.ShippingAddress = command.ShippingAddress;
-            cached.ReceiverPhone = command.ReceiverPhone;
-            cached.PaymentMethod = command.PaymentMethod;
+            var payment = command.PaymentMethod?.Trim() ?? cached.PaymentMethod;
+            var paymentStatus = command.PaymentStatus?.Trim() ?? cached.PaymentStatus;
+
+            // Nếu người dùng có cập nhật danh sách mặt hàng (Lines)
+            if (command.Lines != null && command.Lines.Count > 0)
+            {
+                if (cached.OrderStatus is "Completed" or "Cancelled")
+                    throw new InvalidOperationException("Không thể sửa mặt hàng của đơn đã hoàn thành hoặc đã hủy.");
+
+                if (command.Lines.Any(x => string.IsNullOrWhiteSpace(x.BookId) || x.Quantity < 1 || x.Quantity > 99))
+                    throw new ArgumentException("Đơn hàng cần có sách và số lượng hợp lệ (1-99).");
+
+                if (command.Lines.Select(x => x.BookId).Distinct().Count() != command.Lines.Count)
+                    throw new ArgumentException("Mỗi đầu sách chỉ được xuất hiện một lần trong đơn.");
+
+                var books = _dao.Catalog.GetBooksForOrder(command.Lines.Select(x => x.BookId).ToArray());
+                if (books.Count != command.Lines.Count)
+                    throw new ArgumentException("Một hoặc nhiều đầu sách không tồn tại hoặc đang ẩn.");
+
+                var now = DateTime.UtcNow;
+                var discounts = _pricing.GetActiveDiscounts(command.Lines.Select(x => x.BookId).ToList(), now);
+
+                var orderLines = command.Lines.Select(x =>
+                {
+                    var book = books.First(b => b.BookId == x.BookId);
+                    decimal pct = discounts.TryGetValue(x.BookId, out var d) ? d : 0;
+                    var unit = BookPricingService.ApplyDiscount(book.Price, pct);
+                    return (BookId: x.BookId, Quantity: x.Quantity, UnitPrice: unit, LineTotal: unit * x.Quantity);
+                }).ToList();
+
+                var subtotal = orderLines.Sum(l => l.LineTotal);
+                var orderDiscPct = _pricing.GetOrderDiscount(subtotal, now);
+                var orderDisc = decimal.Round(subtotal * orderDiscPct / 100m, 2, MidpointRounding.AwayFromZero);
+                var total = subtotal - orderDisc;
+                var itemDisc = orderLines.Sum(l =>
+                {
+                    var book = books.First(b => b.BookId == l.BookId);
+                    decimal pct = discounts.TryGetValue(l.BookId, out var d) ? d : 0;
+                    return (book.Price - BookPricingService.ApplyDiscount(book.Price, pct)) * l.Quantity;
+                });
+                var totalDisc = itemDisc + orderDisc;
+
+                _dao.Orders.UpdateOrderFull(id, command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(), payment, paymentStatus,
+                    total, totalDisc, orderLines.Select(l => (l.BookId, l.Quantity, l.UnitPrice, l.LineTotal)).ToList());
+
+                cached.ShippingAddress = command.ShippingAddress;
+                cached.ReceiverPhone = command.ReceiverPhone;
+                cached.PaymentMethod = payment;
+                cached.PaymentStatus = paymentStatus;
+                cached.TotalAmount = total;
+                cached.ItemCount = command.Lines.Sum(l => l.Quantity);
+                cached.Lines = orderLines.Select(l =>
+                {
+                    var book = books.First(b => b.BookId == l.BookId);
+                    return new ManagerOrderLineDto(l.BookId, book.Title, l.Quantity, l.UnitPrice, l.LineTotal);
+                }).ToList();
+            }
+            else
+            {
+                _dao.Orders.UpdateOrderInfo(id, command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(), payment);
+                cached.ShippingAddress = command.ShippingAddress;
+                cached.ReceiverPhone = command.ReceiverPhone;
+                cached.PaymentMethod = payment;
+                if (!string.IsNullOrWhiteSpace(command.PaymentStatus))
+                {
+                    cached.PaymentStatus = command.PaymentStatus;
+                    _dao.Orders.UpdateOrderStatus(id, cached.OrderStatus, command.PaymentStatus);
+                }
+            }
         }
 
         public void UpdateStatus(string id, string status, int? accountId)
