@@ -22,7 +22,7 @@ internal sealed class CustomerOrderDetailsForm : Form
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
         root.Controls.Add(new Label { Text = "Chi tiết hóa đơn", Dock = DockStyle.Fill, Font = new Font("Georgia", 19, FontStyle.Bold), ForeColor = Color.FromArgb(38, 45, 37), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
         root.Controls.Add(new Label { Text = $"Mã hóa đơn: {order.Id}\r\nNgày lập: {order.CreatedAt:dd/MM/yyyy HH:mm}", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(53, 86, 68), TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
-        root.Controls.Add(MakeInfo($"Trạng thái: {order.Status}    ·    Thanh toán: {order.PaymentStatus} ({PaymentName(order.PaymentMethod)})"), 0, 2);
+        root.Controls.Add(MakeInfo($"Trạng thái: {OrderStatusFormatter.FormatOrderStatus(order.Status)}    ·    Thanh toán: {OrderStatusFormatter.FormatPaymentStatus(order.PaymentStatus)} ({OrderStatusFormatter.FormatPaymentMethod(order.PaymentMethod)})"), 0, 2);
         root.Controls.Add(MakeInfo($"Người nhận: {order.ReceiverPhone}    ·    Địa chỉ: {order.ShippingAddress}"), 0, 3);
 
         var grid = new DataGridView

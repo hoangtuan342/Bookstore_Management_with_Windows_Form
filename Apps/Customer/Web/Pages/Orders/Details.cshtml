@@ -3,7 +3,7 @@
 @if (Model.Order is { } order)
 {
     <nav class="breadcrumbs"><a asp-page="/Orders/Index">Hóa đơn</a><span>/</span><span>@order.Id</span></nav>
-    <div class="section-heading"><div><span class="eyebrow">ĐẶT LÚC @order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span><h1>Hóa đơn @order.Id</h1></div><span class="status-pill">@order.Status</span></div>
+    <div class="section-heading"><div><span class="eyebrow">ĐẶT LÚC @order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span><h1>Hóa đơn @order.Id</h1></div><span class="status-pill">@TrangSach.Shared.DTO.OrderStatusFormatter.FormatOrderStatus(order.Status)</span></div>
     <div class="checkout-layout">
         <section class="panel">
             <h2>Sản phẩm</h2>
@@ -26,7 +26,7 @@
                 </article>
             }
         </section>
-        <aside class="panel order-summary"><h2>Thông tin hóa đơn</h2><p><strong>Người nhận:</strong> @order.ReceiverPhone</p><p><strong>Địa chỉ:</strong> @order.ShippingAddress</p><p><strong>Phương thức:</strong> @PaymentName(order.PaymentMethod)</p><p><strong>Thanh toán:</strong> @order.PaymentStatus</p><div class="summary-row"><span>Giảm giá</span><strong>−@order.DiscountAmount.ToString("N0") ₫</strong></div><div class="summary-total"><span>Tổng thanh toán</span><strong>@order.TotalAmount.ToString("N0") ₫</strong></div><a class="button button-light button-wide" asp-page="/Orders/Index">Quay lại danh sách hóa đơn</a></aside>
+        <aside class="panel order-summary"><h2>Thông tin hóa đơn</h2><p><strong>Người nhận:</strong> @order.ReceiverPhone</p><p><strong>Địa chỉ:</strong> @order.ShippingAddress</p><p><strong>Phương thức:</strong> @TrangSach.Shared.DTO.OrderStatusFormatter.FormatPaymentMethod(order.PaymentMethod)</p><p><strong>Thanh toán:</strong> @TrangSach.Shared.DTO.OrderStatusFormatter.FormatPaymentStatus(order.PaymentStatus)</p><div class="summary-row"><span>Giảm giá</span><strong>−@order.DiscountAmount.ToString("N0") ₫</strong></div><div class="summary-total"><span>Tổng thanh toán</span><strong>@order.TotalAmount.ToString("N0") ₫</strong></div><a class="button button-light button-wide" asp-page="/Orders/Index">Quay lại danh sách hóa đơn</a></aside>
     </div>
 }
 @functions { private static string PaymentName(string method) => method switch { "CashOnDelivery" => "Thanh toán khi nhận hàng", "BankTransfer" => "Chuyển khoản", _ => method }; }

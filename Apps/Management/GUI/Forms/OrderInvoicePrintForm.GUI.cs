@@ -157,7 +157,7 @@ public sealed class OrderInvoicePrintForm : Form
         g.DrawString(string.IsNullOrWhiteSpace(_order.ShippingAddress) ? "Nhận tại quầy" : _order.ShippingAddress, fontSub, brushDark, left + 90, y);
 
         g.DrawString("Trạng thái:", fontSubBold, brushDark, colMid, y);
-        g.DrawString($"{_order.OrderStatus} ({_order.PaymentStatus})", fontSub, brushDark, colMid + 75, y);
+        g.DrawString($"{OrderStatusFormatter.FormatOrderStatus(_order.OrderStatus)} ({OrderStatusFormatter.FormatPaymentStatus(_order.PaymentStatus)})", fontSub, brushDark, colMid + 75, y);
         y += 30;
 
         // 4. Bảng chi tiết mặt hàng

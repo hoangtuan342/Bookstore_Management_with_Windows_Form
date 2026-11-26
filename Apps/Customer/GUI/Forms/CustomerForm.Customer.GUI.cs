@@ -18,6 +18,26 @@ public partial class CustomerForm
         _tabs.TabPages.Add(cart);
         var orders = CreateGridPage("Đơn của tôi", out _myOrdersGrid);
         StyleCustomerGrid(_myOrdersGrid);
+        _myOrdersGrid.CellFormatting += (_, e) =>
+        {
+            if (e.RowIndex < 0 || e.Value is null) return;
+            var colName = _myOrdersGrid.Columns[e.ColumnIndex].DataPropertyName;
+            if (colName == nameof(TrangSach.Shared.DTO.StoreOrderDto.Status))
+            {
+                e.Value = OrderStatusFormatter.FormatOrderStatus(e.Value.ToString());
+                e.FormattingApplied = true;
+            }
+            else if (colName == nameof(TrangSach.Shared.DTO.StoreOrderDto.PaymentStatus))
+            {
+                e.Value = OrderStatusFormatter.FormatPaymentStatus(e.Value.ToString());
+                e.FormattingApplied = true;
+            }
+            else if (colName == nameof(TrangSach.Shared.DTO.StoreOrderDto.PaymentMethod))
+            {
+                e.Value = OrderStatusFormatter.FormatPaymentMethod(e.Value.ToString());
+                e.FormattingApplied = true;
+            }
+        };
         _myOrdersGrid.CellDoubleClick += async (_, e) =>
         {
             if (e.RowIndex >= 0) await SafeAsync(OpenSelectedOrderAsync);

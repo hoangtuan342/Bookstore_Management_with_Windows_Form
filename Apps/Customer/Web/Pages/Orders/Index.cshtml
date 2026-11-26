@@ -34,8 +34,8 @@ else
                 </div>
             </div>
             <div>
-                <span class="status-pill">@order.Status</span>
-                <p class="muted" style="margin-top:6px;">@PaymentName(order.PaymentMethod) · @order.PaymentStatus</p>
+                <span class="status-pill">@TrangSach.Shared.DTO.OrderStatusFormatter.FormatOrderStatus(order.Status)</span>
+                <p class="muted" style="margin-top:6px;">@TrangSach.Shared.DTO.OrderStatusFormatter.FormatPaymentMethod(order.PaymentMethod) · @TrangSach.Shared.DTO.OrderStatusFormatter.FormatPaymentStatus(order.PaymentStatus)</p>
             </div>
             <strong class="price">@order.TotalAmount.ToString("N0") ₫</strong>
             <div style="display:flex; flex-direction:column; gap:6px;">

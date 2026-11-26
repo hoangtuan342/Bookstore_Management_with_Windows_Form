@@ -85,6 +85,27 @@ internal sealed class OrdersPageForm : ManagementGridPageForm
         AddAction("Đổi trạng thái", "status");
         AddAction("Sửa thông tin", "edit");
         AddAction("Hủy hóa đơn", "cancel");
+
+        Grid.CellFormatting += (_, e) =>
+        {
+            if (e.RowIndex < 0 || e.Value is null) return;
+            var colName = Grid.Columns[e.ColumnIndex].DataPropertyName;
+            if (colName == nameof(ManagerOrderRowDto.OrderStatus))
+            {
+                e.Value = OrderStatusFormatter.FormatOrderStatus(e.Value.ToString());
+                e.FormattingApplied = true;
+            }
+            else if (colName == nameof(ManagerOrderRowDto.PaymentStatus))
+            {
+                e.Value = OrderStatusFormatter.FormatPaymentStatus(e.Value.ToString());
+                e.FormattingApplied = true;
+            }
+            else if (colName == nameof(ManagerOrderRowDto.PaymentMethod))
+            {
+                e.Value = OrderStatusFormatter.FormatPaymentMethod(e.Value.ToString());
+                e.FormattingApplied = true;
+            }
+        };
     }
 
     protected override void OnGridDataBound()
