@@ -20,6 +20,7 @@ public sealed class ReceiptEditorForm : Form
     }
 
     private readonly ComboBox _cboSupplier = new();
+    private readonly ComboBox _cboEmployee = new();
     private readonly ComboBox _cboBook = new();
     private readonly NumericUpDown _numQty = new();
     private readonly NumericUpDown _numCost = new();
@@ -33,15 +34,18 @@ public sealed class ReceiptEditorForm : Form
     private readonly List<ReceiptLineItem> _lines = new();
     private readonly List<BookItemDto> _availableBooks;
     private readonly List<SupplierOptionDto> _availableSuppliers;
+    private readonly List<ManagerEmployeeDto> _availableEmployees;
 
     public CreateReceiptDto? ResultReceiptDto { get; private set; }
 
     public ReceiptEditorForm(
         List<SupplierOptionDto> suppliers,
-        List<BookItemDto> books)
+        List<BookItemDto> books,
+        List<ManagerEmployeeDto>? employees = null)
     {
         _availableSuppliers = suppliers;
         _availableBooks = books;
+        _availableEmployees = employees ?? new List<ManagerEmployeeDto>();
 
         Text = "Tạo phiếu nhập kho";
         StartPosition = FormStartPosition.CenterParent;
@@ -70,7 +74,7 @@ public sealed class ReceiptEditorForm : Form
         mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Lưới CTPNH
         mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));  // Footer
 
-        // 1. Nhà cung cấp
+        // 1. Nhà cung cấp & Nhân viên lập phiếu
         var pnlSupplier = new FlowLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -79,11 +83,20 @@ public sealed class ReceiptEditorForm : Form
         };
         pnlSupplier.Controls.Add(new Label { Text = "Nhà cung cấp:", AutoSize = true, Margin = new Padding(0, 6, 8, 0), Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = Color.FromArgb(31, 111, 88) });
         _cboSupplier.DropDownStyle = ComboBoxStyle.DropDownList;
-        _cboSupplier.Width = 360;
+        _cboSupplier.Width = 260;
         _cboSupplier.DisplayMember = nameof(SupplierOptionDto.Name);
         _cboSupplier.ValueMember = nameof(SupplierOptionDto.Id);
         _cboSupplier.DataSource = _availableSuppliers.ToList();
         pnlSupplier.Controls.Add(_cboSupplier);
+
+        pnlSupplier.Controls.Add(new Label { Text = "Nhân viên nhập:", AutoSize = true, Margin = new Padding(16, 6, 8, 0), Font = new Font("Segoe UI", 9F, FontStyle.Bold), ForeColor = Color.FromArgb(31, 111, 88) });
+        _cboEmployee.DropDownStyle = ComboBoxStyle.DropDownList;
+        _cboEmployee.Width = 240;
+        var empList = _availableEmployees.Select(e => new { e.Id, Name = $"{e.LastName} {e.FirstName} ({e.Id})".Trim() }).ToList();
+        _cboEmployee.DisplayMember = "Name";
+        _cboEmployee.ValueMember = "Id";
+        _cboEmployee.DataSource = empList;
+        pnlSupplier.Controls.Add(_cboEmployee);
 
         mainLayout.Controls.Add(pnlSupplier, 0, 0);
 
@@ -353,7 +366,8 @@ public sealed class ReceiptEditorForm : Form
         }
 
         var lines = _lines.Select(l => new CreateReceiptLineDto(l.BookId, l.Quantity, l.UnitCost)).ToList();
-        ResultReceiptDto = new CreateReceiptDto(supplierId, lines);
+        var employeeId = _cboEmployee.SelectedValue?.ToString();
+        ResultReceiptDto = new CreateReceiptDto(supplierId, lines, employeeId);
 
         DialogResult = DialogResult.OK;
         Close();

@@ -104,11 +104,26 @@ namespace TrangSach.BUS
                 (l.BookId, l.Quantity, l.UnitCost, l.UnitCost * l.Quantity)).ToList();
             var total = lines.Sum(l => l.Item4);
 
-            _dao.Inventory.InsertReceipt(receiptId, now, null, command.SupplierId, total, lines);
+            string? resolvedEmployeeId = command.EmployeeId;
+            if (string.IsNullOrWhiteSpace(resolvedEmployeeId) && accountId.HasValue)
+            {
+                var profile = _dao.Users.FindCurrentUserProfile(accountId.Value);
+                if (!string.IsNullOrWhiteSpace(profile?.ProfileId)) resolvedEmployeeId = profile.ProfileId;
+            }
+
+            _dao.Inventory.InsertReceipt(receiptId, now, resolvedEmployeeId, command.SupplierId, total, lines);
+
+            string employeeName = "";
+            if (!string.IsNullOrWhiteSpace(resolvedEmployeeId))
+            {
+                var emps = _dao.Users.GetAllEmployees();
+                var emp = emps.FirstOrDefault(e => e.Id == resolvedEmployeeId);
+                if (emp != null) employeeName = $"{emp.LastName} {emp.FirstName}".Trim();
+            }
 
             var linesDtos = command.Lines.Select(l =>
                 new ManagerReceiptLineDto(l.BookId, l.BookId, l.Quantity, l.UnitCost, l.UnitCost * l.Quantity)).ToList();
-            var dto = new ManagerReceiptDto(receiptId, now, "Completed", command.SupplierId, supplier.Name, total, linesDtos);
+            var dto = new ManagerReceiptDto(receiptId, now, "Completed", command.SupplierId, supplier.Name, total, linesDtos, resolvedEmployeeId, employeeName);
             _receipts.Insert(0, dto);
 
             return dto;

@@ -57,11 +57,12 @@ public partial class ManagementForm
     {
         var lookups = GetLookups();
         var books = _services.GetBooks();
+        var employees = _services.GetEmployees();
 
         if (lookups.Suppliers.Count == 0) throw new InvalidOperationException("Chưa có nhà cung cấp nào. Hãy tạo nhà cung cấp trước.");
         if (books.Count == 0) throw new InvalidOperationException("Chưa có sách nào trong danh mục. Hãy tạo sách trước.");
 
-        using var editor = new ReceiptEditorForm(lookups.Suppliers.ToList(), books);
+        using var editor = new ReceiptEditorForm(lookups.Suppliers.ToList(), books, employees);
         if (editor.ShowDialog(this) == DialogResult.OK && editor.ResultReceiptDto != null)
         {
             _services.Manager.CreateReceipt(editor.ResultReceiptDto);

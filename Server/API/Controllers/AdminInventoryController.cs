@@ -56,5 +56,6 @@ public sealed class AdminInventoryController(AdminInventoryService service) : Co
         ControllerExceptionHelper.Execute(() => service.CancelReceipt(id));
 
     private static ReceiptCommandDto ToCommand(PurchaseReceiptRequest request) => new(request.SupplierId,
-        request.Lines.Select(x => new ReceiptLineCommandDto(x.BookId, x.Quantity, x.UnitCost)).ToList());
+        request.Lines.Select(x => new ReceiptLineCommandDto(x.BookId, x.Quantity, x.UnitCost)).ToList(),
+        request.EmployeeId);
 }

@@ -8,6 +8,8 @@ namespace TrangSach.Shared.DTO
         public string Status { get; set; } = string.Empty;
         public string SupplierId { get; set; } = string.Empty;
         public string SupplierName { get; set; } = string.Empty;
+        public string? EmployeeId { get; set; }
+        public string EmployeeName { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
         public List<ManagerReceiptLineDto> Lines { get; set; } = new List<ManagerReceiptLineDto>();
 
@@ -15,7 +17,7 @@ namespace TrangSach.Shared.DTO
         {
         }
 
-        public ManagerReceiptDto(string id, DateTime createdAt, string status, string supplierId, string supplierName, decimal totalAmount, List<ManagerReceiptLineDto> lines)
+        public ManagerReceiptDto(string id, DateTime createdAt, string status, string supplierId, string supplierName, decimal totalAmount, List<ManagerReceiptLineDto> lines, string? employeeId = null, string employeeName = "")
         {
             this.Id = id;
             this.CreatedAt = createdAt;
@@ -24,6 +26,8 @@ namespace TrangSach.Shared.DTO
             this.SupplierName = supplierName;
             this.TotalAmount = totalAmount;
             this.Lines = lines;
+            this.EmployeeId = employeeId;
+            this.EmployeeName = employeeName;
         }
     }
 }

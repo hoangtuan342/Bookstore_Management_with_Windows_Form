@@ -79,7 +79,8 @@ public sealed class ManagementOperationsService(ManagementBusinessService dispat
 
 
     private static ReceiptCommandDto ToReceiptCommand(CreateReceiptDto receipt) => new(receipt.SupplierId,
-        receipt.Lines.Select(x => new ReceiptLineCommandDto(x.BookId, x.Quantity, x.UnitCost)).ToList());
+        receipt.Lines.Select(x => new ReceiptLineCommandDto(x.BookId, x.Quantity, x.UnitCost)).ToList(),
+        receipt.EmployeeId);
 
     private static BookManagementCommandDto ToBookCommand(CreateManagerBookDto item) => new(
         item.Title, item.SalePrice, item.Unit, item.CategoryId, item.PublisherId, item.AuthorIds, item.Description, item.CoverImagePath, item.Isbn, item.IsActive);

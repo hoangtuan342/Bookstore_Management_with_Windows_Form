@@ -60,15 +60,19 @@ public class InventoryDao
         var list = new List<ManagerReceiptDto>();
         using var conn = DbConnection.Open();
         var sql = @"
-            SELECT TOP (@take) p.MaPNH, p.NgayLap, p.TrangThai, p.MaNCC, ISNULL(ncc.TenNCC, N'Chưa có'), p.TongTien
+            SELECT TOP (@take) p.MaPNH, p.NgayLap, p.TrangThai, p.MaNCC, ISNULL(ncc.TenNCC, N'Chưa có'), p.TongTien,
+                   p.MaNV, ISNULL(nv.HoLot + ' ' + nv.Ten, N'')
             FROM PNH p
             LEFT JOIN NCC ncc ON p.MaNCC = ncc.MaNCC
+            LEFT JOIN NV nv ON p.MaNV = nv.MaNV
             ORDER BY p.NgayLap DESC";
         using var cmd = new SqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("@take", take);
         using var r = cmd.ExecuteReader();
-        var receipts = new List<(string Id, DateTime CreatedAt, string Status, string SupplierId, string SupplierName, decimal Total)>();
-        while (r.Read()) receipts.Add((r.GetString(0), r.GetDateTime(1), r.GetString(2), r.GetString(3), r.GetString(4), r.GetDecimal(5)));
+        var receipts = new List<(string Id, DateTime CreatedAt, string Status, string SupplierId, string SupplierName, decimal Total, string? EmployeeId, string EmployeeName)>();
+        while (r.Read())
+            receipts.Add((r.GetString(0), r.GetDateTime(1), r.GetString(2), r.GetString(3), r.GetString(4), r.GetDecimal(5),
+                r.IsDBNull(6) ? null : r.GetString(6), r.IsDBNull(7) ? "" : r.GetString(7).Trim()));
         r.Close();
 
         foreach (var rec in receipts)
@@ -84,7 +88,7 @@ public class InventoryDao
             while (rLines.Read()) lines.Add(new ManagerReceiptLineDto(rLines.GetString(0), rLines.GetString(1), rLines.GetInt32(2), rLines.GetDecimal(3), rLines.GetDecimal(4)));
             rLines.Close();
 
-            list.Add(new ManagerReceiptDto(rec.Id, rec.CreatedAt, rec.Status, rec.SupplierId, rec.SupplierName, rec.Total, lines));
+            list.Add(new ManagerReceiptDto(rec.Id, rec.CreatedAt, rec.Status, rec.SupplierId, rec.SupplierName, rec.Total, lines, rec.EmployeeId, rec.EmployeeName));
         }
 
         return list;

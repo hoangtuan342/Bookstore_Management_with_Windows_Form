@@ -11,7 +11,7 @@ internal sealed class ReceiptsPageForm : ManagementGridPageForm
 
     public ReceiptsPageForm() : base("Phiếu nhập")
     {
-        SetSearchPlaceholder("Mã phiếu, nhà cung cấp, tên hoặc mã sách...");
+        SetSearchPlaceholder("Mã phiếu, nhà cung cấp, nhân viên, tên hoặc mã sách...");
         _status.SelectedValueChanged += (_, _) => RefreshFilter();
         _supplier.SelectedValueChanged += (_, _) => RefreshFilter();
         _fromDate.ValueChanged += (_, _) => RefreshFilter();
@@ -61,7 +61,8 @@ internal sealed class ReceiptsPageForm : ManagementGridPageForm
                 return;
             }
 
-            SetDetailsTitle($"CHI TIẾT PHIẾU {receipt.Id} · {receipt.SupplierName} · {receipt.Lines.Count} mặt hàng · {receipt.TotalAmount:N0} ₫");
+            var empInfo = string.IsNullOrWhiteSpace(receipt.EmployeeName) ? "" : $" · NV: {receipt.EmployeeName}";
+            SetDetailsTitle($"CHI TIẾT PHIẾU {receipt.Id} · {receipt.SupplierName}{empInfo} · {receipt.Lines.Count} mặt hàng · {receipt.TotalAmount:N0} ₫");
             detailGrid.DataSource = receipt.Lines.ToList();
         };
         AddAction("Tải", "load");
@@ -85,6 +86,7 @@ internal sealed class ReceiptsPageForm : ManagementGridPageForm
             SetHeader(nameof(ManagerReceiptDto.Id), "Mã phiếu nhập");
             SetHeader(nameof(ManagerReceiptDto.CreatedAt), "Ngày nhập");
             SetHeader(nameof(ManagerReceiptDto.SupplierName), "Nhà cung cấp");
+            SetHeader(nameof(ManagerReceiptDto.EmployeeName), "Nhân viên nhập");
             SetHeader(nameof(ManagerReceiptDto.Status), "Trạng thái");
             SetHeader(nameof(ManagerReceiptDto.TotalAmount), "Tổng tiền nhập (VNĐ)");
 
@@ -100,6 +102,10 @@ internal sealed class ReceiptsPageForm : ManagementGridPageForm
             if (Grid.Columns[nameof(ManagerReceiptDto.SupplierId)] is { } supIdCol)
             {
                 supIdCol.Visible = false;
+            }
+            if (Grid.Columns[nameof(ManagerReceiptDto.EmployeeId)] is { } empIdCol)
+            {
+                empIdCol.Visible = false;
             }
             if (Grid.Columns[nameof(ManagerReceiptDto.Lines)] is { } linesCol)
             {
@@ -125,7 +131,7 @@ internal sealed class ReceiptsPageForm : ManagementGridPageForm
     }
 
     protected override IEnumerable<string?> GetAdditionalSearchValues(object item) => item is ManagerReceiptDto receipt
-        ? receipt.Lines.SelectMany(line => new[] { line.BookId, line.BookTitle })
+        ? receipt.Lines.SelectMany(line => new[] { line.BookId, line.BookTitle }).Concat(new[] { receipt.EmployeeId, receipt.EmployeeName })
         : [];
 
     protected override void OnDataSourceRefreshed(List<object> rows)

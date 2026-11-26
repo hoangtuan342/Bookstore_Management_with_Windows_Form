@@ -129,6 +129,8 @@ public sealed class PurchaseReceiptRequest
     [Required]
     public string SupplierId { get; init; } = string.Empty;
 
+    public string? EmployeeId { get; init; }
+
     [MinLength(1)]
     public List<PurchaseReceiptLineRequest> Lines { get; init; } = [];
 }
