@@ -23,12 +23,12 @@ public partial class ManagementForm
 
     private void ChangeOrderStatus()
     {
-        var item = Selected<ManagerOrderRowDto>(_ordersGrid) ?? throw new InvalidOperationException("Chọn đơn hàng.");
+        var item = Selected<ManagerOrderRowDto>(_ordersGrid) ?? throw new InvalidOperationException("Chọn hóa đơn.");
         var fields = new List<EditDialogField>
         {
-            new("status", "Trạng thái đơn hàng", item.OrderStatus, OrderStatusOptions)
+            new("status", "Trạng thái hóa đơn", item.OrderStatus, OrderStatusOptions)
         };
-        var values = EditDialog.Show(this, $"Cập nhật trạng thái đơn {item.Id}", fields);
+        var values = EditDialog.Show(this, $"Cập nhật trạng thái hóa đơn {item.Id}", fields);
         if (values is null) return;
         _services.Manager.UpdateOrderStatus(item.Id, values["status"]);
         LoadOrders(true);
@@ -36,15 +36,15 @@ public partial class ManagementForm
 
     private void PrintSelectedOrderInvoice()
     {
-        var item = Selected<ManagerOrderRowDto>(_ordersGrid) ?? throw new InvalidOperationException("Vui lòng chọn đơn hàng cần in hóa đơn.");
+        var item = Selected<ManagerOrderRowDto>(_ordersGrid) ?? throw new InvalidOperationException("Vui lòng chọn hóa đơn cần in.");
         using var invoiceForm = new OrderInvoicePrintForm(item);
         invoiceForm.ShowDialog(this);
     }
 
     private void CancelSelectedOrder()
     {
-        var item = Selected<ManagerOrderRowDto>(_ordersGrid) ?? throw new InvalidOperationException("Chọn đơn hàng cần hủy.");
-        if (Confirm($"Hủy đơn {item.Id}?")) { _services.Manager.DeleteOrder(item.Id); LoadOrders(true); }
+        var item = Selected<ManagerOrderRowDto>(_ordersGrid) ?? throw new InvalidOperationException("Chọn hóa đơn cần hủy.");
+        if (Confirm($"Hủy hóa đơn {item.Id}?")) { _services.Manager.DeleteOrder(item.Id); LoadOrders(true); }
     }
 
     private void CancelSelectedReceipt()
@@ -91,7 +91,7 @@ public partial class ManagementForm
 
     private void EditSelectedOrder()
     {
-        var order = Selected<ManagerOrderRowDto>(_ordersGrid) ?? throw new InvalidOperationException("Chọn đơn hàng cần sửa.");
+        var order = Selected<ManagerOrderRowDto>(_ordersGrid) ?? throw new InvalidOperationException("Chọn hóa đơn cần sửa.");
         var customers = _services.GetCustomers();
         var employees = _services.GetEmployees();
         var books = _services.GetBooks();

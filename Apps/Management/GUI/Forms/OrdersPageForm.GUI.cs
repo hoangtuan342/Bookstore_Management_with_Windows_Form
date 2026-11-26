@@ -19,9 +19,9 @@ internal sealed class OrdersPageForm : ManagementGridPageForm
     private readonly DateTimePicker _fromDate = CreateDateFilter();
     private readonly DateTimePicker _toDate = CreateDateFilter();
 
-    public OrdersPageForm() : base("Đơn hàng")
+    public OrdersPageForm() : base("Hóa đơn")
     {
-        SetSearchPlaceholder("Mã đơn, khách hàng, nhân viên, tên sách...");
+        SetSearchPlaceholder("Mã hóa đơn, khách hàng, nhân viên, tên sách...");
         _status.DropDownStyle = ComboBoxStyle.DropDownList;
         _status.Width = 130;
         _status.Font = new Font("Segoe UI", 8.5f);
@@ -66,25 +66,25 @@ internal sealed class OrdersPageForm : ManagementGridPageForm
             }
             catch { }
         };
-        SetDetailsView(detailGrid, "CHI TIẾT ĐƠN HÀNG · Chọn một đơn phía trên để xem các mặt hàng");
+        SetDetailsView(detailGrid, "CHI TIẾT HÓA ĐƠN · Chọn một hóa đơn phía trên để xem các mặt hàng");
         Grid.SelectionChanged += (_, _) =>
         {
             if (Grid.CurrentRow?.DataBoundItem is not ManagerOrderRowDto order)
             {
                 detailGrid.DataSource = null;
-                SetDetailsTitle("CHI TIẾT ĐƠN HÀNG · Chọn một đơn phía trên để xem các mặt hàng");
+                SetDetailsTitle("CHI TIẾT HÓA ĐƠN · Chọn một hóa đơn phía trên để xem các mặt hàng");
                 return;
             }
 
-            SetDetailsTitle($"CHI TIẾT ĐƠN {order.Id} · {order.CustomerName} · {order.ItemCount} mặt hàng · {order.TotalAmount:N0} ₫");
+            SetDetailsTitle($"CHI TIẾT HÓA ĐƠN {order.Id} · {order.CustomerName} · {order.ItemCount} mặt hàng · {order.TotalAmount:N0} ₫");
             detailGrid.DataSource = order.Lines.ToList();
         };
         AddAction("Tải", "load");
-        AddAction("Tạo đơn", "create");
+        AddAction("Tạo hóa đơn", "create");
         AddAction("In hóa đơn", "print");
         AddAction("Đổi trạng thái", "status");
         AddAction("Sửa thông tin", "edit");
-        AddAction("Hủy đơn", "cancel");
+        AddAction("Hủy hóa đơn", "cancel");
     }
 
     protected override void OnGridDataBound()
@@ -100,7 +100,7 @@ internal sealed class OrdersPageForm : ManagementGridPageForm
                 }
             }
 
-            SetHeader(nameof(ManagerOrderRowDto.Id), "Mã đơn hàng");
+            SetHeader(nameof(ManagerOrderRowDto.Id), "Mã hóa đơn");
             SetHeader(nameof(ManagerOrderRowDto.CreatedAt), "Ngày lập");
             SetHeader(nameof(ManagerOrderRowDto.CustomerName), "Khách hàng");
             SetHeader(nameof(ManagerOrderRowDto.EmployeeName), "Nhân viên lập");
@@ -108,7 +108,7 @@ internal sealed class OrdersPageForm : ManagementGridPageForm
             SetHeader(nameof(ManagerOrderRowDto.ShippingAddress), "Địa chỉ giao hàng");
             SetHeader(nameof(ManagerOrderRowDto.PaymentMethod), "Phương thức TT");
             SetHeader(nameof(ManagerOrderRowDto.PaymentStatus), "Trạng thái TT");
-            SetHeader(nameof(ManagerOrderRowDto.OrderStatus), "Trạng thái đơn");
+            SetHeader(nameof(ManagerOrderRowDto.OrderStatus), "Trạng thái hóa đơn");
             SetHeader(nameof(ManagerOrderRowDto.ItemCount), "Số mặt hàng");
             SetHeader(nameof(ManagerOrderRowDto.TotalAmount), "Tổng tiền (VNĐ)");
 

@@ -43,7 +43,7 @@ internal sealed class DashboardPageForm : Form
         var stats = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 1, BackColor = Color.Transparent, Margin = new Padding(-3, 0, -3, 4) };
         for (var i = 0; i < 4; i++) stats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
         stats.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        var labels = new[] { "DOANH THU THÁNG NÀY", "ĐƠN HÀNG HÔM NAY", "SÁCH ĐANG BÁN", "KHÁCH HÀNG" };
+        var labels = new[] { "DOANH THU THÁNG NÀY", "HÓA ĐƠN HÔM NAY", "SÁCH ĐANG BÁN", "KHÁCH HÀNG" };
         var accents = new[] { Color.FromArgb(48, 145, 132), Color.FromArgb(75, 137, 179), Color.FromArgb(224, 153, 78), Color.FromArgb(151, 113, 177) };
         for (var i = 0; i < 4; i++)
         {
@@ -67,7 +67,7 @@ internal sealed class DashboardPageForm : Form
         trendCard.Resize += (_, _) => openReport.Left = trendCard.ClientSize.Width - openReport.Width - 14;
 
         var ordersCard = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(12, 9, 12, 10), Margin = new Padding(1, 0, 1, 0), BorderStyle = BorderStyle.FixedSingle };
-        var orderHeading = new Label { Text = "Đơn hàng mới", Dock = DockStyle.Top, Height = 29, Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Ink };
+        var orderHeading = new Label { Text = "Hóa đơn mới", Dock = DockStyle.Top, Height = 29, Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Ink };
         Grid.Dock = DockStyle.Fill;
         Grid.ReadOnly = true; Grid.AllowUserToAddRows = false; Grid.AllowUserToDeleteRows = false; Grid.AllowUserToResizeRows = false;
         Grid.RowHeadersVisible = false; Grid.AutoGenerateColumns = false; Grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
@@ -91,7 +91,7 @@ internal sealed class DashboardPageForm : Form
     public void ShowDashboard(ManagerDashboardDto summary, ManagerReportDto trend)
     {
         _values[0].Text = summary.RevenueThisMonth.ToString("N0") + " ₫";
-        _notes[0].Text = "Đơn hàng đã hoàn tất";
+        _notes[0].Text = "Hóa đơn đã hoàn tất";
         _values[1].Text = summary.OrdersToday.ToString("N0");
         _notes[1].Text = $"{summary.PendingOrders:N0} đơn đang chờ";
         _values[2].Text = summary.ActiveBooks.ToString("N0");

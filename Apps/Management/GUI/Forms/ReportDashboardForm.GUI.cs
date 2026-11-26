@@ -150,7 +150,7 @@ public sealed class ReportDashboardForm : Form
         AddAnalysisCard("SẢN PHẨM THEO QUÝ / NĂM", _productChart, 2, 1);
         AddAnalysisCard("TỒN KHO THEO THỂ LOẠI", _inventoryChart, 0, 2);
         AddChartControl(_best, 1, 2);
-        AddDonutCard("TÌNH TRẠNG ĐƠN HÀNG", _orders, 2, 2);
+        AddDonutCard("TÌNH TRẠNG HÓA ĐƠN", _orders, 2, 2);
         AddDonutCard("TỶ TRỌNG DOANH THU THEO THỂ LOẠI", _categories, 0, 3);
         AddChartControl(_customers, 1, 3);
     }
@@ -229,7 +229,7 @@ public sealed class ReportDashboardForm : Form
     {
         for(int i=0;i<3;i++)_stats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,33.333f));
         for(int i=0;i<2;i++)_stats.RowStyles.Add(new RowStyle(SizeType.Percent,50));
-        var captions=new[]{"DOANH THU THUẦN","ĐƠN HÀNG","GIÁ TRỊ ĐƠN TRUNG BÌNH","GIẢM GIÁ","CHI NHẬP HÀNG","LÃI GỘP ƯỚC TÍNH"};
+        var captions=new[]{"DOANH THU THUẦN","HÓA ĐƠN","GIÁ TRỊ ĐƠN TRUNG BÌNH","GIẢM GIÁ","CHI NHẬP HÀNG","LÃI GỘP ƯỚC TÍNH"};
         var notes=new[]{"Đơn hoàn tất, sau giảm giá đơn","Đơn hoàn tất và đang chờ","Tính trên đơn hoàn tất","Tổng giảm giá trên đơn hoàn tất","Phiếu nhập trong kỳ","Theo giá vốn bình quân"};
         for(int i=0;i<6;i++){var p=Card();p.Margin=new Padding(3);p.Padding=new Padding(8,7,8,4);
             var note=new Label{Text=notes[i],Dock=DockStyle.Bottom,Height=22,ForeColor=Muted,Font=new Font("Segoe UI",7f),AutoEllipsis=true};

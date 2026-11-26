@@ -52,7 +52,7 @@ public sealed class OrderEditorForm : Form
         _availableEmployees = employees;
         _availableBooks = books;
 
-        Text = existingOrder == null ? "Tạo đơn hàng tại quầy" : $"Chỉnh sửa đơn hàng - {existingOrder.Id}";
+        Text = existingOrder == null ? "Tạo hóa đơn tại quầy" : $"Chỉnh sửa hóa đơn - {existingOrder.Id}";
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -82,7 +82,7 @@ public sealed class OrderEditorForm : Form
         // 1. Panel thông tin chung
         var grpInfo = new GroupBox
         {
-            Text = "Thông tin chung đơn hàng",
+            Text = "Thông tin chung hóa đơn",
             Dock = DockStyle.Fill,
             Font = new Font("Segoe UI", 9F, FontStyle.Bold),
             ForeColor = Color.FromArgb(31, 111, 88)
@@ -270,7 +270,7 @@ public sealed class OrderEditorForm : Form
         _btnCancel.FlatAppearance.BorderSize = 0;
         _btnCancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
 
-        _btnSave.Text = existingOrder == null ? "Tạo đơn hàng" : "Lưu thay đổi";
+        _btnSave.Text = existingOrder == null ? "Tạo hóa đơn" : "Lưu thay đổi";
         _btnSave.Size = new Size(130, 34);
         _btnSave.BackColor = Color.FromArgb(31, 111, 88);
         _btnSave.ForeColor = Color.White;
@@ -504,7 +504,7 @@ public sealed class OrderEditorForm : Form
         }
         if (_lines.Count == 0)
         {
-            MessageBox.Show(this, "Đơn hàng phải có ít nhất 1 mặt hàng sách.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, "Hóa đơn phải có ít nhất 1 mặt hàng sách.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 

@@ -36,5 +36,5 @@ else
                 </form>
             </article>
         }
-    </section><aside class="panel order-summary"><h2>Tóm tắt đơn hàng</h2><div class="summary-row"><span>@Model.Lines.Sum(line => line.Quantity) cuốn sách</span><strong>@Model.Subtotal.ToString("N0") ₫</strong></div><div class="summary-total"><span>Tạm tính</span><strong>@Model.Subtotal.ToString("N0") ₫</strong></div><p class="muted small">Phí giao hàng và giảm giá (nếu có) sẽ được tính khi xác nhận.</p><a class="button button-primary button-wide" asp-page="/Checkout/Index">Tiến hành thanh toán</a></aside></div>
+    </section><aside class="panel order-summary"><h2>Tóm tắt hóa đơn</h2><div class="summary-row"><span>@Model.Lines.Sum(line => line.Quantity) cuốn sách</span><strong>@Model.Subtotal.ToString("N0") ₫</strong></div><div class="summary-total"><span>Tạm tính</span><strong>@Model.Subtotal.ToString("N0") ₫</strong></div><p class="muted small">Phí giao hàng và giảm giá (nếu có) sẽ được tính khi xác nhận.</p><a class="button button-primary button-wide" asp-page="/Checkout/Index">Tiến hành thanh toán</a></aside></div>
 }

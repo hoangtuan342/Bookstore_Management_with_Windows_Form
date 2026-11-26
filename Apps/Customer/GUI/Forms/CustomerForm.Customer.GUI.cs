@@ -23,7 +23,7 @@ public partial class CustomerForm
             if (e.RowIndex >= 0) await SafeAsync(OpenSelectedOrderAsync);
         };
         ToolBar(orders).Controls.AddRange([
-            ActionButton("Tải đơn hàng", async () => await LoadMyOrdersAsync()),
+            ActionButton("Tải hóa đơn", async () => await LoadMyOrdersAsync()),
             ActionButton("Xem chi tiết", OpenSelectedOrderAsync),
             ActionButton("Hủy đơn", CancelSelectedOrderAsync)]);
         _tabs.TabPages.Add(orders);
@@ -74,7 +74,7 @@ public partial class CustomerForm
 
     private async Task CancelSelectedOrderAsync()
     {
-        if (_myOrdersGrid.CurrentRow?.DataBoundItem is not StoreOrderDto order) throw new InvalidOperationException("Chọn đơn hàng cần hủy.");
+        if (_myOrdersGrid.CurrentRow?.DataBoundItem is not StoreOrderDto order) throw new InvalidOperationException("Chọn hóa đơn cần hủy.");
         if (order.Status is not ("Pending" or "Confirmed")) throw new InvalidOperationException("Chỉ có thể hủy đơn đang chờ hoặc đã xác nhận.");
         if (MessageBox.Show(this, $"Hủy đơn {order.Id}?", "Xác nhận hủy đơn", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
         await _store.CancelOrderAsync(order.Id);
@@ -128,9 +128,9 @@ public partial class CustomerForm
     private async Task OpenSelectedOrderAsync()
     {
         if (_myOrdersGrid.CurrentRow?.DataBoundItem is not TrangSach.Shared.DTO.StoreOrderDto selected)
-            throw new InvalidOperationException("Chọn một đơn hàng để xem chi tiết.");
+            throw new InvalidOperationException("Chọn một hóa đơn để xem chi tiết.");
         var order = await _store.GetOrderAsync(selected.Id)
-            ?? throw new InvalidOperationException("Không tìm thấy đơn hàng hoặc đơn không thuộc tài khoản hiện tại.");
+            ?? throw new InvalidOperationException("Không tìm thấy hóa đơn hoặc hóa đơn không thuộc tài khoản hiện tại.");
         using var details = new CustomerOrderDetailsForm(order);
         details.ShowDialog(this);
     }

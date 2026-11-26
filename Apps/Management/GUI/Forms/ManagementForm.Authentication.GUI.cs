@@ -48,7 +48,7 @@ public partial class ManagementForm
         }
         if (StaffPermissions.CanAccess(role, "customers")) loaders.Add(("Khách hàng", () => LoadCustomers()));
         if (role == StaffRoles.Manager) loaders.Add(("Nhân viên", () => LoadEmployees()));
-        if (StaffPermissions.CanAccess(role, "orders")) loaders.Add(("Đơn hàng", () => LoadOrders()));
+        if (StaffPermissions.CanAccess(role, "orders")) loaders.Add(("Hóa đơn", () => LoadOrders()));
         if (StaffPermissions.CanAccess(role, "inventory"))
         {
             loaders.Add(("Phiếu nhập", () => LoadReceipts()));
@@ -84,7 +84,7 @@ public partial class ManagementForm
         var pageTitle = _initialPage.ToLowerInvariant() switch
         {
             "dashboard" => "Tổng quan", "books" => "Sách", "customers" => "Khách hàng",
-            "employees" => "Nhân viên", "orders" => "Đơn hàng", "receipts" => "Phiếu nhập",
+            "employees" => "Nhân viên", "orders" => "Hóa đơn", "receipts" => "Phiếu nhập",
             "reports" => "Báo cáo", "references" => "Danh mục tham chiếu", "suppliers" => "Nhà cung cấp",
             "promotions" => "Khuyến mãi", "vouchers" => "Voucher", "audit-logs" => "Nhật ký hệ thống",
             _ => null

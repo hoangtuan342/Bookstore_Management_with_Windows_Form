@@ -6,7 +6,7 @@ internal sealed class CustomerOrderDetailsForm : Form
 {
     public CustomerOrderDetailsForm(StoreOrderDto order)
     {
-        Text = "Chi tiết đơn hàng";
+        Text = "Chi tiết hóa đơn";
         StartPosition = FormStartPosition.CenterParent;
         MinimumSize = new Size(720, 560);
         Size = new Size(780, 620);
@@ -20,8 +20,8 @@ internal sealed class CustomerOrderDetailsForm : Form
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
-        root.Controls.Add(new Label { Text = "Chi tiết đơn hàng", Dock = DockStyle.Fill, Font = new Font("Georgia", 19, FontStyle.Bold), ForeColor = Color.FromArgb(38, 45, 37), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
-        root.Controls.Add(new Label { Text = $"Mã đơn: {order.Id}\r\nNgày đặt: {order.CreatedAt:dd/MM/yyyy HH:mm}", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(53, 86, 68), TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
+        root.Controls.Add(new Label { Text = "Chi tiết hóa đơn", Dock = DockStyle.Fill, Font = new Font("Georgia", 19, FontStyle.Bold), ForeColor = Color.FromArgb(38, 45, 37), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        root.Controls.Add(new Label { Text = $"Mã hóa đơn: {order.Id}\r\nNgày lập: {order.CreatedAt:dd/MM/yyyy HH:mm}", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(53, 86, 68), TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
         root.Controls.Add(MakeInfo($"Trạng thái: {order.Status}    ·    Thanh toán: {order.PaymentStatus} ({PaymentName(order.PaymentMethod)})"), 0, 2);
         root.Controls.Add(MakeInfo($"Người nhận: {order.ReceiverPhone}    ·    Địa chỉ: {order.ShippingAddress}"), 0, 3);
 

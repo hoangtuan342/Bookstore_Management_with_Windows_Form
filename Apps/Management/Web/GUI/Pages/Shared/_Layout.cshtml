@@ -52,7 +52,7 @@
                 }
                 @if (StaffPermissions.CanAccess(User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value, "orders"))
                 {
-                    <a asp-page="/Admin/Orders/Index" aria-current="@(currentPage.StartsWith("/Admin/Orders", StringComparison.OrdinalIgnoreCase) ? "page" : null)"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 3h16v18H4zM8 8h8M8 12h8M8 16h5"/></svg></span><span>Đơn hàng</span></a>
+                    <a asp-page="/Admin/Orders/Index" aria-current="@(currentPage.StartsWith("/Admin/Orders", StringComparison.OrdinalIgnoreCase) ? "page" : null)"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 3h16v18H4zM8 8h8M8 12h8M8 16h5"/></svg></span><span>Hóa đơn</span></a>
                 }
                 @if (StaffPermissions.CanAccess(User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value, "inventory"))
                 {

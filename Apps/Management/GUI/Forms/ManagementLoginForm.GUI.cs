@@ -84,7 +84,7 @@ internal sealed class ManagementLoginForm : Form
         var secondHeadline = BrandLabel("hàng sách", 34, 276, 280, 48, 25, FontStyle.Bold, Color.White);
         secondHeadline.AutoSize = true;
         panel.Controls.Add(secondHeadline);
-        panel.Controls.Add(BrandLabel("Sách · Đơn hàng · Kho · Báo cáo", 37, 333, 270, 28, 10, FontStyle.Regular, Color.FromArgb(218, 227, 235)));
+        panel.Controls.Add(BrandLabel("Sách · Hóa đơn · Kho · Báo cáo", 37, 333, 270, 28, 10, FontStyle.Regular, Color.FromArgb(218, 227, 235)));
 
         var separator = new Panel { Location = new Point(37, 397), Size = new Size(266, 1), BackColor = Color.FromArgb(83, 105, 125) };
         panel.Controls.Add(separator);

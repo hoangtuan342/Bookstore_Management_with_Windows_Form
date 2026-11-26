@@ -1,7 +1,7 @@
 @page
 @model TrangSach.Management.Web.GUI.Pages.Admin.Orders.IndexModel
 <div class="panel create-panel">
-    <div class="panel-head"><div><span class="eyebrow">BÁN HÀNG TẠI QUẦY</span><h2>Tạo đơn hàng</h2></div></div>
+    <div class="panel-head"><div><span class="eyebrow">BÁN HÀNG TẠI QUẦY</span><h2>Tạo hóa đơn</h2></div></div>
     <form method="post" asp-page-handler="Create" class="form-grid">
         <div asp-validation-summary="ModelOnly" class="validation span-2"></div>
         <label asp-for="Input.CustomerId"></label><select asp-for="Input.CustomerId"><option value="">Chọn khách hàng</option>@foreach (var customer in Model.Customers){<option value="@customer.Id">@customer.FullName · @customer.Id</option>}</select>
@@ -17,14 +17,14 @@
             </div>
         }
         <button class="button light" type="submit" asp-page-handler="AddLine">+ Thêm sách</button>
-        <button class="button primary">Tạo đơn</button>
+        <button class="button primary">Tạo hóa đơn</button>
     </form>
 </div>
 <div class="panel">
-    <div class="panel-head"><div><span class="eyebrow">QUẢN LÝ BÁN HÀNG</span><h2>Đơn hàng (@Model.Orders.Count)</h2></div>
-        <form method="get" class="search-bar compact"><input name="search" value="@Model.Search" placeholder="Mã đơn, khách, điện thoại..." /><select name="status"><option value="">Mọi trạng thái</option>@foreach(var state in IndexModel.AllowedStatuses){<option value="@state" selected="@(Model.Status == state)">@state</option>}</select><button class="button primary">Lọc</button></form>
+    <div class="panel-head"><div><span class="eyebrow">QUẢN LÝ BÁN HÀNG</span><h2>Hóa đơn (@Model.Orders.Count)</h2></div>
+        <form method="get" class="search-bar compact"><input name="search" value="@Model.Search" placeholder="Mã hóa đơn, khách, điện thoại..." /><select name="status"><option value="">Mọi trạng thái</option>@foreach(var state in IndexModel.AllowedStatuses){<option value="@state" selected="@(Model.Status == state)">@state</option>}</select><button class="button primary">Lọc</button></form>
     </div>
-    <div class="table-wrap"><table><thead><tr><th>Đơn hàng</th><th>Khách</th><th>Ngày</th><th>Trạng thái</th><th>Thanh toán</th><th>Tổng tiền</th><th>Thao tác</th></tr></thead><tbody>
+    <div class="table-wrap"><table><thead><tr><th>Hóa đơn</th><th>Khách</th><th>Ngày lập</th><th>Trạng thái</th><th>Thanh toán</th><th>Tổng tiền</th><th>Thao tác</th></tr></thead><tbody>
     @foreach(var o in Model.Orders)
     {
         <tr><td><strong>@o.Id</strong><details><summary>@o.ItemCount mặt hàng</summary>@foreach(var line in o.Lines){<small class="subcell">@line.Title × @line.Quantity</small>}</details></td><td>@o.CustomerName<small class="subcell">@o.ReceiverPhone</small></td><td>@o.CreatedAt.ToLocalTime().ToString("dd/MM/yy HH:mm")</td>
@@ -34,7 +34,7 @@
                 <details><summary>Sửa giao hàng</summary><form method="post" asp-page-handler="Update" class="form-stack"><input type="hidden" name="id" value="@o.Id" /><label>Địa chỉ</label><textarea name="shippingAddress" rows="2">@o.ShippingAddress</textarea><label>Điện thoại</label><input name="receiverPhone" value="@o.ReceiverPhone" /><label>Thanh toán</label><select name="paymentMethod"><option value="CashOnDelivery" selected="@(o.PaymentMethod == "CashOnDelivery")">COD</option><option value="BankTransfer" selected="@(o.PaymentMethod == "BankTransfer")">Chuyển khoản</option></select><button class="tiny-button">Lưu thay đổi</button></form></details>
                 @if(o.PaymentMethod == "BankTransfer" && o.PaymentStatus != "Paid"){<form method="post" asp-page-handler="MarkPaid"><input type="hidden" name="id" value="@o.Id" /><button class="tiny-button">Đã thu tiền</button></form>}
                 @if(o.OrderStatus == "Cancelled" && o.PaymentStatus == "Paid"){<form method="post" asp-page-handler="Refund"><input type="hidden" name="id" value="@o.Id" /><button class="tiny-button">Đã hoàn tiền</button></form>}
-                <form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Hủy đơn @o.Id?')"><input type="hidden" name="id" value="@o.Id" /><button class="link-danger">Hủy</button></form>
+                <form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Hủy hóa đơn @o.Id?')"><input type="hidden" name="id" value="@o.Id" /><button class="link-danger">Hủy</button></form>
             </td>
         </tr>
     }

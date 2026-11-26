@@ -39,7 +39,7 @@ internal sealed class CustomerCheckoutForm : Form
             Controls =
             {
                 new Label { Text = "THANH TOÁN", AutoSize = true, Location = new Point(0, 0), Font = new Font("Segoe UI", 9, FontStyle.Bold), ForeColor = Forest },
-                new Label { Text = "Xác nhận đơn hàng", AutoSize = true, Location = new Point(0, 23), Font = new Font("Georgia", 22, FontStyle.Bold), ForeColor = Ink },
+                new Label { Text = "Xác nhận hóa đơn", AutoSize = true, Location = new Point(0, 23), Font = new Font("Georgia", 22, FontStyle.Bold), ForeColor = Ink },
                 new Label { Text = "Kiểm tra sách và điền thông tin nhận hàng trước khi đặt.", AutoSize = true, Location = new Point(0, 54), Font = new Font("Segoe UI", 9), ForeColor = Color.FromArgb(105, 113, 102) }
             }
         }, 0, 0);

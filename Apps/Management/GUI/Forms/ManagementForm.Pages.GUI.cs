@@ -248,7 +248,7 @@ public partial class ManagementForm
         "Tác giả" => "✍",
         "Khách hàng" => "♙",
         "Nhân viên" => "♟",
-        "Đơn hàng" => "☷",
+        "Hóa đơn" => "☷",
         "Phiếu nhập" => "▣",
         "Báo cáo" => "▥",
         "Danh mục tham chiếu" => "☰",
