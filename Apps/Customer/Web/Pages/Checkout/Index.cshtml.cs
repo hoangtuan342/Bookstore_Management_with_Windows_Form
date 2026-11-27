@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TrangSach.Customer.BUS;
@@ -6,7 +7,6 @@ using TrangSach.Shared.DTO;
 
 namespace TrangSach.Customer.Web.Pages.Checkout;
 
-[Authorize(Roles = "Customer")]
 public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
 {
     [BindProperty] public CheckoutInput Input { get; set; } = new();
@@ -22,16 +22,20 @@ public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
 
         try
         {
-            CustomerProfile = await api.GetProfileAsync(RequireApiToken(), ct);
-            if (CustomerProfile is not null)
+            var token = await EnsureCustomerTokenAsync(api, ct);
+            if (User.FindFirstValue("is_guest") != "true")
             {
-                if (string.IsNullOrWhiteSpace(Input.ReceiverPhone) && !string.IsNullOrWhiteSpace(CustomerProfile.PhoneNumber))
+                CustomerProfile = await api.GetProfileAsync(token, ct);
+                if (CustomerProfile is not null)
                 {
-                    Input.ReceiverPhone = CustomerProfile.PhoneNumber;
-                }
-                if (string.IsNullOrWhiteSpace(Input.ShippingAddress) && !string.IsNullOrWhiteSpace(CustomerProfile.Address))
-                {
-                    Input.ShippingAddress = CustomerProfile.Address;
+                    if (string.IsNullOrWhiteSpace(Input.ReceiverPhone) && !string.IsNullOrWhiteSpace(CustomerProfile.PhoneNumber))
+                    {
+                        Input.ReceiverPhone = CustomerProfile.PhoneNumber;
+                    }
+                    if (string.IsNullOrWhiteSpace(Input.ShippingAddress) && !string.IsNullOrWhiteSpace(CustomerProfile.Address))
+                    {
+                        Input.ShippingAddress = CustomerProfile.Address;
+                    }
                 }
             }
         }
@@ -48,7 +52,8 @@ public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
         if (!ModelState.IsValid) { await LoadAsync(ct); return Page(); }
         try
         {
-            var order = await api.CheckoutAsync(RequireApiToken(), new CheckoutDetailsDto(
+            var token = await EnsureCustomerTokenAsync(api, ct);
+            var order = await api.CheckoutAsync(token, new CheckoutDetailsDto(
                 Input.ShippingAddress.Trim(), Input.ReceiverPhone.Trim(), Input.PaymentMethod,
                 string.IsNullOrWhiteSpace(Input.VoucherCode) ? null : Input.VoucherCode.Trim()), ct);
             TempData["Notice"] = "Đặt hàng thành công.";
@@ -57,7 +62,15 @@ public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
         catch (Exception ex) { ModelState.AddModelError(string.Empty, ex.Message); await LoadAsync(ct); return Page(); }
     }
 
-    private async Task LoadAsync(CancellationToken ct) => Lines = await api.GetCartAsync(RequireApiToken(), ct);
+    private async Task LoadAsync(CancellationToken ct)
+    {
+        try
+        {
+            var token = await EnsureCustomerTokenAsync(api, ct);
+            Lines = await api.GetCartAsync(token, ct);
+        }
+        catch { Lines = []; }
+    }
 
     public sealed class CheckoutInput
     {

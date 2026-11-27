@@ -312,7 +312,7 @@ public class OrderDao
             SELECT MaHD, NgayLapHD, TrangThaiDonHang, TrangThaiThanhToan, PhuongThucThanhToan,
                    DiaChiGiaoHang, SDTNhanHang, TongTien, TongGiamGia
             FROM HD
-            WHERE MaHD = @id AND MaKH = @cusId";
+            WHERE MaHD = @id AND (MaKH = @cusId OR @cusId = '*')";
         using var cmd = new SqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("@id", orderId);
         cmd.Parameters.AddWithValue("@cusId", customerId);

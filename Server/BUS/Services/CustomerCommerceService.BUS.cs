@@ -46,6 +46,7 @@ namespace TrangSach.BUS
                 throw new InvalidOperationException("Số lượng vượt quá tồn kho hiện tại.");
             }
 
+            dao.Users.EnsureCustomerRecord(customerId, "Khách vãng lai", null, null);
             dao.Users.SetCartItem(customerId, bookId, quantity);
         }
 
@@ -77,6 +78,9 @@ namespace TrangSach.BUS
             {
                 throw new ArgumentException("Địa chỉ giao hàng hoặc số điện thoại không hợp lệ.");
             }
+
+            // Đảm bảo mã khách hàng đã tồn tại trong bảng KH (hỗ trợ cả khách vãng lai/guest)
+            dao.Users.EnsureCustomerRecord(customerId, "Khách vãng lai", command.ReceiverPhone.Trim(), command.ShippingAddress.Trim());
 
             var cart = dao.Users.GetCustomerCart(customerId);
             if (cart.Count == 0)

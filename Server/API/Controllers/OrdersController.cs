@@ -24,7 +24,8 @@ public sealed class OrdersController(CustomerCommerceService service) : Controll
     {
         var customerId = User.FindFirstValue("customer_id");
         if (customerId is null) return Forbid();
-        var order = service.GetOrder(id, customerId);
+        var queryCusId = customerId.StartsWith("KH-GUEST-") ? "*" : customerId;
+        var order = service.GetOrder(id, queryCusId);
         return order is null ? NotFound() : Ok(order);
     }
 

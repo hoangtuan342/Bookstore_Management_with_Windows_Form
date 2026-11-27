@@ -27,6 +27,12 @@ public sealed class CustomerWebApiClient(HttpClient httpClient)
     public Task<StoreAuthResultDto?> RegisterAsync(string userName, string email, string password, string fullName, string? phoneNumber, CancellationToken ct = default) =>
         PostAsync<StoreAuthResultDto>("api/auth/register", new { userName, email, password, fullName, phoneNumber }, null, ct);
 
+    public Task<StoreAuthResultDto?> GetGuestTokenAsync(string? guestId = null, CancellationToken ct = default)
+    {
+        var path = string.IsNullOrWhiteSpace(guestId) ? "api/auth/guest" : $"api/auth/guest?guestId={Uri.EscapeDataString(guestId.Trim())}";
+        return PostAsync<StoreAuthResultDto>(path, new { }, null, ct);
+    }
+
     public Task<AccountProfileDto?> GetProfileAsync(string token, CancellationToken ct = default) =>
         GetAsync<AccountProfileDto>("api/auth/me", token, ct);
 

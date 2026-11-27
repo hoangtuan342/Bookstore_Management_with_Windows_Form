@@ -24,10 +24,10 @@ public sealed class IndexModel(CustomerWebApiClient api) : PageModel
 
     public async Task<IActionResult> OnPostAddToCartAsync(string id, CancellationToken ct)
     {
-        if (!User.IsInRole("Customer")) return RedirectToPage("/Account/Login", new { returnUrl = Url.Page("/Books/Details", new { id }) });
         try
         {
-            var token = User.FindFirst("access_token")?.Value ?? string.Empty;
+            var guestModel = new AnonymousCartHelper(HttpContext, api);
+            var token = await guestModel.EnsureCustomerTokenAsync(ct);
             var cart = await api.GetCartAsync(token, ct);
             var current = cart.FirstOrDefault(line => line.BookId == id)?.Quantity ?? 0;
             await api.SetCartQuantityAsync(token, id, current + 1, ct);
@@ -35,5 +35,14 @@ public sealed class IndexModel(CustomerWebApiClient api) : PageModel
         }
         catch (Exception ex) { TempData["Notice"] = ex.Message; }
         return RedirectToPage("/Index", new { search = Search, category = Category });
+    }
+
+    private sealed class AnonymousCartHelper(HttpContext httpContext, CustomerWebApiClient apiClient) : CustomerPageModel
+    {
+        public Task<string> EnsureCustomerTokenAsync(CancellationToken ct)
+        {
+            PageContext = new Microsoft.AspNetCore.Mvc.RazorPages.PageContext { HttpContext = httpContext };
+            return EnsureCustomerTokenAsync(apiClient, ct);
+        }
     }
 }

@@ -11,15 +11,15 @@
         <a class="brand" asp-page="/Index"><span class="brand-mark">TS</span><span>Trang Sách<small>một góc nhỏ dành cho người yêu sách</small></span></a>
         <nav class="main-nav">
             <a asp-page="/Index">Cửa hàng</a>
-            @if (User.IsInRole("Customer"))
+            <a asp-page="/Cart/Index">Giỏ hàng</a>
+            @if (User.IsInRole("Customer") && User.FindFirst("is_guest")?.Value != "true")
             {
-                <a asp-page="/Cart/Index">Giỏ hàng</a>
                 <a asp-page="/Orders/Index">Hóa đơn</a>
                 <a asp-page="/Profile/Index">Hồ sơ</a>
             }
         </nav>
         <div class="account-nav">
-            @if (User.Identity?.IsAuthenticated == true)
+            @if (User.Identity?.IsAuthenticated == true && User.FindFirst("is_guest")?.Value != "true")
             {
                 <span class="welcome">Xin chào, @User.Identity.Name</span>
                 <form method="post" asp-page="/Account/Logout"><button class="button button-light" type="submit">Đăng xuất</button></form>

@@ -95,6 +95,18 @@ public sealed class AuthController(AuthenticationService service, IConfiguration
         }
     }
 
+    [AllowAnonymous, HttpPost("guest")]
+    [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
+    public IActionResult CreateGuestToken([FromQuery] string? guestId)
+    {
+        var id = !string.IsNullOrWhiteSpace(guestId) && guestId.StartsWith("KH-GUEST-")
+            ? guestId.Trim()
+            : $"KH-GUEST-{Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(4))}";
+        
+        var account = new AuthenticatedAccountDto(0, id, $"{id.ToLower()}@guest.trangsach.vn", "Customer", id);
+        return Ok(CreateToken(account));
+    }
+
     [Authorize, HttpGet("me")]
     public IActionResult GetCurrentUser()
     {

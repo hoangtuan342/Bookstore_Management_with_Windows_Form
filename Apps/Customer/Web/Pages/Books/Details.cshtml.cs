@@ -21,11 +21,10 @@ public sealed class DetailsModel(CustomerWebApiClient api) : PageModel
 
     private async Task<IActionResult> AddToCartAsync(string id, bool buyNow, CancellationToken ct)
     {
-        if (!User.IsInRole("Customer"))
-            return RedirectToPage("/Account/Login", new { returnUrl = Url.Page("/Books/Details", new { id }) });
         try
         {
-            var token = User.FindFirst("access_token")?.Value ?? string.Empty;
+            var guestModel = new AnonymousCartHelper(HttpContext, api);
+            var token = await guestModel.EnsureCustomerTokenAsync(ct);
             var book = await api.GetBookAsync(id, ct) ?? throw new InvalidOperationException("Sản phẩm không còn tồn tại.");
             if (book.AvailableStock <= 0) throw new InvalidOperationException("Sản phẩm hiện đã hết hàng.");
             var cart = await api.GetCartAsync(token, ct);
@@ -38,6 +37,15 @@ public sealed class DetailsModel(CustomerWebApiClient api) : PageModel
         {
             TempData["Notice"] = ex.Message;
             return RedirectToPage("/Books/Details", new { id });
+        }
+    }
+
+    private sealed class AnonymousCartHelper(HttpContext httpContext, CustomerWebApiClient apiClient) : CustomerPageModel
+    {
+        public Task<string> EnsureCustomerTokenAsync(CancellationToken ct)
+        {
+            PageContext = new Microsoft.AspNetCore.Mvc.RazorPages.PageContext { HttpContext = httpContext };
+            return EnsureCustomerTokenAsync(apiClient, ct);
         }
     }
 }

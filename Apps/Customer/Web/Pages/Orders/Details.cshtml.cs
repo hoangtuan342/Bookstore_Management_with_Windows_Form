@@ -5,16 +5,16 @@ using TrangSach.Shared.DTO;
 
 namespace TrangSach.Customer.Web.Pages.Orders;
 
-[Authorize(Roles = "Customer")]
 public sealed class DetailsModel(CustomerWebApiClient api) : CustomerPageModel
 {
     public StoreOrderDto? Order { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(string id, CancellationToken ct)
     {
-        Order = await api.GetOrderAsync(RequireApiToken(), id, ct);
+        var token = await EnsureCustomerTokenAsync(api, ct);
+        Order = await api.GetOrderAsync(token, id, ct);
         if (Order is null) return NotFound();
-        ViewData["Title"] = "Chi tiết đơn hàng";
+        ViewData["Title"] = "Chi tiết hóa đơn";
         return Page();
     }
 }

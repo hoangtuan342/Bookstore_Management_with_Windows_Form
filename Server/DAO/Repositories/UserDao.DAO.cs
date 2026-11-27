@@ -157,6 +157,21 @@ public class UserDao
         InsertCustomer(id, fullName, null, phoneNumber, shippingAddress, accountId);
     }
 
+    public void EnsureCustomerRecord(string id, string fullName, string? phoneNumber, string? shippingAddress)
+    {
+        using var conn = DbConnection.Open();
+        var sql = @"
+            IF NOT EXISTS (SELECT 1 FROM KH WHERE MaKH = @id)
+                INSERT INTO KH (MaKH, HoTen, SoDienThoai, DiaChiGiaoHang, IDTaiKhoan)
+                VALUES (@id, @name, @phone, @addr, NULL);";
+        using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.Parameters.AddWithValue("@name", string.IsNullOrWhiteSpace(fullName) ? "Khách vãng lai" : fullName.Trim());
+        cmd.Parameters.AddWithValue("@phone", (object?)phoneNumber ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@addr", (object?)shippingAddress ?? DBNull.Value);
+        cmd.ExecuteNonQuery();
+    }
+
     public void UpdateCustomer(string id, string fullName, DateOnly? birthDate, string? phoneNumber, string? shippingAddress, int? accountId)
     {
         using var conn = DbConnection.Open();
