@@ -10,6 +10,9 @@ public sealed class SetCartQuantityRequest
 
 public sealed class CheckoutRequest
 {
+    [StringLength(100)]
+    public string? ReceiverName { get; init; }
+
     [Required, StringLength(500, MinimumLength = 8)]
     public string ShippingAddress { get; init; } = string.Empty;
 

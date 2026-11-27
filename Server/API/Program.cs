@@ -60,6 +60,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             OnTokenValidated = async context =>
             {
+                var customerId = context.Principal?.FindFirstValue("customer_id");
+                if (customerId != null && customerId.StartsWith("KH-GUEST-", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Guest token hợp lệ
+                    return;
+                }
+
                 var accountIdClaim = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (!int.TryParse(accountIdClaim, out var accountId))
                 {

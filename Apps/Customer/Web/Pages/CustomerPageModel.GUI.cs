@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Security.Claims;
+using System.Text.Json;
 using TrangSach.Customer.BUS;
 
 namespace TrangSach.Customer.Web.Pages;
@@ -17,13 +18,16 @@ public abstract class CustomerPageModel : PageModel
         ?? throw new InvalidOperationException("Phiên làm việc đã hết hạn. Vui lòng thử lại.");
 
     /// <summary>
-    /// Đảm bảo luôn có token (nếu là khách vãng lai chưa đăng nhập, tự động cấp JWT Guest dựa theo cookie).
+    /// Đảm bảo luôn có token hợp lệ. Nếu token đã hết hạn hoặc là khách vãng lai, tự động cấp hoặc làm mới JWT Guest.
     /// </summary>
-    protected async Task<string> EnsureCustomerTokenAsync(CustomerWebApiClient api, CancellationToken ct = default)
+    protected async Task<string> EnsureCustomerTokenAsync(CustomerWebApiClient api, CancellationToken ct = default, bool forceRefresh = false)
     {
-        if (!string.IsNullOrWhiteSpace(ApiToken))
+        if (!forceRefresh && !string.IsNullOrWhiteSpace(ApiToken))
         {
-            return ApiToken;
+            if (IsJwtTokenValid(ApiToken))
+            {
+                return ApiToken;
+            }
         }
 
         // Kiểm tra cookie khách vãng lai hoặc sinh mã mới
@@ -62,6 +66,29 @@ public abstract class CustomerPageModel : PageModel
             new AuthenticationProperties { IsPersistent = true, ExpiresUtc = expires });
 
         return auth.AccessToken;
+    }
+
+    private static bool IsJwtTokenValid(string token)
+    {
+        try
+        {
+            var parts = token.Split('.');
+            if (parts.Length < 2) return false;
+            var payload = parts[1];
+            payload = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
+            var bytes = Convert.FromBase64String(payload.Replace('-', '+').Replace('_', '/'));
+            using var doc = JsonDocument.Parse(bytes);
+            if (doc.RootElement.TryGetProperty("exp", out var expElement) && expElement.TryGetInt64(out var exp))
+            {
+                var expTime = DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime;
+                return expTime > DateTime.UtcNow.AddMinutes(1);
+            }
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     protected void AddApiError(Exception exception) => ModelState.AddModelError(string.Empty, exception.Message);

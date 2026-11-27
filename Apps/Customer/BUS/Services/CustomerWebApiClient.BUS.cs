@@ -89,6 +89,9 @@ public sealed class CustomerWebApiClient(HttpClient httpClient)
         return await httpClient.SendAsync(request, ct);
     }
 
+    public static bool IsUnauthorizedException(Exception ex) =>
+        ex is InvalidOperationException iex && iex.Message.Contains("Phiên đăng nhập đã hết hạn", StringComparison.OrdinalIgnoreCase);
+
     private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken ct)
     {
         if (response.IsSuccessStatusCode) return;

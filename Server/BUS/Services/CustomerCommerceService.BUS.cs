@@ -80,7 +80,8 @@ namespace TrangSach.BUS
             }
 
             // Đảm bảo mã khách hàng đã tồn tại trong bảng KH (hỗ trợ cả khách vãng lai/guest)
-            dao.Users.EnsureCustomerRecord(customerId, "Khách vãng lai", command.ReceiverPhone.Trim(), command.ShippingAddress.Trim());
+            var customerName = !string.IsNullOrWhiteSpace(command.ReceiverName) ? command.ReceiverName.Trim() : "Khách vãng lai";
+            dao.Users.EnsureCustomerRecord(customerId, customerName, command.ReceiverPhone.Trim(), command.ShippingAddress.Trim());
 
             var cart = dao.Users.GetCustomerCart(customerId);
             if (cart.Count == 0)

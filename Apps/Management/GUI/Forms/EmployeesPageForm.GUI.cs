@@ -6,6 +6,15 @@ internal sealed class EmployeesPageForm : ManagementGridPageForm
     private readonly ComboBox _role = ManagementGridPageForm.Choice(160, new ManagementSearchFilterOption(null, "Mọi vị trí"));
     private readonly ComboBox _login = ManagementGridPageForm.Choice(155, new ManagementSearchFilterOption(null, "Mọi quyền truy cập"));
 
+    public sealed record EmployeeAccountDetailDto(
+        int? AccountId,
+        string? UserName,
+        string? Email,
+        string? RoleName,
+        string? LoginStatus,
+        string StatusText
+    );
+
     public EmployeesPageForm() : base("Nhân viên")
     {
         SetSearchPlaceholder("Tên, mã nhân viên, điện thoại, email...");
@@ -20,6 +29,78 @@ internal sealed class EmployeesPageForm : ManagementGridPageForm
         AddAction("Thêm", "add");
         AddAction("Sửa", "edit");
         AddAction("Xóa", "delete");
+
+        var detailGrid = CreateDetailGrid();
+        detailGrid.DataBindingComplete += (_, _) =>
+        {
+            try
+            {
+                if (detailGrid.Columns[nameof(EmployeeAccountDetailDto.AccountId)] is { } idCol)
+                {
+                    idCol.HeaderText = "Mã tài khoản";
+                    idCol.Width = 110;
+                }
+                if (detailGrid.Columns[nameof(EmployeeAccountDetailDto.UserName)] is { } userCol)
+                {
+                    userCol.HeaderText = "Tên đăng nhập";
+                    userCol.Width = 170;
+                }
+                if (detailGrid.Columns[nameof(EmployeeAccountDetailDto.Email)] is { } emailCol)
+                {
+                    emailCol.HeaderText = "Email";
+                    emailCol.Width = 230;
+                }
+                if (detailGrid.Columns[nameof(EmployeeAccountDetailDto.RoleName)] is { } roleCol)
+                {
+                    roleCol.HeaderText = "Vai trò / Chức vụ";
+                    roleCol.Width = 160;
+                }
+                if (detailGrid.Columns[nameof(EmployeeAccountDetailDto.StatusText)] is { } statusCol)
+                {
+                    statusCol.HeaderText = "Trạng thái đăng nhập";
+                    statusCol.Width = 170;
+                }
+                if (detailGrid.Columns[nameof(EmployeeAccountDetailDto.LoginStatus)] is { } rawCol)
+                {
+                    rawCol.Visible = false;
+                }
+            }
+            catch { }
+        };
+
+        SetDetailsView(detailGrid, "TÀI KHOẢN NHÂN VIÊN · Chọn một nhân viên ở bảng trên để xem thông tin tài khoản");
+
+        Grid.SelectionChanged += (_, _) =>
+        {
+            if (Grid.CurrentRow?.DataBoundItem is not TrangSach.Shared.DTO.ManagerEmployeeDto employee)
+            {
+                detailGrid.DataSource = null;
+                SetDetailsTitle("TÀI KHOẢN NHÂN VIÊN · Chọn một nhân viên ở bảng trên để xem thông tin tài khoản");
+                return;
+            }
+
+            var fullName = $"{employee.LastName} {employee.FirstName}".Trim();
+            if (employee.AccountId is null && string.IsNullOrWhiteSpace(employee.UserName))
+            {
+                SetDetailsTitle($"TÀI KHOẢN NHÂN VIÊN · {fullName} ({employee.Id}) · Chưa có tài khoản đăng nhập");
+                detailGrid.DataSource = new List<EmployeeAccountDetailDto>();
+                return;
+            }
+
+            SetDetailsTitle($"TÀI KHOẢN NHÂN VIÊN · {fullName} ({employee.Id}) · Tài khoản: {employee.UserName ?? "Chưa đặt"} · Quyền: {employee.RoleName}");
+            var displayStatus = ManagementGridPageForm.StatusCaption(employee.LoginStatus ?? "Active");
+            detailGrid.DataSource = new List<EmployeeAccountDetailDto>
+            {
+                new(
+                    employee.AccountId,
+                    employee.UserName ?? "(Chưa có)",
+                    employee.Email ?? "(Chưa có)",
+                    employee.RoleName,
+                    employee.LoginStatus ?? "Active",
+                    displayStatus
+                )
+            };
+        };
     }
 
     protected override void OnGridDataBound()
@@ -43,9 +124,6 @@ internal sealed class EmployeesPageForm : ManagementGridPageForm
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.RoleName), "Chức vụ");
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.BaseSalary), "Lương cơ bản (VNĐ)");
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.AccountStatus), "Trạng thái hồ sơ");
-            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.LoginStatus), "Quyền truy cập");
-            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.UserName), "Tên tài khoản");
-            SetHeader(nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.Email), "Email");
 
             if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.BaseSalary)] is { } salCol)
             {
@@ -60,9 +138,23 @@ internal sealed class EmployeesPageForm : ManagementGridPageForm
             {
                 avaCol.Visible = false;
             }
+
+            // Ẩn các cột tài khoản ở bảng trên vì đã hiển thị ở bảng tài khoản chi tiết bên dưới
             if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.AccountId)] is { } accIdCol)
             {
                 accIdCol.Visible = false;
+            }
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.UserName)] is { } userCol)
+            {
+                userCol.Visible = false;
+            }
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.Email)] is { } emailCol)
+            {
+                emailCol.Visible = false;
+            }
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerEmployeeDto.LoginStatus)] is { } loginCol)
+            {
+                loginCol.Visible = false;
             }
         }
         catch { }

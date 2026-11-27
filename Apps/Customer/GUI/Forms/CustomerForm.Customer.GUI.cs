@@ -136,7 +136,25 @@ public partial class CustomerForm
     {
         var cart = await _store.GetCartAsync();
         if (cart.Count == 0) throw new InvalidOperationException("Giỏ hàng đang trống.");
-        using var checkout = new CustomerCheckoutForm(cart);
+        string? name = null;
+        string? address = null;
+        string? phone = null;
+        try
+        {
+            if (_role == StaffRoles.Customer)
+            {
+                var profile = await _store.GetProfileAsync();
+                if (profile != null)
+                {
+                    name = profile.FullName;
+                    address = profile.Address;
+                    phone = profile.PhoneNumber;
+                }
+            }
+        }
+        catch { }
+
+        using var checkout = new CustomerCheckoutForm(cart, name, address, phone);
         if (checkout.ShowDialog(this) != DialogResult.OK || checkout.Details is null) return;
         var order = await _store.CheckoutAsync(checkout.Details);
         await LoadCartAsync();
@@ -279,7 +297,6 @@ public partial class CustomerForm
 
     private async Task AddBookToCartAsync(TrangSach.Shared.DTO.BookItemDto book)
     {
-        if (_role != StaffRoles.Customer) throw new UnauthorizedAccessException("Đăng nhập tài khoản khách hàng để thêm sách vào giỏ.");
         var cart = await _store.GetCartAsync();
         var quantity = cart.FirstOrDefault(item => item.BookId == book.Id)?.Quantity ?? 0;
         await _store.SetCartQuantityAsync(book.Id, quantity + 1);

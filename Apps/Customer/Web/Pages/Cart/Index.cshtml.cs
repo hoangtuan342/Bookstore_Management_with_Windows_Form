@@ -21,7 +21,15 @@ public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
         try
         {
             var token = await EnsureCustomerTokenAsync(api, ct);
-            await api.SetCartQuantityAsync(token, bookId, quantity, ct);
+            try
+            {
+                await api.SetCartQuantityAsync(token, bookId, quantity, ct);
+            }
+            catch (Exception ex) when (CustomerWebApiClient.IsUnauthorizedException(ex))
+            {
+                token = await EnsureCustomerTokenAsync(api, ct, forceRefresh: true);
+                await api.SetCartQuantityAsync(token, bookId, quantity, ct);
+            }
             TempData["Notice"] = "Đã cập nhật số lượng.";
         }
         catch (Exception ex) { TempData["Notice"] = ex.Message; }
@@ -33,7 +41,15 @@ public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
         try
         {
             var token = await EnsureCustomerTokenAsync(api, ct);
-            await api.RemoveCartItemAsync(token, bookId, ct);
+            try
+            {
+                await api.RemoveCartItemAsync(token, bookId, ct);
+            }
+            catch (Exception ex) when (CustomerWebApiClient.IsUnauthorizedException(ex))
+            {
+                token = await EnsureCustomerTokenAsync(api, ct, forceRefresh: true);
+                await api.RemoveCartItemAsync(token, bookId, ct);
+            }
             TempData["Notice"] = "Đã xóa sách khỏi giỏ.";
         }
         catch (Exception ex) { TempData["Notice"] = ex.Message; }
@@ -45,7 +61,15 @@ public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
         try
         {
             var token = await EnsureCustomerTokenAsync(api, ct);
-            Lines = await api.GetCartAsync(token, ct);
+            try
+            {
+                Lines = await api.GetCartAsync(token, ct);
+            }
+            catch (Exception ex) when (CustomerWebApiClient.IsUnauthorizedException(ex))
+            {
+                token = await EnsureCustomerTokenAsync(api, ct, forceRefresh: true);
+                Lines = await api.GetCartAsync(token, ct);
+            }
         }
         catch { Lines = []; }
     }

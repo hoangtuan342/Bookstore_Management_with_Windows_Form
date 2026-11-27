@@ -163,7 +163,15 @@ public class UserDao
         var sql = @"
             IF NOT EXISTS (SELECT 1 FROM KH WHERE MaKH = @id)
                 INSERT INTO KH (MaKH, HoTen, SoDienThoai, DiaChiGiaoHang, IDTaiKhoan)
-                VALUES (@id, @name, @phone, @addr, NULL);";
+                VALUES (@id, @name, @phone, @addr, NULL);
+            ELSE
+            BEGIN
+                UPDATE KH
+                SET HoTen = CASE WHEN @name <> 'Khách vãng lai' AND @name <> '' THEN @name ELSE HoTen END,
+                    SoDienThoai = COALESCE(@phone, SoDienThoai),
+                    DiaChiGiaoHang = COALESCE(@addr, DiaChiGiaoHang)
+                WHERE MaKH = @id;
+            END";
         using var cmd = new SqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("@id", id);
         cmd.Parameters.AddWithValue("@name", string.IsNullOrWhiteSpace(fullName) ? "Khách vãng lai" : fullName.Trim());

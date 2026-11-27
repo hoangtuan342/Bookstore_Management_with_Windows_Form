@@ -13,6 +13,7 @@ internal sealed class CustomerCheckoutForm : Form
         public override string ToString() => Caption;
     }
 
+    private readonly TextBox _name = new();
     private readonly TextBox _address = new();
     private readonly TextBox _phone = new();
     private readonly TextBox _voucher = new();
@@ -20,7 +21,7 @@ internal sealed class CustomerCheckoutForm : Form
     private readonly List<StoreCartLineDto> _cart;
     public CheckoutDetailsDto? Details { get; private set; }
 
-    public CustomerCheckoutForm(List<StoreCartLineDto> cart, string? address = null, string? phone = null)
+    public CustomerCheckoutForm(List<StoreCartLineDto> cart, string? name = null, string? address = null, string? phone = null)
     {
         _cart = cart;
         Text = "Thanh toán | Trang Sách";
@@ -49,7 +50,7 @@ internal sealed class CustomerCheckoutForm : Form
         body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
         var cartPanel = BuildCartSummary();
         cartPanel.Margin = new Padding(0, 0, 9, 0);
-        var shippingPanel = BuildShippingPanel(address, phone);
+        var shippingPanel = BuildShippingPanel(name, address, phone);
         shippingPanel.Margin = new Padding(9, 0, 0, 0);
         body.Controls.Add(cartPanel, 0, 0);
         body.Controls.Add(shippingPanel, 1, 0);
@@ -115,11 +116,13 @@ internal sealed class CustomerCheckoutForm : Form
         return panel;
     }
 
-    private Control BuildShippingPanel(string? address, string? phone)
+    private Control BuildShippingPanel(string? name, string? address, string? phone)
     {
         var panel = CardPanel();
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20), ColumnCount = 1, RowCount = 9 };
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20), ColumnCount = 1, RowCount = 11 };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
@@ -130,25 +133,29 @@ internal sealed class CustomerCheckoutForm : Form
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.Controls.Add(SectionHeading("Thông tin nhận hàng"), 0, 0);
 
+        _name.Text = name ?? string.Empty;
+        _name.PlaceholderText = "Ví dụ: Nguyễn Văn A";
+        AddField(layout, "Họ và tên người nhận", _name, 1, 2);
+
         _address.Text = address ?? string.Empty;
         _address.Multiline = true;
         _address.ScrollBars = ScrollBars.Vertical;
         _address.PlaceholderText = "Số nhà, đường, phường/xã, tỉnh/thành";
-        AddField(layout, "Địa chỉ giao hàng", _address, 1, 2);
+        AddField(layout, "Địa chỉ giao hàng", _address, 3, 4);
 
         _phone.Text = phone ?? string.Empty;
         _phone.PlaceholderText = "Số điện thoại người nhận";
-        AddField(layout, "Số điện thoại", _phone, 3, 4);
+        AddField(layout, "Số điện thoại", _phone, 5, 6);
 
         _voucher.PlaceholderText = "Nhập mã nếu bạn có";
-        AddField(layout, "Mã voucher", _voucher, 5, 6);
+        AddField(layout, "Mã voucher", _voucher, 7, 8);
 
         _payment.DropDownStyle = ComboBoxStyle.DropDownList;
         _payment.Items.AddRange([
             new PaymentOption("Thanh toán khi nhận hàng", "CashOnDelivery"),
             new PaymentOption("Chuyển khoản (mô phỏng)", "BankTransfer")]);
         _payment.SelectedIndex = 0;
-        AddField(layout, "Phương thức thanh toán", _payment, 7, 8);
+        AddField(layout, "Phương thức thanh toán", _payment, 9, 10);
         panel.Controls.Add(layout);
         return panel;
     }
@@ -156,14 +163,14 @@ internal sealed class CustomerCheckoutForm : Form
     private void Confirm()
     {
         var payment = _payment.SelectedItem as PaymentOption;
-        if (string.IsNullOrWhiteSpace(_address.Text) || string.IsNullOrWhiteSpace(_phone.Text))
+        if (string.IsNullOrWhiteSpace(_name.Text) || string.IsNullOrWhiteSpace(_address.Text) || string.IsNullOrWhiteSpace(_phone.Text))
         {
-            MessageBox.Show(this, "Nhập địa chỉ giao hàng và số điện thoại người nhận.", "Thiếu thông tin", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, "Nhập họ tên, địa chỉ giao hàng và số điện thoại người nhận.", "Thiếu thông tin", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
         Details = new CheckoutDetailsDto(_address.Text.Trim(), _phone.Text.Trim(), payment?.Code ?? "CashOnDelivery",
-            string.IsNullOrWhiteSpace(_voucher.Text) ? null : _voucher.Text.Trim());
+            string.IsNullOrWhiteSpace(_voucher.Text) ? null : _voucher.Text.Trim(), _name.Text.Trim());
         DialogResult = DialogResult.OK;
         Close();
     }

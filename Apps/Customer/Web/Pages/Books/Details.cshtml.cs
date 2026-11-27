@@ -27,9 +27,22 @@ public sealed class DetailsModel(CustomerWebApiClient api) : PageModel
             var token = await guestModel.EnsureCustomerTokenAsync(ct);
             var book = await api.GetBookAsync(id, ct) ?? throw new InvalidOperationException("Sản phẩm không còn tồn tại.");
             if (book.AvailableStock <= 0) throw new InvalidOperationException("Sản phẩm hiện đã hết hàng.");
-            var cart = await api.GetCartAsync(token, ct);
-            var quantity = cart.FirstOrDefault(line => line.BookId == id)?.Quantity ?? 0;
-            await api.SetCartQuantityAsync(token, id, quantity + 1, ct);
+            
+            try
+            {
+                var cart = await api.GetCartAsync(token, ct);
+                var quantity = cart.FirstOrDefault(line => line.BookId == id)?.Quantity ?? 0;
+                await api.SetCartQuantityAsync(token, id, quantity + 1, ct);
+            }
+            catch (Exception ex) when (CustomerWebApiClient.IsUnauthorizedException(ex))
+            {
+                // Nếu token cũ của cookie trước đó đã hết hạn, tự động làm mới token phiên khách vãng lai và thử lại
+                token = await guestModel.EnsureCustomerTokenAsync(ct, forceRefresh: true);
+                var cart = await api.GetCartAsync(token, ct);
+                var quantity = cart.FirstOrDefault(line => line.BookId == id)?.Quantity ?? 0;
+                await api.SetCartQuantityAsync(token, id, quantity + 1, ct);
+            }
+
             TempData["Notice"] = $"Đã thêm ‘{book.Title}’ vào giỏ hàng.";
             return buyNow ? RedirectToPage("/Checkout/Index") : RedirectToPage("/Books/Details", new { id });
         }
@@ -42,10 +55,10 @@ public sealed class DetailsModel(CustomerWebApiClient api) : PageModel
 
     private sealed class AnonymousCartHelper(HttpContext httpContext, CustomerWebApiClient apiClient) : CustomerPageModel
     {
-        public Task<string> EnsureCustomerTokenAsync(CancellationToken ct)
+        public Task<string> EnsureCustomerTokenAsync(CancellationToken ct, bool forceRefresh = false)
         {
             PageContext = new Microsoft.AspNetCore.Mvc.RazorPages.PageContext { HttpContext = httpContext };
-            return EnsureCustomerTokenAsync(apiClient, ct);
+            return EnsureCustomerTokenAsync(apiClient, ct, forceRefresh);
         }
     }
 }

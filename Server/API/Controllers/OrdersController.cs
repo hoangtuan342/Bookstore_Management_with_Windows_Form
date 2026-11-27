@@ -37,7 +37,7 @@ public sealed class OrdersController(CustomerCommerceService service) : Controll
     {
         var id = User.FindFirstValue("customer_id");
         if (id is null) return Forbid();
-        return ControllerExceptionHelper.Execute(() => service.Checkout(id, new(request.ShippingAddress, request.ReceiverPhone, request.PaymentMethod, request.VoucherCode)), StatusCodes.Status201Created);
+        return ControllerExceptionHelper.Execute(() => service.Checkout(id, new(request.ShippingAddress, request.ReceiverPhone, request.PaymentMethod, request.VoucherCode, request.ReceiverName)), StatusCodes.Status201Created);
     }
 
     [HttpPut("{id}/cancel")]

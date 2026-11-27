@@ -28,6 +28,10 @@ public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
                 CustomerProfile = await api.GetProfileAsync(token, ct);
                 if (CustomerProfile is not null)
                 {
+                    if (string.IsNullOrWhiteSpace(Input.ReceiverName) && !string.IsNullOrWhiteSpace(CustomerProfile.FullName))
+                    {
+                        Input.ReceiverName = CustomerProfile.FullName;
+                    }
                     if (string.IsNullOrWhiteSpace(Input.ReceiverPhone) && !string.IsNullOrWhiteSpace(CustomerProfile.PhoneNumber))
                     {
                         Input.ReceiverPhone = CustomerProfile.PhoneNumber;
@@ -53,9 +57,24 @@ public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
         try
         {
             var token = await EnsureCustomerTokenAsync(api, ct);
-            var order = await api.CheckoutAsync(token, new CheckoutDetailsDto(
-                Input.ShippingAddress.Trim(), Input.ReceiverPhone.Trim(), Input.PaymentMethod,
-                string.IsNullOrWhiteSpace(Input.VoucherCode) ? null : Input.VoucherCode.Trim()), ct);
+            StoreOrderDto order;
+            var checkoutDto = new CheckoutDetailsDto(
+                Input.ShippingAddress.Trim(),
+                Input.ReceiverPhone.Trim(),
+                Input.PaymentMethod,
+                string.IsNullOrWhiteSpace(Input.VoucherCode) ? null : Input.VoucherCode.Trim(),
+                string.IsNullOrWhiteSpace(Input.ReceiverName) ? null : Input.ReceiverName.Trim());
+
+            try
+            {
+                order = await api.CheckoutAsync(token, checkoutDto, ct);
+            }
+            catch (Exception ex) when (CustomerWebApiClient.IsUnauthorizedException(ex))
+            {
+                token = await EnsureCustomerTokenAsync(api, ct, forceRefresh: true);
+                order = await api.CheckoutAsync(token, checkoutDto, ct);
+            }
+
             TempData["Notice"] = "Đặt hàng thành công.";
             return RedirectToPage("/Orders/Details", new { id = order.Id });
         }
@@ -67,13 +86,23 @@ public sealed class IndexModel(CustomerWebApiClient api) : CustomerPageModel
         try
         {
             var token = await EnsureCustomerTokenAsync(api, ct);
-            Lines = await api.GetCartAsync(token, ct);
+            try
+            {
+                Lines = await api.GetCartAsync(token, ct);
+            }
+            catch (Exception ex) when (CustomerWebApiClient.IsUnauthorizedException(ex))
+            {
+                token = await EnsureCustomerTokenAsync(api, ct, forceRefresh: true);
+                Lines = await api.GetCartAsync(token, ct);
+            }
         }
         catch { Lines = []; }
     }
 
     public sealed class CheckoutInput
     {
+        [Required(ErrorMessage = "Vui lòng nhập họ và tên người nhận."), StringLength(100, MinimumLength = 2), Display(Name = "Họ và tên người nhận")]
+        public string ReceiverName { get; set; } = string.Empty;
         [Required, StringLength(500, MinimumLength = 8), Display(Name = "Địa chỉ nhận hàng")]
         public string ShippingAddress { get; set; } = string.Empty;
         [Required, Phone, StringLength(30), Display(Name = "Số điện thoại người nhận")]

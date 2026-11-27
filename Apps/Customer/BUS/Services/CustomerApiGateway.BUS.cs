@@ -106,8 +106,34 @@ public sealed class CustomerApiGateway : IDisposable
         return await response.Content.ReadFromJsonAsync<T>(cancellationToken: cancellationToken);
     }
 
+    public async Task EnsureGuestSessionAsync(CancellationToken cancellationToken = default)
+    {
+        if (!string.IsNullOrWhiteSpace(_accessToken)) return;
+
+        var guestId = CustomerId;
+        if (string.IsNullOrWhiteSpace(guestId) || !guestId.StartsWith("KH-GUEST-"))
+        {
+            guestId = $"KH-GUEST-{Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(4))}";
+        }
+
+        using var response = await _httpClient.PostAsJsonAsync($"api/auth/guest?guestId={Uri.EscapeDataString(guestId)}", new { }, cancellationToken);
+        if (!response.IsSuccessStatusCode) return;
+
+        var auth = await response.Content.ReadFromJsonAsync<StoreAuthResultDto>(cancellationToken: cancellationToken);
+        if (auth is not null && !string.IsNullOrWhiteSpace(auth.AccessToken))
+        {
+            _accessToken = auth.AccessToken;
+            CustomerId = auth.CustomerId ?? guestId;
+            Role = auth.Role;
+        }
+    }
+
     private async Task<HttpResponseMessage> SendAuthorizedCoreAsync(HttpMethod method, string path, object? body, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(_accessToken))
+        {
+            await EnsureGuestSessionAsync(cancellationToken);
+        }
         if (string.IsNullOrWhiteSpace(_accessToken)) throw new UnauthorizedAccessException("Vui lòng đăng nhập để tiếp tục.");
         using var request = new HttpRequestMessage(method, path);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
