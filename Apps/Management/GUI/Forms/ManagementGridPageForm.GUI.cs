@@ -84,6 +84,8 @@ internal class ManagementGridPageForm : Form
         "Disabled" => "Đã khóa",
         "Inactive" => "Ngừng hoạt động",
         "Posted" => "Đã ghi nhận",
+        "Completed" => "Đã hoàn thành",
+        "Reversed" => "Đã đảo phiếu",
         "Cancelled" => "Đã hủy",
         "Expired" => "Đã hết hạn",
         _ => value

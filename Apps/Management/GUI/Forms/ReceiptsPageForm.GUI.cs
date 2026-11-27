@@ -68,6 +68,17 @@ internal sealed class ReceiptsPageForm : ManagementGridPageForm
         AddAction("Tải", "load");
         AddAction("Tạo phiếu nhập", "create");
         AddAction("Đảo phiếu", "cancel");
+
+        Grid.CellFormatting += (_, e) =>
+        {
+            if (e.RowIndex < 0 || e.Value is null) return;
+            var colName = Grid.Columns[e.ColumnIndex].DataPropertyName;
+            if (colName == nameof(ManagerReceiptDto.Status))
+            {
+                e.Value = OrderStatusFormatter.FormatReceiptStatus(e.Value.ToString());
+                e.FormattingApplied = true;
+            }
+        };
     }
 
     protected override void OnGridDataBound()

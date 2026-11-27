@@ -30,4 +30,14 @@ public static class OrderStatusFormatter
         "BankTransfer" => "Chuyển khoản",
         _ => string.IsNullOrWhiteSpace(method) ? string.Empty : method
     };
+
+    public static string FormatReceiptStatus(string? status) => status?.Trim() switch
+    {
+        "Posted" => "Đã ghi nhận",
+        "Completed" => "Đã hoàn thành",
+        "Cancelled" => "Đã hủy",
+        "Reversed" => "Đã đảo phiếu",
+        "Pending" => "Chờ xử lý",
+        _ => string.IsNullOrWhiteSpace(status) ? string.Empty : status
+    };
 }
