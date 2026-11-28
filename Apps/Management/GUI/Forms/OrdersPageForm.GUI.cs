@@ -155,11 +155,24 @@ internal sealed class OrdersPageForm : ManagementGridPageForm
             SetHeader(nameof(ManagerOrderRowDto.EmployeeName), "Nhân viên lập");
             SetHeader(nameof(ManagerOrderRowDto.ReceiverPhone), "SĐT nhận hàng");
             SetHeader(nameof(ManagerOrderRowDto.ShippingAddress), "Địa chỉ giao hàng");
-            SetHeader(nameof(ManagerOrderRowDto.PaymentMethod), "Phương thức TT");
-            SetHeader(nameof(ManagerOrderRowDto.PaymentStatus), "Trạng thái TT");
-            SetHeader(nameof(ManagerOrderRowDto.OrderStatus), "Trạng thái hóa đơn");
+            SetHeader(nameof(ManagerOrderRowDto.PaymentMethod), "Phương thức thanh toán");
+            SetHeader(nameof(ManagerOrderRowDto.PaymentStatus), "Trạng thái thanh toán");
+            SetHeader(nameof(ManagerOrderRowDto.OrderStatus), "Trạng thái đơn hàng");
             SetHeader(nameof(ManagerOrderRowDto.ItemCount), "Số mặt hàng");
             SetHeader(nameof(ManagerOrderRowDto.TotalAmount), "Tổng tiền (VNĐ)");
+
+            if (Grid.Columns[nameof(ManagerOrderRowDto.OrderStatus)] is { } osCol)
+            {
+                osCol.Width = 145;
+            }
+            if (Grid.Columns[nameof(ManagerOrderRowDto.PaymentStatus)] is { } psCol)
+            {
+                psCol.Width = 155;
+            }
+            if (Grid.Columns[nameof(ManagerOrderRowDto.PaymentMethod)] is { } pmCol)
+            {
+                pmCol.Width = 160;
+            }
 
             if (Grid.Columns[nameof(ManagerOrderRowDto.CreatedAt)] is { } createdCol)
             {
