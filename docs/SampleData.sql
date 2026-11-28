@@ -154,7 +154,12 @@ WHERE NOT EXISTS (SELECT 1 FROM dbo.KMTheoHD x WHERE x.MaCTKM=v.MaCTKM AND x.Muc
 
 INSERT dbo.KMTheoVoucher (MaCTKM, MaVoucher, PhanTramGiam)
 SELECT v.MaCTKM, v.MaVoucher, v.PhanTram
-FROM (VALUES (N'DEMO-KM-VOUCHER',N'DEMO10',10.0),(N'DEMO-KM-VOUCHER',N'DEMO15',15.0)) v(MaCTKM, MaVoucher, PhanTram)
+FROM (VALUES 
+    (N'DEMO-KM-VOUCHER',N'DEMO10',10.0),
+    (N'DEMO-KM-VOUCHER',N'DEMO15',15.0),
+    (N'DEMO-KM-CU',N'DEMO-EXPIRED',10.0),
+    (N'DEMO-KM-CU',N'DEMO-USED',20.0)
+) v(MaCTKM, MaVoucher, PhanTram)
 WHERE NOT EXISTS (SELECT 1 FROM dbo.KMTheoVoucher x WHERE x.MaCTKM=v.MaCTKM AND x.MaVoucher=v.MaVoucher);
 
 /* Purchase receipts: posted records power purchase and inventory reports; one cancelled receipt tests status filtering. */

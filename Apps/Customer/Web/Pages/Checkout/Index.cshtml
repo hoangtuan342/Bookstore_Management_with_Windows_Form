@@ -13,11 +13,19 @@
     <label asp-for="Input.ReceiverName"></label><input asp-for="Input.ReceiverName" id="receiverNameInput" placeholder="Ví dụ: Nguyễn Văn A" autocomplete="name" /><span asp-validation-for="Input.ReceiverName" class="validation"></span>
     <label asp-for="Input.ShippingAddress"></label><textarea asp-for="Input.ShippingAddress" id="shippingAddressInput" rows="3" placeholder="Số nhà, đường, phường/xã, tỉnh/thành"></textarea><span asp-validation-for="Input.ShippingAddress" class="validation"></span>
     <label asp-for="Input.ReceiverPhone"></label><input asp-for="Input.ReceiverPhone" id="receiverPhoneInput" autocomplete="tel" /><span asp-validation-for="Input.ReceiverPhone" class="validation"></span>
-    <label asp-for="Input.VoucherCode"></label><input asp-for="Input.VoucherCode" placeholder="Nhập mã nếu bạn có" /><span asp-validation-for="Input.VoucherCode" class="validation"></span>
+    <label asp-for="Input.VoucherCode"></label><input asp-for="Input.VoucherCode" placeholder="Nhập mã voucher (ví dụ: VC-GIAM15)" /><span asp-validation-for="Input.VoucherCode" class="validation"></span>
+    <p class="muted small" style="margin-top:-6px; margin-bottom:10px; color:#2e5b3e;">💡 Ưu đãi: Giảm theo giá trị đơn hàng hoặc theo mã Voucher sẽ được tự động tính và áp dụng mức giảm tốt nhất khi chốt đơn.</p>
     <label asp-for="Input.PaymentMethod"></label><select asp-for="Input.PaymentMethod"><option value="CashOnDelivery">Thanh toán khi nhận hàng</option><option value="BankTransfer">Chuyển khoản (mô phỏng)</option></select>
 </section><aside class="panel order-summary"><h2>Hóa đơn của bạn</h2>
     @foreach (var line in Model.Lines) { <div class="checkout-line"><span>@line.Title <small>× @line.Quantity</small></span><strong>@line.LineTotal.ToString("N0") ₫</strong></div> }
-    <div class="summary-total"><span>Tạm tính</span><strong>@Model.Subtotal.ToString("N0") ₫</strong></div><p class="muted small">Ưu đãi voucher sẽ được xác nhận khi đặt hàng.</p>
+    <div class="summary-total"><span>Tạm tính</span><strong>@Model.Subtotal.ToString("N0") ₫</strong></div>
+    <div style="background:#f4f7f4; border-radius:6px; padding:10px; margin:10px 0; font-size:12.5px; color:#2d4734; line-height:1.4;">
+        <strong>🎁 Chính sách khuyến mãi:</strong>
+        <ul style="margin:4px 0 0 16px; padding:0;">
+            <li>Ưu đãi giảm theo hóa đơn áp dụng tự động cho đơn đạt mức tối thiểu.</li>
+            <li>Nhập mã Voucher để nhận thêm % giảm tương ứng.</li>
+        </ul>
+    </div>
     <div class="checkout-buttons"><a class="button button-light" asp-page="/Cart/Index">Quay lại giỏ</a><button class="button button-primary" type="submit">Đặt hàng</button></div>
 </aside></form>
 

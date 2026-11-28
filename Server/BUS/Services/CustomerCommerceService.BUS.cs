@@ -96,19 +96,20 @@ namespace TrangSach.BUS
             }
 
             var now = DateTime.UtcNow;
-            var discounts = pricing.GetActiveDiscounts(cart.Select(x => x.BookId).ToList(), now);
+            var promoDetails = pricing.GetActivePromotionDetails(cart.Select(x => x.BookId).ToList(), now);
 
             var lines = cart.Select(x =>
             {
-                decimal discount = discounts.ContainsKey(x.BookId) ? discounts[x.BookId] : 0;
+                decimal discount = promoDetails.TryGetValue(x.BookId, out var pInfo) ? pInfo.DiscountPercent : 0;
                 var unit = BookPricingService.ApplyDiscount(x.SalePrice, discount);
                 return (x.BookId, x.Quantity, unit, unit * x.Quantity);
             }).ToList();
 
             var subtotal = lines.Sum(x => x.Item4);
-            var orderRate = pricing.GetOrderDiscount(subtotal, now);
+            var (orderRate, orderPromoName, orderMinAmount) = pricing.GetOrderDiscountDetails(subtotal, now);
 
             decimal voucherRate = 0;
+            string voucherPromoName = "";
             string? voucherCode = command.VoucherCode?.Trim();
             if (!string.IsNullOrWhiteSpace(voucherCode))
             {
@@ -118,7 +119,9 @@ namespace TrangSach.BUS
                 {
                     throw new InvalidOperationException("Voucher không tồn tại, đã hết hạn hoặc đã hết lượt sử dụng.");
                 }
-                voucherRate = pricing.GetVoucherDiscount(voucherCode, now);
+                var vDetails = pricing.GetVoucherDiscountDetails(voucherCode, now);
+                voucherRate = vDetails.DiscountPercent;
+                voucherPromoName = vDetails.PromoName;
                 if (voucherRate <= 0)
                 {
                     throw new InvalidOperationException("Voucher hiện không áp dụng được.");
@@ -129,9 +132,35 @@ namespace TrangSach.BUS
             var orderDiscount = decimal.Round(subtotal * appliedRate / 100m, 2, MidpointRounding.AwayFromZero);
             var itemDiscount = cart.Sum(x =>
             {
-                decimal discount = discounts.ContainsKey(x.BookId) ? discounts[x.BookId] : 0;
+                decimal discount = promoDetails.TryGetValue(x.BookId, out var pInfo) ? pInfo.DiscountPercent : 0;
                 return (x.SalePrice - BookPricingService.ApplyDiscount(x.SalePrice, discount)) * x.Quantity;
             });
+
+            // Tổng hợp mô tả khuyến mãi
+            var discountDescriptions = new List<string>();
+            var itemPromoNames = promoDetails.Values
+                .Where(v => v.DiscountPercent > 0 && !string.IsNullOrWhiteSpace(v.PromoName))
+                .Select(v => v.PromoName)
+                .Distinct()
+                .ToList();
+            if (itemPromoNames.Count > 0)
+            {
+                discountDescriptions.Add($"Giảm theo sách: {string.Join(", ", itemPromoNames)} (-{itemDiscount:N0} ₫)");
+            }
+
+            if (voucherRate >= orderRate && voucherRate > 0)
+            {
+                var vPromo = !string.IsNullOrWhiteSpace(voucherPromoName) ? $" ({voucherPromoName})" : "";
+                discountDescriptions.Add($"Voucher {voucherCode}: giảm {voucherRate:0.#}% (-{orderDiscount:N0} ₫){vPromo}");
+            }
+            else if (orderRate > 0)
+            {
+                var oPromo = !string.IsNullOrWhiteSpace(orderPromoName) ? $" ({orderPromoName})" : "";
+                var minStr = orderMinAmount > 0 ? $"cho đơn từ {orderMinAmount:N0} ₫" : "đơn hàng";
+                discountDescriptions.Add($"Giảm {orderRate:0.#}% {minStr} (-{orderDiscount:N0} ₫){oPromo}");
+            }
+
+            var discountDescription = string.Join("; ", discountDescriptions);
 
             string? finalVoucherId = (voucherRate >= orderRate && voucherRate > 0) ? voucherCode : null;
             var orderId = $"HD{now:yyyyMMddHHmmss}{Convert.ToHexString(RandomNumberGenerator.GetBytes(3))}";
@@ -141,21 +170,23 @@ namespace TrangSach.BUS
 
             dao.Orders.InsertOrder(orderId, now, customerId, null, finalVoucherId,
                 totalAmount, totalDiscount, "Pending", payStatus, payment,
-                command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(), lines);
+                command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(), lines, discountDescription);
 
             dao.Users.ClearCart(customerId);
 
             var storeLines = cart.Select(x =>
             {
-                decimal discount = discounts.ContainsKey(x.BookId) ? discounts[x.BookId] : 0;
+                decimal discount = promoDetails.TryGetValue(x.BookId, out var pInfo) ? pInfo.DiscountPercent : 0;
+                string promoName = promoDetails.TryGetValue(x.BookId, out var pInfo2) ? pInfo2.PromoName : "";
                 var unit = BookPricingService.ApplyDiscount(x.SalePrice, discount);
-                return new StoreOrderLineDto(x.BookId, x.Title, x.Quantity, unit, unit * x.Quantity, x.CoverImagePath);
+                return new StoreOrderLineDto(x.BookId, x.Title, x.Quantity, unit, unit * x.Quantity, x.CoverImagePath,
+                    originalPrice: x.SalePrice, discountPercent: discount, promotionName: promoName);
             }).ToList();
 
             var orderDto = new StoreOrderDto(
                 orderId, now, "Pending", payStatus, payment,
                 command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(),
-                totalAmount, totalDiscount, storeLines);
+                totalAmount, totalDiscount, storeLines, discountDescription, finalVoucherId);
 
             return orderDto;
         }

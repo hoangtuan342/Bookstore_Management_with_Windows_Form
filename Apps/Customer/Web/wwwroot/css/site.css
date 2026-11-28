@@ -1177,3 +1177,211 @@ body {
         margin-bottom: 12px;
     }
 }
+
+/* ==========================================================================
+   BỘ LỌC TÌM KIẾM ĐA ĐIỀU KIỆN & KHUYẾN MÃI (CUSTOMER STORE)
+   ========================================================================== */
+.catalog-filter-box {
+    background: #ffffff;
+    border: 1px solid #e2e5df;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0 30px;
+    box-shadow: 0 4px 18px rgba(37, 52, 38, 0.05);
+}
+
+.search-main-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.filter-search-group {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.filter-search-group .filter-icon {
+    position: absolute;
+    left: 14px;
+    font-size: 16px;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.filter-search-group input[type="search"] {
+    width: 100%;
+    padding: 12px 14px 12px 42px;
+    font-size: 15px;
+    border: 1px solid #d4d8cf;
+    border-radius: 8px;
+    background: #fdfdfc;
+    transition: all 0.2s;
+}
+
+.filter-search-group input[type="search"]:focus {
+    border-color: var(--forest);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(53, 86, 68, 0.15);
+}
+
+.filter-submit-btn {
+    padding: 12px 24px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.filter-reset-btn {
+    padding: 12px 18px;
+    white-space: nowrap;
+    border-color: #d4d8cf;
+    color: #555e54;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #f0f2ed;
+}
+
+.filter-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #636d61;
+}
+
+.filter-col select {
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 13.5px;
+    border: 1px solid #d9ddd5;
+    border-radius: 6px;
+    background: #ffffff;
+    color: var(--ink);
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.filter-col select:focus {
+    border-color: var(--forest);
+    box-shadow: 0 0 0 2px rgba(53, 86, 68, 0.12);
+}
+
+.custom-price-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: #f7f8f5;
+    border-radius: 6px;
+    font-size: 13.5px;
+    color: #4b5548;
+}
+
+.custom-price-row.is-hidden {
+    display: none !important;
+}
+
+.custom-price-row input {
+    width: 150px;
+    padding: 6px 10px;
+    font-size: 13.5px;
+    border: 1px solid #d0d5cb;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.button-small {
+    padding: 6px 12px;
+    font-size: 12.5px;
+}
+
+/* Badge khuyến mãi trên bìa sách */
+.promo-badge-ribbon {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: linear-gradient(135deg, #e53935, #c62828);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 4px 9px;
+    border-radius: 4px;
+    box-shadow: 0 3px 8px rgba(198, 40, 40, 0.4);
+    z-index: 3;
+    letter-spacing: 0.02em;
+}
+
+.book-card.has-promotion {
+    border-color: #ffd8d6;
+}
+
+.book-card.has-promotion:hover {
+    border-color: #e57373;
+}
+
+.book-tags {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.publisher-tag {
+    font-size: 11px;
+    color: #5d675b;
+    background: #f0f3ed;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.book-promo-indicator {
+    margin: 4px 0 8px;
+}
+
+.promo-tag {
+    display: inline-block;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #c62828;
+    background: #ffebee;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #ffcdd2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.price-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.original-price {
+    font-size: 12px;
+    color: #8c938a;
+    text-decoration: line-through;
+    margin-top: -2px;
+}
+

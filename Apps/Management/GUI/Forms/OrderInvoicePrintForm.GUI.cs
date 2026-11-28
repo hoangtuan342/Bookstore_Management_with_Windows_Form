@@ -162,12 +162,14 @@ public sealed class OrderInvoicePrintForm : Form
 
         // 4. Bảng chi tiết mặt hàng
         float colNo = left;
-        float wNo = 40;
+        float wNo = 35;
         float colTitle = colNo + wNo;
-        float wTitle = width - 330;
+        float wTitle = width - 405;
         float colQty = colTitle + wTitle;
-        float wQty = 60;
-        float colPrice = colQty + wQty;
+        float wQty = 45;
+        float colOrig = colQty + wQty;
+        float wOrig = 95;
+        float colPrice = colOrig + wOrig;
         float wPrice = 110;
         float colTotal = colPrice + wPrice;
         float wTotal = 120;
@@ -183,7 +185,8 @@ public sealed class OrderInvoicePrintForm : Form
         g.DrawString("STT", fontHead, brushDark, new RectangleF(colNo, y, wNo, 26), sfCenterAlign);
         g.DrawString("Tên sách / Sản phẩm", fontHead, brushDark, new RectangleF(colTitle + 6, y, wTitle - 6, 26), sfLeft);
         g.DrawString("SL", fontHead, brushDark, new RectangleF(colQty, y, wQty, 26), sfCenterAlign);
-        g.DrawString("Đơn giá", fontHead, brushDark, new RectangleF(colPrice, y, wPrice - 6, 26), sfRight);
+        g.DrawString("Giá gốc", fontHead, brushDark, new RectangleF(colOrig, y, wOrig - 6, 26), sfRight);
+        g.DrawString("Đơn giá bán", fontHead, brushDark, new RectangleF(colPrice, y, wPrice - 6, 26), sfRight);
         g.DrawString("Thành tiền", fontHead, brushDark, new RectangleF(colTotal, y, wTotal - 6, 26), sfRight);
         y += 26;
 
@@ -197,11 +200,20 @@ public sealed class OrderInvoicePrintForm : Form
             g.DrawString(index.ToString(), fontBody, brushDark, new RectangleF(colNo, y, wNo, rowH), sfCenterAlign);
 
             var bookTitle = line.Title;
-            if (bookTitle.Length > 42) bookTitle = bookTitle.Substring(0, 39) + "...";
+            if (bookTitle.Length > 36) bookTitle = bookTitle.Substring(0, 33) + "...";
             g.DrawString(bookTitle, fontBody, brushDark, new RectangleF(colTitle + 6, y, wTitle - 6, rowH), sfLeft);
 
             g.DrawString(line.Quantity.ToString(), fontBody, brushDark, new RectangleF(colQty, y, wQty, rowH), sfCenterAlign);
-            g.DrawString($"{line.UnitPrice:N0} ₫", fontBody, brushDark, new RectangleF(colPrice, y, wPrice - 6, rowH), sfRight);
+
+            var origPrice = line.OriginalPrice > 0 ? line.OriginalPrice : line.UnitPrice;
+            g.DrawString($"{origPrice:N0} ₫", fontBody, brushMuted, new RectangleF(colOrig, y, wOrig - 6, rowH), sfRight);
+
+            var priceText = $"{line.UnitPrice:N0} ₫";
+            if (line.DiscountPercent > 0)
+            {
+                priceText += $" (-{line.DiscountPercent:0.#}%)";
+            }
+            g.DrawString(priceText, fontBody, brushDark, new RectangleF(colPrice, y, wPrice - 6, rowH), sfRight);
             g.DrawString($"{line.LineTotal:N0} ₫", fontBodyBold, brushDark, new RectangleF(colTotal, y, wTotal - 6, rowH), sfRight);
 
             y += rowH;
@@ -211,16 +223,39 @@ public sealed class OrderInvoicePrintForm : Form
         y += 15;
 
         // 5. Tổng kết
-        float sumBoxW = 260;
+        float sumBoxW = 320;
         float sumBoxX = right - sumBoxW;
+
+        decimal totalOriginal = _order.TotalAmount + _order.DiscountAmount;
 
         g.DrawString($"Tổng số lượng:", fontSub, brushDark, sumBoxX, y);
         g.DrawString($"{_order.ItemCount} quyển", fontSubBold, brushDark, right - 6, y, sfRight);
         y += 20;
 
+        g.DrawString("Tổng tiền hàng (gốc):", fontSub, brushDark, sumBoxX, y);
+        g.DrawString($"{totalOriginal:N0} VNĐ", fontSubBold, brushDark, right - 6, y, sfRight);
+        y += 20;
+
+        if (_order.DiscountAmount > 0)
+        {
+            using var brushRed = new SolidBrush(Color.FromArgb(198, 40, 40));
+            g.DrawString("Giảm trừ khuyến mãi:", fontSubBold, brushRed, sumBoxX, y);
+            g.DrawString($"-{_order.DiscountAmount:N0} VNĐ", fontSubBold, brushRed, right - 6, y, sfRight);
+            y += 18;
+
+            if (!string.IsNullOrWhiteSpace(_order.DiscountDescription))
+            {
+                using var fontSmall = new Font("Segoe UI", 8.5F, FontStyle.Italic);
+                var noteText = $"Chi tiết KM: {_order.DiscountDescription}";
+                if (noteText.Length > 55) noteText = noteText.Substring(0, 52) + "...";
+                g.DrawString(noteText, fontSmall, brushRed, sumBoxX, y);
+                y += 18;
+            }
+        }
+
         g.DrawString("Tổng cộng thanh toán:", fontTotal, brushGreen, sumBoxX, y);
         g.DrawString($"{_order.TotalAmount:N0} VNĐ", fontTotal, brushGreen, right - 6, y, sfRight);
-        y += 40;
+        y += 35;
 
         // 6. Lời cảm ơn & Chữ ký
         g.DrawLine(penLine, left, y, right, y);

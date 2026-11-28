@@ -67,27 +67,40 @@ namespace TrangSach.BUS
             }
 
             var now = DateTime.UtcNow;
-            var discounts = _pricing.GetActiveDiscounts(command.Lines.Select(x => x.BookId).ToList(), now);
+            var promoDetails = _pricing.GetActivePromotionDetails(command.Lines.Select(x => x.BookId).ToList(), now);
 
             var orderLines = command.Lines.Select(x =>
             {
                 var book = books.First(b => b.BookId == x.BookId);
-                decimal pct = discounts.TryGetValue(x.BookId, out var d) ? d : 0;
+                decimal pct = promoDetails.TryGetValue(x.BookId, out var pInfo) ? pInfo.DiscountPercent : 0;
                 var unit = BookPricingService.ApplyDiscount(book.Price, pct);
-                return (BookId: x.BookId, Quantity: x.Quantity, UnitPrice: unit, LineTotal: unit * x.Quantity);
+                return (BookId: x.BookId, Quantity: x.Quantity, UnitPrice: unit, LineTotal: unit * x.Quantity, OriginalPrice: book.Price, DiscountPercent: pct, PromoName: promoDetails.TryGetValue(x.BookId, out var pInfo2) ? pInfo2.PromoName : "");
             }).ToList();
 
             var subtotal = orderLines.Sum(l => l.LineTotal);
-            var orderDiscPct = _pricing.GetOrderDiscount(subtotal, now);
+            var (orderDiscPct, orderPromoName, orderMinAmount) = _pricing.GetOrderDiscountDetails(subtotal, now);
             var orderDisc = decimal.Round(subtotal * orderDiscPct / 100m, 2, MidpointRounding.AwayFromZero);
             var total = subtotal - orderDisc;
-            var itemDisc = orderLines.Sum(l =>
-            {
-                var book = books.First(b => b.BookId == l.BookId);
-                decimal pct = discounts.TryGetValue(l.BookId, out var d) ? d : 0;
-                return (book.Price - BookPricingService.ApplyDiscount(book.Price, pct)) * l.Quantity;
-            });
+            var itemDisc = orderLines.Sum(l => (l.OriginalPrice - l.UnitPrice) * l.Quantity);
             var totalDisc = itemDisc + orderDisc;
+
+            var discountDescriptions = new List<string>();
+            var itemPromoNames = promoDetails.Values
+                .Where(v => v.DiscountPercent > 0 && !string.IsNullOrWhiteSpace(v.PromoName))
+                .Select(v => v.PromoName)
+                .Distinct()
+                .ToList();
+            if (itemPromoNames.Count > 0)
+            {
+                discountDescriptions.Add($"Giảm theo sách: {string.Join(", ", itemPromoNames)} (-{itemDisc:N0} ₫)");
+            }
+            if (orderDiscPct > 0)
+            {
+                var oPromo = !string.IsNullOrWhiteSpace(orderPromoName) ? $" ({orderPromoName})" : "";
+                var minStr = orderMinAmount > 0 ? $"cho đơn từ {orderMinAmount:N0} ₫" : "đơn hàng";
+                discountDescriptions.Add($"Giảm {orderDiscPct:0.#}% {minStr} (-{orderDisc:N0} ₫){oPromo}");
+            }
+            var discountDescription = string.Join("; ", discountDescriptions);
 
             var orderId = $"HD{now:yyyyMMddHHmmss}{Convert.ToHexString(RandomNumberGenerator.GetBytes(3))}";
             var payStatus = payment == "CashOnDelivery" ? "Unpaid" : "AwaitingPayment";
@@ -128,7 +141,8 @@ namespace TrangSach.BUS
             _dao.Orders.InsertOrder(orderId, now, customerId, employeeId, null,
                 total, totalDisc, "Pending", payStatus, payment,
                 command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(),
-                orderLines.Select(l => (l.BookId, l.Quantity, l.UnitPrice, l.LineTotal)).ToList());
+                orderLines.Select(l => (l.BookId, l.Quantity, l.UnitPrice, l.LineTotal)).ToList(),
+                discountDescription);
 
             var employeeName = string.Empty;
             if (!string.IsNullOrWhiteSpace(employeeId))
@@ -142,8 +156,11 @@ namespace TrangSach.BUS
                 orderLines.Select(l =>
                 {
                     var book = books.First(b => b.BookId == l.BookId);
-                    return new ManagerOrderLineDto(l.BookId, book.Title, l.Quantity, l.UnitPrice, l.LineTotal);
-                }).ToList());
+                    return new ManagerOrderLineDto(l.BookId, book.Title, l.Quantity, l.UnitPrice, l.LineTotal,
+                        originalPrice: l.OriginalPrice, discountPercent: l.DiscountPercent, promotionName: l.PromoName);
+                }).ToList(),
+                discountAmount: totalDisc,
+                discountDescription: discountDescription);
             _orders.Insert(0, newRow);
 
             return new AdminOrderCreated(orderId, total, now);
@@ -175,30 +192,43 @@ namespace TrangSach.BUS
                     throw new ArgumentException("Một hoặc nhiều đầu sách không tồn tại hoặc đang ẩn.");
 
                 var now = DateTime.UtcNow;
-                var discounts = _pricing.GetActiveDiscounts(command.Lines.Select(x => x.BookId).ToList(), now);
+                var promoDetails = _pricing.GetActivePromotionDetails(command.Lines.Select(x => x.BookId).ToList(), now);
 
                 var orderLines = command.Lines.Select(x =>
                 {
                     var book = books.First(b => b.BookId == x.BookId);
-                    decimal pct = discounts.TryGetValue(x.BookId, out var d) ? d : 0;
+                    decimal pct = promoDetails.TryGetValue(x.BookId, out var pInfo) ? pInfo.DiscountPercent : 0;
                     var unit = BookPricingService.ApplyDiscount(book.Price, pct);
-                    return (BookId: x.BookId, Quantity: x.Quantity, UnitPrice: unit, LineTotal: unit * x.Quantity);
+                    return (BookId: x.BookId, Quantity: x.Quantity, UnitPrice: unit, LineTotal: unit * x.Quantity, OriginalPrice: book.Price, DiscountPercent: pct, PromoName: promoDetails.TryGetValue(x.BookId, out var pInfo2) ? pInfo2.PromoName : "");
                 }).ToList();
 
                 var subtotal = orderLines.Sum(l => l.LineTotal);
-                var orderDiscPct = _pricing.GetOrderDiscount(subtotal, now);
+                var (orderDiscPct, orderPromoName, orderMinAmount) = _pricing.GetOrderDiscountDetails(subtotal, now);
                 var orderDisc = decimal.Round(subtotal * orderDiscPct / 100m, 2, MidpointRounding.AwayFromZero);
                 var total = subtotal - orderDisc;
-                var itemDisc = orderLines.Sum(l =>
-                {
-                    var book = books.First(b => b.BookId == l.BookId);
-                    decimal pct = discounts.TryGetValue(l.BookId, out var d) ? d : 0;
-                    return (book.Price - BookPricingService.ApplyDiscount(book.Price, pct)) * l.Quantity;
-                });
+                var itemDisc = orderLines.Sum(l => (l.OriginalPrice - l.UnitPrice) * l.Quantity);
                 var totalDisc = itemDisc + orderDisc;
 
+                var discountDescriptions = new List<string>();
+                var itemPromoNames = promoDetails.Values
+                    .Where(v => v.DiscountPercent > 0 && !string.IsNullOrWhiteSpace(v.PromoName))
+                    .Select(v => v.PromoName)
+                    .Distinct()
+                    .ToList();
+                if (itemPromoNames.Count > 0)
+                {
+                    discountDescriptions.Add($"Giảm theo sách: {string.Join(", ", itemPromoNames)} (-{itemDisc:N0} ₫)");
+                }
+                if (orderDiscPct > 0)
+                {
+                    var oPromo = !string.IsNullOrWhiteSpace(orderPromoName) ? $" ({orderPromoName})" : "";
+                    var minStr = orderMinAmount > 0 ? $"cho đơn từ {orderMinAmount:N0} ₫" : "đơn hàng";
+                    discountDescriptions.Add($"Giảm {orderDiscPct:0.#}% {minStr} (-{orderDisc:N0} ₫){oPromo}");
+                }
+                var discountDescription = string.Join("; ", discountDescriptions);
+
                 _dao.Orders.UpdateOrderFull(id, command.ShippingAddress.Trim(), command.ReceiverPhone.Trim(), payment, paymentStatus,
-                    total, totalDisc, orderLines.Select(l => (l.BookId, l.Quantity, l.UnitPrice, l.LineTotal)).ToList(), command.EmployeeId);
+                    total, totalDisc, orderLines.Select(l => (l.BookId, l.Quantity, l.UnitPrice, l.LineTotal)).ToList(), command.EmployeeId, discountDescription);
 
                 cached.ShippingAddress = command.ShippingAddress;
                 cached.ReceiverPhone = command.ReceiverPhone;
@@ -211,11 +241,14 @@ namespace TrangSach.BUS
                 }
                 if (!string.IsNullOrWhiteSpace(command.CustomerName)) cached.CustomerName = command.CustomerName;
                 cached.TotalAmount = total;
+                cached.DiscountAmount = totalDisc;
+                cached.DiscountDescription = discountDescription;
                 cached.ItemCount = command.Lines.Sum(l => l.Quantity);
                 cached.Lines = orderLines.Select(l =>
                 {
                     var book = books.First(b => b.BookId == l.BookId);
-                    return new ManagerOrderLineDto(l.BookId, book.Title, l.Quantity, l.UnitPrice, l.LineTotal);
+                    return new ManagerOrderLineDto(l.BookId, book.Title, l.Quantity, l.UnitPrice, l.LineTotal,
+                        originalPrice: l.OriginalPrice, discountPercent: l.DiscountPercent, promotionName: l.PromoName);
                 }).ToList();
             }
             else

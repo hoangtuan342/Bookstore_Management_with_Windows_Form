@@ -52,12 +52,13 @@ namespace TrangSach.BUS
             var book = _activeBooks.FirstOrDefault(b => b.Id == id);
             if (book == null) return null;
 
-            var discounts = _pricing.GetActiveDiscounts(new List<string> { id }, System.DateTime.UtcNow);
-            if (discounts.TryGetValue(id, out var pct) && pct > 0)
+            var discounts = _pricing.GetActivePromotionDetails(new List<string> { id }, System.DateTime.UtcNow);
+            if (discounts.TryGetValue(id, out var promoInfo) && promoInfo.DiscountPercent > 0)
             {
-                var finalPrice = BookPricingService.ApplyDiscount(book.Price, pct);
+                var finalPrice = BookPricingService.ApplyDiscount(book.Price, promoInfo.DiscountPercent);
                 return new BookItemDto(book.Id, book.Title, book.Author, book.Category, finalPrice,
-                    book.CoverStyle, $"GIẢM {pct:0.#}%", book.Description, book.AvailableStock, book.Publisher, book.CoverImagePath, book.Isbn);
+                    book.CoverStyle, $"GIẢM {promoInfo.DiscountPercent:0.#}%", book.Description, book.AvailableStock, book.Publisher, book.CoverImagePath, book.Isbn,
+                    originalPrice: book.Price, discountPercent: promoInfo.DiscountPercent, promotionName: promoInfo.PromoName, promotionType: promoInfo.PromoType);
             }
             return book;
         }
@@ -66,15 +67,16 @@ namespace TrangSach.BUS
         {
             if (books.Count == 0) return;
             var ids = books.Select(b => b.Id).ToList();
-            var discounts = _pricing.GetActiveDiscounts(ids, nowUtc);
+            var discounts = _pricing.GetActivePromotionDetails(ids, nowUtc);
             for (int i = 0; i < books.Count; i++)
             {
                 var b = books[i];
-                if (discounts.TryGetValue(b.Id, out var pct) && pct > 0)
+                if (discounts.TryGetValue(b.Id, out var promoInfo) && promoInfo.DiscountPercent > 0)
                 {
-                    var newPrice = BookPricingService.ApplyDiscount(b.Price, pct);
+                    var newPrice = BookPricingService.ApplyDiscount(b.Price, promoInfo.DiscountPercent);
                     books[i] = new BookItemDto(b.Id, b.Title, b.Author, b.Category, newPrice,
-                        b.CoverStyle, $"GIẢM {pct:0.#}%", b.Description, b.AvailableStock, b.Publisher, b.CoverImagePath, b.Isbn);
+                        b.CoverStyle, $"GIẢM {promoInfo.DiscountPercent:0.#}%", b.Description, b.AvailableStock, b.Publisher, b.CoverImagePath, b.Isbn,
+                        originalPrice: b.Price, discountPercent: promoInfo.DiscountPercent, promotionName: promoInfo.PromoName, promotionType: promoInfo.PromoType);
                 }
             }
         }

@@ -12,13 +12,15 @@ namespace TrangSach.Shared.DTO
         public string ReceiverPhone { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
         public decimal DiscountAmount { get; set; }
+        public string DiscountDescription { get; set; } = string.Empty;
+        public string? VoucherCode { get; set; }
         public List<StoreOrderLineDto> Lines { get; set; } = new List<StoreOrderLineDto>();
 
         public StoreOrderDto()
         {
         }
 
-        public StoreOrderDto(string id, DateTime createdAt, string status, string paymentStatus, string paymentMethod, string shippingAddress, string receiverPhone, decimal totalAmount, decimal discountAmount, List<StoreOrderLineDto> lines)
+        public StoreOrderDto(string id, DateTime createdAt, string status, string paymentStatus, string paymentMethod, string shippingAddress, string receiverPhone, decimal totalAmount, decimal discountAmount, List<StoreOrderLineDto> lines, string discountDescription = "", string? voucherCode = null)
         {
             this.Id = id;
             this.CreatedAt = createdAt;
@@ -30,6 +32,8 @@ namespace TrangSach.Shared.DTO
             this.TotalAmount = totalAmount;
             this.DiscountAmount = discountAmount;
             this.Lines = lines;
+            this.DiscountDescription = discountDescription;
+            this.VoucherCode = voucherCode;
         }
     }
 }

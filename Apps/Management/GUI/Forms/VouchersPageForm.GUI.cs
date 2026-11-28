@@ -34,11 +34,17 @@ internal sealed class VouchersPageForm : ManagementGridPageForm
             }
 
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerVoucherDto.Id), "Mã Voucher");
+            SetHeader(nameof(TrangSach.Shared.DTO.ManagerVoucherDto.PromotionInfo), "Chương trình khuyến mãi");
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerVoucherDto.Status), "Trạng thái");
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerVoucherDto.ExpiresAt), "Hạn sử dụng");
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerVoucherDto.MaxUsageCount), "Số lượt tối đa");
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerVoucherDto.UsageCount), "Đã sử dụng");
             SetHeader(nameof(TrangSach.Shared.DTO.ManagerVoucherDto.OrderCount), "Số đơn áp dụng");
+
+            if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerVoucherDto.PromotionInfo)] is { } pInfoCol)
+            {
+                pInfoCol.Width = 240;
+            }
 
             if (Grid.Columns[nameof(TrangSach.Shared.DTO.ManagerVoucherDto.ExpiresAt)] is { } expCol)
             {

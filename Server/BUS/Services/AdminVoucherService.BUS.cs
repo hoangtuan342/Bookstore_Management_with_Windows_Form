@@ -45,11 +45,11 @@ namespace TrangSach.BUS
             if (command.MaxUsageCount is < 1 or > 1000000)
                 throw new ArgumentException("Số lượt sử dụng tối đa phải từ 1 đến 1.000.000.");
 
-            if (command.DiscountPercent is <= 0 or > 100)
-                throw new ArgumentException("Phần trăm giảm giá phải từ 0.1% đến 100%.");
+            if (string.IsNullOrWhiteSpace(command.PromotionId))
+                throw new ArgumentException("Voucher bắt buộc phải thuộc một chương trình khuyến mãi (CTKM).");
 
-            if (!string.IsNullOrWhiteSpace(command.PromotionId) && !command.DiscountPercent.HasValue)
-                throw new ArgumentException("Khi gắn voucher vào chương trình khuyến mãi, vui lòng nhập % giảm giá.");
+            if (!command.DiscountPercent.HasValue || command.DiscountPercent.Value <= 0 || command.DiscountPercent.Value > 100)
+                throw new ArgumentException("Phần trăm giảm giá của voucher trong CTKM phải từ 0.1% đến 100%.");
 
             var existing = dao.Promotions.FindVoucher(code);
             if (existing != null)

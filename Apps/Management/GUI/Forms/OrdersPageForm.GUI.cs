@@ -51,17 +51,35 @@ internal sealed class OrdersPageForm : ManagementGridPageForm
                     qty.HeaderText = "Số lượng";
                     qty.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
                 }
+                if (detailGrid.Columns["OriginalPrice"] is { } orig)
+                {
+                    orig.HeaderText = "Giá gốc (VNĐ)";
+                    orig.DefaultCellStyle.Format = "N0";
+                    orig.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                }
                 if (detailGrid.Columns["UnitPrice"] is { } price)
                 {
-                    price.HeaderText = "Đơn giá (VNĐ)";
+                    price.HeaderText = "Đơn giá bán (VNĐ)";
                     price.DefaultCellStyle.Format = "N0";
                     price.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                }
+                if (detailGrid.Columns["DiscountPercent"] is { } disc)
+                {
+                    disc.HeaderText = "% Giảm theo sách";
+                    disc.DefaultCellStyle.Format = "0.#\\%";
+                    disc.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    disc.Width = 130;
                 }
                 if (detailGrid.Columns["LineTotal"] is { } total)
                 {
                     total.HeaderText = "Thành tiền (VNĐ)";
                     total.DefaultCellStyle.Format = "N0";
                     total.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                }
+                if (detailGrid.Columns["PromotionName"] is { } promo)
+                {
+                    promo.HeaderText = "CTKM theo sách";
+                    promo.Width = 160;
                 }
             }
             catch { }
@@ -76,7 +94,17 @@ internal sealed class OrdersPageForm : ManagementGridPageForm
                 return;
             }
 
-            SetDetailsTitle($"CHI TIẾT HÓA ĐƠN {order.Id} · {order.CustomerName} · {order.ItemCount} mặt hàng · {order.TotalAmount:N0} ₫");
+            var titleText = $"CHI TIẾT HÓA ĐƠN {order.Id} · {order.CustomerName} · {order.ItemCount} mặt hàng · Tổng: {order.TotalAmount:N0} ₫";
+            if (order.DiscountAmount > 0)
+            {
+                titleText += $" · [ĐÃ GIẢM: -{order.DiscountAmount:N0} ₫";
+                if (!string.IsNullOrWhiteSpace(order.DiscountDescription))
+                {
+                    titleText += $" ({order.DiscountDescription})";
+                }
+                titleText += "]";
+            }
+            SetDetailsTitle(titleText);
             detailGrid.DataSource = order.Lines.ToList();
         };
         AddAction("Tải", "load");
@@ -145,6 +173,18 @@ internal sealed class OrdersPageForm : ManagementGridPageForm
             {
                 totalCol.DefaultCellStyle.Format = "N0";
                 totalCol.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            }
+            if (Grid.Columns[nameof(ManagerOrderRowDto.DiscountAmount)] is { } discCol)
+            {
+                discCol.Visible = false;
+            }
+            if (Grid.Columns[nameof(ManagerOrderRowDto.DiscountDescription)] is { } discDescCol)
+            {
+                discDescCol.Visible = false;
+            }
+            if (Grid.Columns[nameof(ManagerOrderRowDto.VoucherCode)] is { } vchCol)
+            {
+                vchCol.Visible = false;
             }
             if (Grid.Columns[nameof(ManagerOrderRowDto.Lines)] is { } linesCol)
             {

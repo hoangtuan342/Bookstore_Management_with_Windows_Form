@@ -4,6 +4,7 @@ namespace TrangSach.Shared.DTO
     public class ManagerVoucherDto
     {
         public string Id { get; set; } = string.Empty;
+        public string PromotionInfo { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public DateTime? ExpiresAt { get; set; }
         public int? MaxUsageCount { get; set; }
@@ -15,7 +16,7 @@ namespace TrangSach.Shared.DTO
         {
         }
 
-        public ManagerVoucherDto(string id, string status, DateTime? expiresAt, int? maxUsageCount, int usageCount, List<string> promotions, int orderCount)
+        public ManagerVoucherDto(string id, string status, DateTime? expiresAt, int? maxUsageCount, int usageCount, List<string> promotions, int orderCount, string? promotionInfo = null)
         {
             this.Id = id;
             this.Status = status;
@@ -24,6 +25,9 @@ namespace TrangSach.Shared.DTO
             this.UsageCount = usageCount;
             this.Promotions = promotions;
             this.OrderCount = orderCount;
+            this.PromotionInfo = !string.IsNullOrWhiteSpace(promotionInfo) 
+                ? promotionInfo 
+                : (promotions != null && promotions.Count > 0 ? string.Join(", ", promotions) : "Chưa gắn CTKM");
         }
     }
 }

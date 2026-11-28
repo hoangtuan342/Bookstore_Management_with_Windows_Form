@@ -21,10 +21,24 @@ public static class DbConnection
 
     public static SqlConnection Create() => new(ConnectionString);
 
+    private static bool _schemaChecked = false;
+    private static readonly object _schemaLock = new();
+
     public static SqlConnection Open()
     {
         var conn = Create();
         conn.Open();
+        if (!_schemaChecked)
+        {
+            lock (_schemaLock)
+            {
+                if (!_schemaChecked)
+                {
+                    EnsureDatabaseSchema(conn);
+                    _schemaChecked = true;
+                }
+            }
+        }
         return conn;
     }
 
@@ -39,7 +53,7 @@ public static class DbConnection
         try
         {
             // Tự động kiểm tra và thêm cột NgaySinh vào bảng KH nếu chưa tồn tại
-            var checkColumnSql = @"
+            var checkKhSql = @"
                 IF NOT EXISTS (
                     SELECT 1 FROM sys.columns 
                     WHERE object_id = OBJECT_ID(N'dbo.KH') AND name = 'NgaySinh'
@@ -47,8 +61,8 @@ public static class DbConnection
                 BEGIN
                     ALTER TABLE dbo.KH ADD NgaySinh DATE NULL;
                 END";
-            using var cmd = new SqlCommand(checkColumnSql, conn);
-            cmd.ExecuteNonQuery();
+            using var cmdKh = new SqlCommand(checkKhSql, conn);
+            cmdKh.ExecuteNonQuery();
         }
         catch
         {

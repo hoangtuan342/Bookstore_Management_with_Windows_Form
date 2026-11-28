@@ -37,7 +37,21 @@ else
                 <span class="status-pill">@TrangSach.Shared.DTO.OrderStatusFormatter.FormatOrderStatus(order.Status)</span>
                 <p class="muted" style="margin-top:6px;">@TrangSach.Shared.DTO.OrderStatusFormatter.FormatPaymentMethod(order.PaymentMethod) · @TrangSach.Shared.DTO.OrderStatusFormatter.FormatPaymentStatus(order.PaymentStatus)</p>
             </div>
-            <strong class="price">@order.TotalAmount.ToString("N0") ₫</strong>
+            <div>
+                <strong class="price">@order.TotalAmount.ToString("N0") ₫</strong>
+                @if (order.DiscountAmount > 0)
+                {
+                    <div style="font-size:11.5px; color:#c62828; margin-top:2px;">
+                        <span>Đã giảm: −@order.DiscountAmount.ToString("N0") ₫</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(order.DiscountDescription))
+                    {
+                        <div style="font-size:11px; color:#2e5b3e; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="@order.DiscountDescription">
+                            🎁 @order.DiscountDescription
+                        </div>
+                    }
+                }
+            </div>
             <div style="display:flex; flex-direction:column; gap:6px;">
                 <a class="button button-light" asp-page="/Orders/Details" asp-route-id="@order.Id">Xem chi tiết</a>
                 @if (order.Status is "Pending" or "Confirmed")

@@ -6,19 +6,127 @@
 </section>
 <section class="catalog-section">
     <div class="section-heading"><div><span class="eyebrow">ĐƯỢC BẠN ĐỌC YÊU THÍCH</span><h2>Sách dành cho bạn</h2></div><span class="muted">@Model.Books.Count cuốn sách</span></div>
-    <form method="get" class="catalog-tools">
-        <input type="search" name="search" value="@Model.Search" placeholder="Tìm tên sách, tác giả, nội dung..." aria-label="Tìm kiếm sách" />
-        <select name="category" aria-label="Chọn thể loại"><option value="">Tất cả thể loại</option>@foreach (var item in Model.Categories) { <option value="@item" selected="@(item == Model.Category)">@item</option> }</select>
-        <button class="button button-primary" type="submit">Tìm sách</button>
-        @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.Category)) { <a class="button button-light" asp-page="/Index">Xóa lọc</a> }
+
+    <form method="get" class="catalog-filter-box">
+        <div class="filter-row search-main-row">
+            <div class="filter-search-group">
+                <span class="filter-icon">🔍</span>
+                <input type="search" name="search" value="@Model.Search" placeholder="Tìm kiếm theo tên sách, tác giả, nhà xuất bản, ISBN, nội dung..." aria-label="Tìm kiếm sách" />
+            </div>
+            <button class="button button-primary filter-submit-btn" type="submit">Tìm kiếm</button>
+            @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.Category) 
+                 || !string.IsNullOrWhiteSpace(Model.Publisher) || !string.IsNullOrWhiteSpace(Model.PriceRange)
+                 || Model.MinPrice.HasValue || Model.MaxPrice.HasValue
+                 || !string.IsNullOrWhiteSpace(Model.Promotion) || !string.IsNullOrWhiteSpace(Model.PromoType)
+                 || !string.IsNullOrWhiteSpace(Model.SortBy))
+            {
+                <a class="button button-light filter-reset-btn" asp-page="/Index">Xóa tất cả lọc</a>
+            }
+        </div>
+
+        <div class="filter-grid">
+            <!-- Lọc Thể loại -->
+            <div class="filter-col">
+                <label class="filter-label">Thể loại</label>
+                <select name="category" aria-label="Chọn thể loại">
+                    <option value="">Tất cả thể loại</option>
+                    @foreach (var item in Model.Categories)
+                    {
+                        <option value="@item" selected="@(item.Equals(Model.Category, StringComparison.OrdinalIgnoreCase))">@item</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Lọc Nhà xuất bản -->
+            <div class="filter-col">
+                <label class="filter-label">Nhà xuất bản</label>
+                <select name="publisher" aria-label="Chọn nhà xuất bản">
+                    <option value="">Tất cả nhà xuất bản</option>
+                    @foreach (var pub in Model.Publishers)
+                    {
+                        <option value="@pub" selected="@(pub.Equals(Model.Publisher, StringComparison.OrdinalIgnoreCase))">@pub</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Lọc Khoảng giá -->
+            <div class="filter-col">
+                <label class="filter-label">Khoảng giá</label>
+                <select name="priceRange" aria-label="Chọn khoảng giá" onchange="toggleCustomPrice(this.value)">
+                    <option value="" selected="@(string.IsNullOrWhiteSpace(Model.PriceRange) && !Model.MinPrice.HasValue && !Model.MaxPrice.HasValue)">Tất cả mức giá</option>
+                    <option value="under-100k" selected="@(Model.PriceRange == "under-100k")">Dưới 100,000 ₫</option>
+                    <option value="100k-200k" selected="@(Model.PriceRange == "100k-200k")">Từ 100,000 ₫ đến 200,000 ₫</option>
+                    <option value="200k-500k" selected="@(Model.PriceRange == "200k-500k")">Từ 200,000 ₫ đến 500,000 ₫</option>
+                    <option value="above-500k" selected="@(Model.PriceRange == "above-500k")">Trên 500,000 ₫</option>
+                    <option value="custom" selected="@(Model.PriceRange == "custom" || (string.IsNullOrWhiteSpace(Model.PriceRange) && (Model.MinPrice.HasValue || Model.MaxPrice.HasValue)))">Tự nhập khoảng giá...</option>
+                </select>
+            </div>
+
+            <!-- Lọc Khuyến mãi -->
+            <div class="filter-col">
+                <label class="filter-label">Chương trình khuyến mãi</label>
+                <select name="promotion" aria-label="Chương trình khuyến mãi">
+                    <option value="">Tất cả sản phẩm</option>
+                    <option value="all-promo" selected="@(Model.Promotion == "all-promo")">🔥 Tất cả sách đang giảm giá</option>
+                    @foreach (var promo in Model.PromotionPrograms)
+                    {
+                        <option value="@promo" selected="@(promo.Equals(Model.Promotion, StringComparison.OrdinalIgnoreCase))">@promo</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Lọc Kiểu khuyến mãi -->
+            <div class="filter-col">
+                <label class="filter-label">Kiểu khuyến mãi</label>
+                <select name="promoType" aria-label="Kiểu khuyến mãi">
+                    <option value="">Tất cả kiểu KM</option>
+                    @foreach (var pt in Model.PromotionTypes)
+                    {
+                        <option value="@pt" selected="@(pt.Equals(Model.PromoType, StringComparison.OrdinalIgnoreCase))">@pt</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Sắp xếp kết quả -->
+            <div class="filter-col">
+                <label class="filter-label">Sắp xếp theo</label>
+                <select name="sortBy" aria-label="Sắp xếp theo">
+                    <option value="title-asc" selected="@(string.IsNullOrWhiteSpace(Model.SortBy) || Model.SortBy == "title-asc")">Tên sách (A → Z)</option>
+                    <option value="price-asc" selected="@(Model.SortBy == "price-asc")">Giá tăng dần</option>
+                    <option value="price-desc" selected="@(Model.SortBy == "price-desc")">Giá giảm dần</option>
+                    <option value="discount-desc" selected="@(Model.SortBy == "discount-desc")">Giảm giá nhiều nhất</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Khung nhập khoảng giá tùy chọn -->
+        <div class="custom-price-row @(Model.PriceRange == "custom" || (string.IsNullOrWhiteSpace(Model.PriceRange) && (Model.MinPrice.HasValue || Model.MaxPrice.HasValue)) ? "" : "is-hidden")" id="customPriceInputs">
+            <span>Khoảng giá tùy chỉnh:</span>
+            <input type="number" step="1000" min="0" name="minPrice" value="@Model.MinPrice" placeholder="Từ giá (VNĐ)" aria-label="Từ giá" />
+            <span>—</span>
+            <input type="number" step="1000" min="0" name="maxPrice" value="@Model.MaxPrice" placeholder="Đến giá (VNĐ)" aria-label="Đến giá" />
+            <button class="button button-light button-small" type="submit">Áp dụng giá</button>
+        </div>
     </form>
-    @if (Model.Books.Count == 0) { <div class="empty-state">Chưa tìm thấy sách phù hợp. Hãy thử từ khóa hoặc thể loại khác.</div> }
+
+    <script>
+        function toggleCustomPrice(val) {
+            const el = document.getElementById('customPriceInputs');
+            if (val === 'custom') {
+                el.classList.remove('is-hidden');
+            } else {
+                el.classList.add('is-hidden');
+            }
+        }
+    </script>
+
+    @if (Model.Books.Count == 0) { <div class="empty-state">Chưa tìm thấy sách phù hợp với các tiêu chí tìm kiếm. Hãy thử điều chỉnh bộ lọc.</div> }
     else
     {
         <div class="book-grid">
         @foreach (var book in Model.Books)
         {
-            <article class="book-card">
+            <article class="book-card @(book.DiscountPercent > 0 ? "has-promotion" : "")">
                 <a class="book-cover @book.CoverStyle" asp-page="/Books/Details" asp-route-id="@book.Id">
                     @if (!string.IsNullOrWhiteSpace(book.CoverImagePath))
                     {
@@ -28,10 +136,47 @@
                     {
                         <span class="cover-brand">TRANG SÁCH</span><span class="cover-title">@book.Title</span><span class="cover-author">@book.Author</span>
                     }
+                    @if (book.DiscountPercent > 0)
+                    {
+                        <span class="promo-badge-ribbon">🔥 -@book.DiscountPercent.ToString("0.#")%</span>
+                    }
                     <span class="cover-label">@book.Label</span>
                 </a>
-                <div class="book-meta"><span class="eyebrow">@book.Category</span><h3><a asp-page="/Books/Details" asp-route-id="@book.Id">@book.Title</a></h3><p class="muted">@book.Author</p><div class="book-bottom"><strong class="price">@book.Price.ToString("N0") ₫</strong><span class="stock">@(book.AvailableStock > 0 ? $"Còn {book.AvailableStock} cuốn" : "Tạm hết hàng")</span></div>
-                    <div class="card-actions"><a class="button button-light" asp-page="/Books/Details" asp-route-id="@book.Id">Chi tiết</a><form method="post" asp-page-handler="AddToCart"><input type="hidden" name="id" value="@book.Id" /><button class="button button-primary" type="submit" disabled="@(book.AvailableStock <= 0)">Thêm vào giỏ</button></form></div>
+                <div class="book-meta">
+                    <div class="book-tags">
+                        <span class="eyebrow">@book.Category</span>
+                        @if (!string.IsNullOrWhiteSpace(book.Publisher) && book.Publisher != "Chưa cập nhật")
+                        {
+                            <span class="publisher-tag" title="Nhà xuất bản">🏢 @book.Publisher</span>
+                        }
+                    </div>
+                    <h3><a asp-page="/Books/Details" asp-route-id="@book.Id">@book.Title</a></h3>
+                    <p class="muted book-author">✍️ @book.Author</p>
+                    
+                    @if (!string.IsNullOrWhiteSpace(book.PromotionName))
+                    {
+                        <div class="book-promo-indicator" title="@book.PromotionName">
+                            <span class="promo-tag">🎁 @book.PromotionName</span>
+                        </div>
+                    }
+
+                    <div class="book-bottom">
+                        <div class="price-box">
+                            <strong class="price">@book.Price.ToString("N0") ₫</strong>
+                            @if (book.OriginalPrice > book.Price)
+                            {
+                                <span class="original-price">@book.OriginalPrice.ToString("N0") ₫</span>
+                            }
+                        </div>
+                        <span class="stock">@(book.AvailableStock > 0 ? $"Còn {book.AvailableStock}" : "Tạm hết hàng")</span>
+                    </div>
+                    <div class="card-actions">
+                        <a class="button button-light" asp-page="/Books/Details" asp-route-id="@book.Id">Chi tiết</a>
+                        <form method="post" asp-page-handler="AddToCart">
+                            <input type="hidden" name="id" value="@book.Id" />
+                            <button class="button button-primary" type="submit" disabled="@(book.AvailableStock <= 0)">Thêm vào giỏ</button>
+                        </form>
+                    </div>
                 </div>
             </article>
         }

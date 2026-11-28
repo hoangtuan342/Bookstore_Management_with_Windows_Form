@@ -9,6 +9,9 @@ namespace TrangSach.Shared.DTO
         public string PaymentStatus { get; set; } = string.Empty;
         public string PaymentMethod { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
+        public decimal DiscountAmount { get; set; } = 0;
+        public string DiscountDescription { get; set; } = string.Empty;
+        public string? VoucherCode { get; set; }
         public string CustomerName { get; set; } = string.Empty;
         public string EmployeeName { get; set; } = string.Empty;
         public string ReceiverPhone { get; set; } = string.Empty;
@@ -20,7 +23,7 @@ namespace TrangSach.Shared.DTO
         {
         }
 
-        public ManagerOrderRowDto(string id, DateTime createdAt, string orderStatus, string paymentStatus, string paymentMethod, decimal totalAmount, string customerName, string employeeName, string receiverPhone, string shippingAddress, int itemCount, List<ManagerOrderLineDto> lines)
+        public ManagerOrderRowDto(string id, DateTime createdAt, string orderStatus, string paymentStatus, string paymentMethod, decimal totalAmount, string customerName, string employeeName, string receiverPhone, string shippingAddress, int itemCount, List<ManagerOrderLineDto> lines, decimal discountAmount = 0, string discountDescription = "", string? voucherCode = null)
         {
             this.Id = id;
             this.CreatedAt = createdAt;
@@ -34,6 +37,9 @@ namespace TrangSach.Shared.DTO
             this.ShippingAddress = shippingAddress;
             this.ItemCount = itemCount;
             this.Lines = lines;
+            this.DiscountAmount = discountAmount;
+            this.DiscountDescription = discountDescription;
+            this.VoucherCode = voucherCode;
         }
     }
 }

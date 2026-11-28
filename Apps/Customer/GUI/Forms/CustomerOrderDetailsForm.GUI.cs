@@ -18,7 +18,7 @@ internal sealed class CustomerOrderDetailsForm : Form
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
         root.Controls.Add(new Label { Text = "Chi tiết hóa đơn", Dock = DockStyle.Fill, Font = new Font("Georgia", 19, FontStyle.Bold), ForeColor = Color.FromArgb(38, 45, 37), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
         root.Controls.Add(new Label { Text = $"Mã hóa đơn: {order.Id}\r\nNgày lập: {order.CreatedAt:dd/MM/yyyy HH:mm}", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(53, 86, 68), TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
@@ -32,13 +32,52 @@ internal sealed class CustomerOrderDetailsForm : Form
             SelectionMode = DataGridViewSelectionMode.FullRowSelect, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             BackgroundColor = Color.White, EnableHeadersVisualStyles = false
         };
-        grid.Columns[nameof(StoreOrderLineDto.BookId)]!.Visible = false;
-        grid.Columns[nameof(StoreOrderLineDto.Title)]!.HeaderText = "Sách";
-        grid.Columns[nameof(StoreOrderLineDto.Quantity)]!.HeaderText = "Số lượng";
-        grid.Columns[nameof(StoreOrderLineDto.UnitPrice)]!.HeaderText = "Đơn giá";
-        grid.Columns[nameof(StoreOrderLineDto.LineTotal)]!.HeaderText = "Thành tiền";
+        if (grid.Columns[nameof(StoreOrderLineDto.BookId)] is { } cBookId) cBookId.Visible = false;
+        if (grid.Columns[nameof(StoreOrderLineDto.CoverImagePath)] is { } cCover) cCover.Visible = false;
+        if (grid.Columns[nameof(StoreOrderLineDto.Title)] is { } cTitle) cTitle.HeaderText = "Sách";
+        if (grid.Columns[nameof(StoreOrderLineDto.Quantity)] is { } cQty) cQty.HeaderText = "Số lượng";
+        if (grid.Columns[nameof(StoreOrderLineDto.OriginalPrice)] is { } cOrig)
+        {
+            cOrig.HeaderText = "Giá gốc";
+            cOrig.DefaultCellStyle.Format = "N0";
+            cOrig.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+        }
+        if (grid.Columns[nameof(StoreOrderLineDto.UnitPrice)] is { } cPrice)
+        {
+            cPrice.HeaderText = "Đơn giá bán";
+            cPrice.DefaultCellStyle.Format = "N0";
+            cPrice.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+        }
+        if (grid.Columns[nameof(StoreOrderLineDto.DiscountPercent)] is { } cDisc)
+        {
+            cDisc.HeaderText = "% Giảm theo sách";
+            cDisc.DefaultCellStyle.Format = "0.#\\%";
+            cDisc.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            cDisc.Width = 130;
+        }
+        if (grid.Columns[nameof(StoreOrderLineDto.LineTotal)] is { } cTotal)
+        {
+            cTotal.HeaderText = "Thành tiền";
+            cTotal.DefaultCellStyle.Format = "N0";
+            cTotal.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+        }
+        if (grid.Columns[nameof(StoreOrderLineDto.PromotionName)] is { } cPromo)
+        {
+            cPromo.HeaderText = "Khuyến mãi";
+            cPromo.Visible = false;
+        }
         root.Controls.Add(grid, 0, 4);
-        root.Controls.Add(MakeInfo($"Giảm giá: {order.DiscountAmount:N0} ₫"), 0, 5);
+
+        var discountDetail = $"Giảm giá: {order.DiscountAmount:N0} ₫";
+        if (!string.IsNullOrWhiteSpace(order.DiscountDescription))
+        {
+            discountDetail += $" ({order.DiscountDescription})";
+        }
+        var lblDiscount = MakeInfo(discountDetail);
+        lblDiscount.ForeColor = Color.FromArgb(198, 40, 40);
+        lblDiscount.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+        root.Controls.Add(lblDiscount, 0, 5);
+
         root.Controls.Add(new Label { Text = $"Tổng thanh toán: {order.TotalAmount:N0} ₫", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = Color.FromArgb(53, 86, 68) }, 0, 6);
         Controls.Add(root);
     }

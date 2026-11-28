@@ -69,8 +69,12 @@ public partial class ManagementForm
     private void CreateVoucher()
     {
         var promos = _services.GetPromotions();
-        var promoOptions = new List<(string Id, string Name)> { ("", "-- Không gắn vào CTKM nào --") };
-        promoOptions.AddRange(promos.Select(p => (p.Id, $"{p.Name} ({p.Id})")));
+        if (promos.Count == 0)
+        {
+            throw new InvalidOperationException("Chưa có chương trình khuyến mãi nào trong hệ thống. Vui lòng tạo CTKM trước khi tạo Voucher.");
+        }
+
+        var promoOptions = promos.Select(p => (p.Id, $"{p.Name} ({p.Id})")).ToList();
 
         var fields = new List<EditDialogField>
         {
@@ -78,8 +82,8 @@ public partial class ManagementForm
             new("status", "Trạng thái voucher", "Active", VoucherStatusOptions),
             new("expires", "Hạn dùng (yyyy-MM-dd, để trống = không hạn)", DateTime.Today.AddDays(30).ToString("yyyy-MM-dd")),
             new("max", "Số lượt dùng tối đa", "100"),
-            new("promo", "Gắn vào CTKM", "", promoOptions),
-            new("rate", "→ % giảm giá (bắt buộc nếu chọn CTKM, 0.1-100)", "10")
+            new("promo", "Chương trình khuyến mãi (bắt buộc)", promoOptions[0].Id, promoOptions),
+            new("rate", "→ % giảm giá áp dụng (0.1 - 100)", "10")
         };
 
         var values = EditDialog.Show(this, "Thêm voucher mới", fields);
@@ -91,17 +95,18 @@ public partial class ManagementForm
         int? max = int.TryParse(values["max"], out var m) ? m : null;
 
         var promoId = EmptyToNull(values["promo"]);
-        decimal? discountPercent = null;
-        if (!string.IsNullOrWhiteSpace(promoId))
+        if (string.IsNullOrWhiteSpace(promoId))
         {
-            if (!decimal.TryParse(values["rate"], NumberStyles.Any, CultureInfo.InvariantCulture, out var r) &&
-                !decimal.TryParse(values["rate"], out r))
-            {
-                throw new InvalidOperationException("% giảm giá qua voucher không hợp lệ.");
-            }
-            if (r is <= 0 or > 100) throw new InvalidOperationException("% giảm giá qua voucher phải từ 0.1% đến 100%.");
-            discountPercent = r;
+            throw new InvalidOperationException("Vui lòng chọn chương trình khuyến mãi cho voucher.");
         }
+
+        if (!decimal.TryParse(values["rate"], NumberStyles.Any, CultureInfo.InvariantCulture, out var r) &&
+            !decimal.TryParse(values["rate"], out r))
+        {
+            throw new InvalidOperationException("% giảm giá qua voucher không hợp lệ.");
+        }
+        if (r is <= 0 or > 100) throw new InvalidOperationException("% giảm giá qua voucher phải từ 0.1% đến 100%.");
+        decimal? discountPercent = r;
 
         _services.Manager.CreateVoucher(new CreateVoucherDto(code, status, expires, max, promoId, discountPercent));
         LoadVouchers(true);

@@ -15,12 +15,16 @@ namespace TrangSach.Shared.DTO
         public string Publisher { get; set; } = "";
         public string CoverImagePath { get; set; } = "";
         public string Isbn { get; set; } = "";
+        public decimal OriginalPrice { get; set; } = 0;
+        public decimal DiscountPercent { get; set; } = 0;
+        public string PromotionName { get; set; } = "";
+        public string PromotionType { get; set; } = "";
 
         public BookItemDto()
         {
         }
 
-        public BookItemDto(string id, string title, string author, string category, decimal price, string coverStyle, string label, string description, int availableStock = 0, string publisher = "", string coverImagePath = "", string isbn = "")
+        public BookItemDto(string id, string title, string author, string category, decimal price, string coverStyle, string label, string description, int availableStock = 0, string publisher = "", string coverImagePath = "", string isbn = "", decimal originalPrice = 0, decimal discountPercent = 0, string promotionName = "", string promotionType = "")
         {
             this.Id = id;
             this.Title = title;
@@ -34,6 +38,10 @@ namespace TrangSach.Shared.DTO
             this.Publisher = publisher;
             this.CoverImagePath = coverImagePath;
             this.Isbn = isbn;
+            this.OriginalPrice = originalPrice > 0 ? originalPrice : price;
+            this.DiscountPercent = discountPercent;
+            this.PromotionName = promotionName;
+            this.PromotionType = promotionType;
         }
     }
 }
