@@ -137,24 +137,24 @@ public partial class ManagementForm : Form
         _workspace.BackgroundImageLayout = ImageLayout.Stretch;
         _workspace.Visible = false;
         _navigation.Dock = DockStyle.Left;
-        _navigation.Width = 218;
-        _navigation.Padding = new Padding(12, 14, 12, 12);
+        _navigation.Width = 240;
+        _navigation.Padding = new Padding(10, 14, 10, 12);
         _navigation.BackColor = Color.FromArgb(25, 48, 68);
         _navigationItems.Dock = DockStyle.Fill;
         _navigationItems.FlowDirection = FlowDirection.TopDown;
         _navigationItems.WrapContents = false;
         _navigationItems.AutoScroll = true;
-        _navigationItems.Padding = new Padding(0, 8, 0, 8);
+        _navigationItems.Padding = new Padding(0, 4, 0, 8);
         _navigationItems.BackColor = _navigation.BackColor;
         _navigation.Controls.Add(_navigationItems);
         _navigation.Controls.Add(new Label
         {
             Text = "ĐIỀU HƯỚNG",
             Dock = DockStyle.Top,
-            Height = 36,
-            Padding = new Padding(1, 5, 0, 0),
+            Height = 32,
+            Padding = new Padding(8, 2, 0, 0),
             TextAlign = ContentAlignment.MiddleLeft,
-            Font = new Font("Segoe UI", 8, FontStyle.Bold),
+            Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
             ForeColor = Color.FromArgb(151, 180, 194),
             BackColor = _navigation.BackColor
         });

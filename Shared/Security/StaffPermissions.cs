@@ -30,7 +30,7 @@ namespace TrangSach.Shared.Security
             switch (role)
             {
                 case StaffRoles.Manager:
-                    return "/admin";
+                    return "/admin/orders";
                 case StaffRoles.Sales:
                     return "/admin/orders";
                 case StaffRoles.Inventory:

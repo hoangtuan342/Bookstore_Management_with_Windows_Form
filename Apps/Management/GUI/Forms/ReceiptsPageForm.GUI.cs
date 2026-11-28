@@ -67,6 +67,7 @@ internal sealed class ReceiptsPageForm : ManagementGridPageForm
         };
         AddAction("Tải", "load");
         AddAction("Tạo phiếu nhập", "create");
+        AddAction("In phiếu nhập", "print");
         AddAction("Đảo phiếu", "cancel");
 
         Grid.CellFormatting += (_, e) =>

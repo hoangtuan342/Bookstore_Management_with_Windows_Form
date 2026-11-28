@@ -18,7 +18,7 @@ public sealed class SetupManagerModel(ManagementWebApiClient api) : AdminAccount
                 ?? throw new InvalidOperationException("API không trả về thông tin tài khoản.");
             await SignInStaffAsync(account, true);
             TempData["Notice"] = "Đã thiết lập tài khoản quản lý đầu tiên.";
-            return RedirectToPage("/Admin/Index");
+            return RedirectToPage("/Admin/Orders/Index");
         }
         catch (Exception ex) { ModelState.AddModelError(string.Empty, ex.Message); return Page(); }
     }

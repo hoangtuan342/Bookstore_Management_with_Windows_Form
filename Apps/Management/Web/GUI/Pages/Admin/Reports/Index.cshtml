@@ -3,9 +3,9 @@
 
 <header class="report-page-heading">
     <div>
-        <span class="eyebrow">PHÂN TÍCH KINH DOANH</span>
+        <span class="eyebrow">MỤC 5. THỐNG KÊ DOANH THU & ĐỐI SOÁT TÀI CHÍNH</span>
         <h2>Báo cáo cửa hàng</h2>
-        <p>Theo dõi doanh thu, đơn hàng, tồn kho và hiệu quả bán hàng.</p>
+        <p>Báo cáo đối soát thu chi, nhân viên, khách hàng và doanh số sản phẩm theo đúng chuẩn đồ án.</p>
     </div>
     @if (Model.Report is { } period)
     {
@@ -18,15 +18,15 @@
         <div class="report-date-fields">
             <label><span>Từ ngày</span><input type="date" name="fromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" /></label>
             <label><span>Đến ngày</span><input type="date" name="toDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" /></label>
-            <button class="button primary" type="submit">Cập nhật báo cáo</button>
+            <button class="button primary" type="submit">Xem thống kê</button>
         </div>
         <div class="report-export-actions">
-            <a class="button light" asp-page-handler="Export" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">CSV</a>
-            <a class="button light" asp-page-handler="ExportExcel" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">Excel</a>
+            <a class="button light" asp-page-handler="Export" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">Xuất CSV</a>
+            <a class="button light" asp-page-handler="ExportExcel" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">Xuất Excel</a>
         </div>
     </form>
     <nav class="report-quick-periods" aria-label="Chọn kỳ báo cáo nhanh">
-        <span>Kỳ nhanh</span>
+        <span>Kỳ nhanh:</span>
         <a asp-page="/Admin/Reports/Index" asp-route-days="7">7 ngày</a>
         <a asp-page="/Admin/Reports/Index" asp-route-days="30">30 ngày</a>
         <a asp-page="/Admin/Reports/Index" asp-route-days="90">90 ngày</a>
@@ -37,37 +37,283 @@
 
 @if (Model.Report is { } r)
 {
-    <section class="report-kpi-grid" aria-label="Chỉ số tổng quan">
-        <article class="stat-card report-kpi"><span>Doanh thu thuần</span><strong>@r.Revenue.ToString("N0") ₫</strong><small>Kỳ trước: @r.PreviousPeriodRevenue.ToString("N0") ₫</small></article>
-        <article class="stat-card report-kpi"><span>Đơn hàng</span><strong>@r.TotalOrders.ToString("N0")</strong><small>@r.CompletedOrders hoàn tất · @r.PendingOrders chờ xác nhận</small></article>
-        <article class="stat-card report-kpi"><span>Giá trị đơn trung bình</span><strong>@r.AverageOrderValue.ToString("N0") ₫</strong><small>Tính trên đơn hoàn tất</small></article>
-        <article class="stat-card report-kpi"><span>Giảm giá</span><strong>@r.Discounts.ToString("N0") ₫</strong><small>Đơn hoàn tất trong kỳ</small></article>
-        <article class="stat-card report-kpi"><span>Chi nhập hàng</span><strong>@r.PurchaseSpend.ToString("N0") ₫</strong><small>Phiếu nhập đã ghi nhận</small></article>
-        <article class="stat-card report-kpi"><span>Lãi gộp ước tính</span><strong>@r.EstimatedGrossProfit.ToString("N0") ₫</strong><small>Độ phủ giá vốn @r.CostCoveragePercent.ToString("N1")%</small></article>
-    </section>
+    var history = Model.HistoryReport ?? r;
+    var currentYear = Model.ToDate?.Year ?? DateTime.Today.Year;
 
-    <section class="report-comparison" aria-label="So sánh với kỳ trước">
-        <div><span>Doanh thu so với kỳ trước</span><strong>@(r.RevenueChangePercent is decimal revenueChange ? revenueChange.ToString("+0.0;-0.0;0.0") + "%" : "Chưa có kỳ so sánh")</strong></div>
-        <div><span>Đơn hoàn tất so với kỳ trước</span><strong>@(r.CompletedOrdersChangePercent is decimal orderChange ? orderChange.ToString("+0.0;-0.0;0.0") + "%" : "Chưa có kỳ so sánh")</strong></div>
-    </section>
-
-    <div class="report-section-heading"><div><span class="eyebrow">BIỂU ĐỒ TRỰC QUAN</span><h2>Diễn biến và cơ cấu kinh doanh</h2></div><span>Xu hướng thời gian dùng dữ liệu 5 năm gần nhất</span></div>
-    <div class="report-chart-grid">
-        @foreach (var chart in Model.ChartPanels) { <partial name="_ReportChart" model="chart" /> }
-    </div>
-
-    <section class="panel report-details-panel"><div class="report-section-heading"><div><span class="eyebrow">TRA CỨU CHI TIẾT</span><h2>Số liệu trong kỳ đang chọn</h2></div><span>Các bảng chi tiết giữ nguyên theo bộ lọc ngày phía trên</span></div>
-        <div class="admin-columns report-detail-columns">
-            <section><h3>Sách bán chạy</h3><div class="table-wrap"><table><thead><tr><th>Sách</th><th>Số lượng</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var row in r.BestSellers) { <tr><td>@row.Title<small class="subcell">@row.BookId</small></td><td>@row.Quantity</td><td>@row.Revenue.ToString("N0") ₫</td></tr> }</tbody></table></div>
-                <h3>Doanh thu theo thể loại</h3><div class="table-wrap"><table><thead><tr><th>Thể loại</th><th>Số lượng</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var row in r.RevenueByCategory) { <tr><td>@row.Category</td><td>@row.Quantity</td><td>@row.Revenue.ToString("N0") ₫</td></tr> }</tbody></table></div></section>
-            <section><h3>Khách hàng thân thiết</h3><div class="table-wrap"><table><thead><tr><th>Khách hàng</th><th>Số đơn</th><th>Số cuốn</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var row in r.TopCustomers) { <tr><td>@row.CustomerName</td><td>@row.Orders</td><td>@row.Quantity</td><td>@row.Revenue.ToString("N0") ₫</td></tr> }</tbody></table></div>
-                <h3>Tồn kho theo thể loại</h3><div class="table-wrap"><table><thead><tr><th>Thể loại</th><th>Số sách</th><th>Tồn</th><th>Sắp hết</th></tr></thead><tbody>@foreach (var row in r.InventoryByCategory) { <tr><td>@row.Category</td><td>@row.BookCount</td><td>@row.StockQuantity</td><td>@row.LowStockBooks</td></tr> }</tbody></table></div></section>
+    <!-- 5.a Thống kê tổng tiền HĐ từ ngày a đến ngày b -->
+    <section class="panel" style="margin-bottom: 24px; padding: 20px;">
+        <div class="report-section-heading" style="margin-bottom: 14px;">
+            <div>
+                <span class="eyebrow" style="color: #456f55; font-weight: bold;">5.a</span>
+                <h3 style="margin: 4px 0 0 0;">Thống kê tổng tiền Hóa đơn từ ngày a đến ngày b</h3>
+            </div>
+            <span>Kỳ đối soát: @r.FromDate.ToString("dd/MM/yyyy") – @r.ToDate.ToString("dd/MM/yyyy")</span>
         </div>
-        <details><summary>Doanh thu theo tháng</summary><div class="table-wrap"><table><thead><tr><th>Năm</th><th>Tháng</th><th>Đơn</th><th>Doanh thu</th><th>Chi nhập</th><th>Lãi gộp</th></tr></thead><tbody>@foreach (var x in r.RevenueByMonth) { <tr><td>@x.Year</td><td>@x.Month</td><td>@x.Orders</td><td>@x.Revenue.ToString("N0")</td><td>@x.PurchaseSpend.ToString("N0")</td><td>@x.EstimatedGrossProfit.ToString("N0")</td></tr> }</tbody></table></div></details>
-        <details><summary>Doanh thu theo quý</summary><div class="table-wrap"><table><thead><tr><th>Năm</th><th>Quý</th><th>Đơn</th><th>Doanh thu</th><th>Chi nhập</th><th>Lãi gộp</th></tr></thead><tbody>@foreach (var x in r.RevenueByQuarter) { <tr><td>@x.Year</td><td>@x.Quarter</td><td>@x.Orders</td><td>@x.Revenue.ToString("N0")</td><td>@x.PurchaseSpend.ToString("N0")</td><td>@x.EstimatedGrossProfit.ToString("N0")</td></tr> }</tbody></table></div></details>
-        <details><summary>Doanh thu theo năm</summary><div class="table-wrap"><table><thead><tr><th>Năm</th><th>Đơn</th><th>Doanh thu</th><th>Chi nhập</th><th>Lãi gộp</th></tr></thead><tbody>@foreach (var x in r.RevenueByYear) { <tr><td>@x.Year</td><td>@x.Orders</td><td>@x.Revenue.ToString("N0")</td><td>@x.PurchaseSpend.ToString("N0")</td><td>@x.EstimatedGrossProfit.ToString("N0")</td></tr> }</tbody></table></div></details>
-        <details><summary>Doanh thu theo nhân viên / năm</summary><div class="table-wrap"><table><thead><tr><th>Năm</th><th>Nhân viên</th><th>Số đơn</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var x in r.RevenueByEmployeeYear) { <tr><td>@x.Year</td><td>@x.EmployeeName <small class="subcell">@x.EmployeeId</small></td><td>@x.Orders</td><td>@x.Revenue.ToString("N0")</td></tr> }</tbody></table></div></details>
-        <details><summary>Sản phẩm theo quý / năm</summary><div class="table-wrap"><table><thead><tr><th>Năm / quý</th><th>Sách</th><th>Số lượng</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var x in r.ProductSalesByQuarter) { <tr><td>@x.Year / Q@x.Quarter</td><td>@x.Title <small class="subcell">@x.BookId</small></td><td>@x.Quantity</td><td>@x.Revenue.ToString("N0")</td></tr> }</tbody></table></div></details>
+        <div class="table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Chỉ số thống kê</th>
+                        <th style="text-align: right;">Giá trị</th>
+                        <th>Ghi chú nghiệp vụ đối chứng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>HĐ (Tổng thu bán hàng)</strong></td>
+                        <td style="text-align: right; color: #456f55; font-weight: bold; font-size: 1.1em;">@r.Revenue.ToString("N0") ₫</td>
+                        <td>Tổng tiền đơn hàng hoàn tất sau khi trừ chiết khấu / giảm giá</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PNH (Tổng chi nhập hàng)</strong></td>
+                        <td style="text-align: right; color: #d4a268; font-weight: bold; font-size: 1.1em;">@r.PurchaseSpend.ToString("N0") ₫</td>
+                        <td>Tổng tiền các phiếu nhập kho đã xác nhận hoàn tất trong kỳ</td>
+                    </tr>
+                    <tr style="background: #f0f7f2;">
+                        <td><strong>Lợi nhuận (Tổng thu - Tổng chi)</strong></td>
+                        <td style="text-align: right; color: #2e543c; font-weight: bold; font-size: 1.15em;">@((r.Revenue - r.PurchaseSpend).ToString("N0")) ₫</td>
+                        <td>Chênh lệch thực thu bán ra và thực chi nhập vào trong kỳ</td>
+                    </tr>
+                    <tr>
+                        <td>Số lượng đơn hàng phát sinh</td>
+                        <td style="text-align: right;">@r.TotalOrders.ToString("N0") đơn</td>
+                        <td>Gồm @r.CompletedOrders đơn hoàn tất, @r.PendingOrders đơn chờ, @r.CancelledOrders đơn hủy</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 5.b Thống kê tổng tiền HĐ theo Tháng / Quý / Năm / Các năm -->
+    <section class="panel" style="margin-bottom: 24px; padding: 20px;">
+        <div class="report-section-heading" style="margin-bottom: 14px;">
+            <div>
+                <span class="eyebrow" style="color: #456f55; font-weight: bold;">5.b</span>
+                <h3 style="margin: 4px 0 0 0;">Thống kê tổng tiền HĐ theo Quý trong năm (Thu - Chi - Lợi nhuận)</h3>
+            </div>
+            <span>Đối chứng tài chính HĐ và PNH theo 4 Quý năm @currentYear</span>
+        </div>
+        @{
+            var quarters = history.RevenueByQuarter.Where(x => x.Year == currentYear).ToList();
+            var qRev = new decimal[4];
+            var qCost = new decimal[4];
+            foreach (var q in quarters)
+            {
+                if (q.Quarter is >= 1 and <= 4)
+                {
+                    qRev[q.Quarter - 1] = q.Revenue;
+                    qCost[q.Quarter - 1] = q.PurchaseSpend;
+                }
+            }
+            var sumRev = qRev.Sum();
+            var sumCost = qCost.Sum();
+        }
+        <div class="table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 140px;">@currentYear</th>
+                        <th style="text-align: right;">Q1</th>
+                        <th style="text-align: right;">Q2</th>
+                        <th style="text-align: right;">Q3</th>
+                        <th style="text-align: right;">Q4</th>
+                        <th style="text-align: right; font-weight: bold; background: #e8f0ec;">TC (Tổng cộng)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>HĐ (Tổng thu)</strong></td>
+                        <td style="text-align: right;">@qRev[0].ToString("N0")</td>
+                        <td style="text-align: right;">@qRev[1].ToString("N0")</td>
+                        <td style="text-align: right;">@qRev[2].ToString("N0")</td>
+                        <td style="text-align: right;">@qRev[3].ToString("N0")</td>
+                        <td style="text-align: right; font-weight: bold; background: #f4f8f5;">@sumRev.ToString("N0")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PNH (Tổng chi)</strong></td>
+                        <td style="text-align: right;">@qCost[0].ToString("N0")</td>
+                        <td style="text-align: right;">@qCost[1].ToString("N0")</td>
+                        <td style="text-align: right;">@qCost[2].ToString("N0")</td>
+                        <td style="text-align: right;">@qCost[3].ToString("N0")</td>
+                        <td style="text-align: right; font-weight: bold; background: #f4f8f5;">@sumCost.ToString("N0")</td>
+                    </tr>
+                    <tr style="background: #eef6f1; font-weight: bold;">
+                        <td><strong>Lợi nhuận</strong></td>
+                        <td style="text-align: right;">@((qRev[0] - qCost[0]).ToString("N0"))</td>
+                        <td style="text-align: right;">@((qRev[1] - qCost[1]).ToString("N0"))</td>
+                        <td style="text-align: right;">@((qRev[2] - qCost[2]).ToString("N0"))</td>
+                        <td style="text-align: right;">@((qRev[3] - qCost[3]).ToString("N0"))</td>
+                        <td style="text-align: right; color: #2e543c; background: #e0eee4;">@((sumRev - sumCost).ToString("N0"))</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 5.c Thống kê theo Nhân viên và Khách hàng (Hiển thị tuần tự dọc) -->
+    <!-- 5.c.1 Nhân viên -->
+    <section class="panel" style="margin-bottom: 24px; padding: 20px;">
+        <div class="report-section-heading" style="margin-bottom: 14px;">
+            <div>
+                <span class="eyebrow" style="color: #456f55; font-weight: bold;">5.c</span>
+                <h3 style="margin: 4px 0 0 0;">Ma trận tổng tiền HĐ theo Nhân viên & Năm</h3>
+            </div>
+            <span>Thống kê doanh số bán ra của từng nhân viên qua các năm</span>
+        </div>
+        @{
+            var empYears = history.RevenueByEmployeeYear.Select(x => x.Year).Distinct().OrderBy(y => y).ToList();
+            if (empYears.Count == 0) empYears.Add(currentYear);
+            var emps = history.RevenueByEmployeeYear.GroupBy(x => new { x.EmployeeId, x.EmployeeName }).Select(g => g.Key).OrderBy(e => e.EmployeeName).ToList();
+            var empYearTotals = new decimal[empYears.Count];
+        }
+        <div class="table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 180px;">NV (Nhân viên)</th>
+                        @foreach (var y in empYears) { <th style="text-align: right;">@y</th> }
+                        <th style="text-align: right; background: #e8f0ec;">TC (Tổng cộng)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var emp in emps)
+                    {
+                        decimal rowTotal = 0m;
+                        <tr>
+                            <td>@(string.IsNullOrWhiteSpace(emp.EmployeeName) ? emp.EmployeeId : $"{emp.EmployeeName} ({emp.EmployeeId})")</td>
+                            @for (int i = 0; i < empYears.Count; i++)
+                            {
+                                var y = empYears[i];
+                                var rev = history.RevenueByEmployeeYear.FirstOrDefault(x => x.EmployeeId == emp.EmployeeId && x.Year == y)?.Revenue ?? 0m;
+                                rowTotal += rev;
+                                empYearTotals[i] += rev;
+                                <td style="text-align: right;">@rev.ToString("N0")</td>
+                            }
+                            <td style="text-align: right; font-weight: bold; background: #f4f8f5;">@rowTotal.ToString("N0")</td>
+                        </tr>
+                    }
+                    <tr style="background: #eef6f1; font-weight: bold;">
+                        <td>TC</td>
+                        @for (int i = 0; i < empYears.Count; i++)
+                        {
+                            <td style="text-align: right;">@empYearTotals[i].ToString("N0")</td>
+                        }
+                        <td style="text-align: right; color: #2e543c; background: #e0eee4;">@empYearTotals.Sum().ToString("N0")</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 5.c.2 Khách hàng đặt ngay bên dưới -->
+    <section class="panel" style="margin-bottom: 24px; padding: 20px;">
+        <div class="report-section-heading" style="margin-bottom: 14px;">
+            <div>
+                <span class="eyebrow" style="color: #456f55; font-weight: bold;">5.c</span>
+                <h3 style="margin: 4px 0 0 0;">Ma trận tổng tiền HĐ theo Khách hàng & Năm (Tương tự cho KH)</h3>
+            </div>
+            <span>Thống kê doanh số bán ra cho từng khách hàng qua các năm</span>
+        </div>
+        @{
+            var custYears = history.RevenueByCustomerYear.Select(x => x.Year).Distinct().OrderBy(y => y).ToList();
+            if (custYears.Count == 0) custYears.Add(currentYear);
+            var custs = history.RevenueByCustomerYear.GroupBy(x => new { x.CustomerId, x.CustomerName }).Select(g => g.Key).OrderBy(c => c.CustomerName).ToList();
+            var custYearTotals = new decimal[custYears.Count];
+        }
+        <div class="table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 180px;">KH (Khách hàng)</th>
+                        @foreach (var y in custYears) { <th style="text-align: right;">@y</th> }
+                        <th style="text-align: right; background: #e8f0ec;">TC (Tổng cộng)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cust in custs)
+                    {
+                        decimal rowTotal = 0m;
+                        <tr>
+                            <td>@(string.IsNullOrWhiteSpace(cust.CustomerName) ? "Khách vãng lai" : $"{cust.CustomerName} ({cust.CustomerId})")</td>
+                            @for (int i = 0; i < custYears.Count; i++)
+                            {
+                                var y = custYears[i];
+                                var rev = history.RevenueByCustomerYear.FirstOrDefault(x => x.CustomerId == cust.CustomerId && x.Year == y)?.Revenue ?? 0m;
+                                rowTotal += rev;
+                                custYearTotals[i] += rev;
+                                <td style="text-align: right;">@rev.ToString("N0")</td>
+                            }
+                            <td style="text-align: right; font-weight: bold; background: #f4f8f5;">@rowTotal.ToString("N0")</td>
+                        </tr>
+                    }
+                    <tr style="background: #eef6f1; font-weight: bold;">
+                        <td>TC</td>
+                        @for (int i = 0; i < custYears.Count; i++)
+                        {
+                            <td style="text-align: right;">@custYearTotals[i].ToString("N0")</td>
+                        }
+                        <td style="text-align: right; color: #2e543c; background: #e0eee4;">@custYearTotals.Sum().ToString("N0")</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 5.d Thống kê tổng tiền HĐ theo Sản phẩm & Quý - Năm -->
+    <section class="panel" style="margin-bottom: 24px; padding: 20px;">
+        <div class="report-section-heading" style="margin-bottom: 14px;">
+            <div>
+                <span class="eyebrow" style="color: #456f55; font-weight: bold;">5.d</span>
+                <h3 style="margin: 4px 0 0 0;">Ma trận tổng tiền HĐ theo Sản phẩm & Quý - Năm @currentYear</h3>
+            </div>
+        </div>
+        @{
+            var prodData = history.ProductSalesByQuarter.Where(x => x.Year == currentYear).ToList();
+            var products = prodData.GroupBy(x => new { x.BookId, x.Title }).Select(g => g.Key).OrderBy(p => p.Title).ToList();
+            var prodQTotals = new decimal[4];
+        }
+        <div class="table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 200px;">SP (Tên sản phẩm)</th>
+                        <th style="text-align: right;">Q1</th>
+                        <th style="text-align: right;">Q2</th>
+                        <th style="text-align: right;">Q3</th>
+                        <th style="text-align: right;">Q4</th>
+                        <th style="text-align: right; font-weight: bold; background: #e8f0ec;">TC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in products)
+                    {
+                        decimal rowTotal = 0m;
+                        <tr>
+                            <td><strong>@p.Title</strong> <small style="color: #888;">(@p.BookId)</small></td>
+                            @for (int q = 1; q <= 4; q++)
+                            {
+                                var rev = prodData.FirstOrDefault(x => x.BookId == p.BookId && x.Quarter == q)?.Revenue ?? 0m;
+                                rowTotal += rev;
+                                prodQTotals[q - 1] += rev;
+                                <td style="text-align: right;">@rev.ToString("N0")</td>
+                            }
+                            <td style="text-align: right; font-weight: bold; background: #f4f8f5;">@rowTotal.ToString("N0")</td>
+                        </tr>
+                    }
+                    <tr style="background: #eef6f1; font-weight: bold;">
+                        <td>TC</td>
+                        @for (int q = 0; q < 4; q++)
+                        {
+                            <td style="text-align: right;">@prodQTotals[q].ToString("N0")</td>
+                        }
+                        <td style="text-align: right; color: #2e543c; background: #e0eee4;">@prodQTotals.Sum().ToString("N0")</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </section>
 }
-else { <div class="panel">Chưa có dữ liệu báo cáo trong khoảng thời gian này.</div> }
+else
+{
+    <div class="panel">Chưa có dữ liệu báo cáo trong khoảng thời gian này.</div>
+}

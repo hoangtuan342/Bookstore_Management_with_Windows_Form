@@ -47,6 +47,13 @@ public partial class ManagementForm
         if (Confirm($"Hủy hóa đơn {item.Id}?")) { _services.Manager.DeleteOrder(item.Id); LoadOrders(true); }
     }
 
+    private void PrintSelectedReceipt()
+    {
+        var item = Selected<ManagerReceiptDto>(_receiptsGrid) ?? throw new InvalidOperationException("Chọn phiếu nhập cần in.");
+        using var printForm = new PurchaseReceiptPrintForm(item);
+        printForm.ShowDialog(this);
+    }
+
     private void CancelSelectedReceipt()
     {
         var item = Selected<ManagerReceiptDto>(_receiptsGrid) ?? throw new InvalidOperationException("Chọn phiếu nhập.");

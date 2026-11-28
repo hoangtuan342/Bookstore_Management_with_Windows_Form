@@ -31,13 +31,14 @@ namespace TrangSach.Shared.DTO
         public List<QuarterlyRevenueDto> RevenueByQuarter { get; set; } = new List<QuarterlyRevenueDto>();
         public List<YearlyRevenueDto> RevenueByYear { get; set; } = new List<YearlyRevenueDto>();
         public List<EmployeeYearSalesDto> RevenueByEmployeeYear { get; set; } = new List<EmployeeYearSalesDto>();
+        public List<CustomerYearSalesDto> RevenueByCustomerYear { get; set; } = new List<CustomerYearSalesDto>();
         public List<ProductQuarterSalesDto> ProductSalesByQuarter { get; set; } = new List<ProductQuarterSalesDto>();
 
         public ManagerReportDto()
         {
         }
 
-        public ManagerReportDto(int days, int totalOrders, int completedOrders, int processingOrders, int pendingOrders, int cancelledOrders, decimal revenue, decimal averageOrderValue, decimal discounts, decimal purchaseSpend, decimal estimatedCostOfGoods, decimal estimatedGrossProfit, decimal costCoveragePercent, decimal previousPeriodRevenue, int previousPeriodCompletedOrders, decimal? revenueChangePercent, decimal? completedOrdersChangePercent, List<RevenueByDayDto> revenueByDayDto, List<BestSellerDto> bestSellers, List<CategorySalesDto> revenueByCategory, List<CustomerSalesDto> topCustomers, List<CategoryInventorySummaryDto> inventoryByCategory, DateTime fromDate, DateTime toDate, List<MonthlyRevenueDto> revenueByMonth, List<QuarterlyRevenueDto> revenueByQuarter, List<YearlyRevenueDto> revenueByYear, List<EmployeeYearSalesDto> revenueByEmployeeYear, List<ProductQuarterSalesDto> productSalesByQuarter)
+        public ManagerReportDto(int days, int totalOrders, int completedOrders, int processingOrders, int pendingOrders, int cancelledOrders, decimal revenue, decimal averageOrderValue, decimal discounts, decimal purchaseSpend, decimal estimatedCostOfGoods, decimal estimatedGrossProfit, decimal costCoveragePercent, decimal previousPeriodRevenue, int previousPeriodCompletedOrders, decimal? revenueChangePercent, decimal? completedOrdersChangePercent, List<RevenueByDayDto> revenueByDayDto, List<BestSellerDto> bestSellers, List<CategorySalesDto> revenueByCategory, List<CustomerSalesDto> topCustomers, List<CategoryInventorySummaryDto> inventoryByCategory, DateTime fromDate, DateTime toDate, List<MonthlyRevenueDto> revenueByMonth, List<QuarterlyRevenueDto> revenueByQuarter, List<YearlyRevenueDto> revenueByYear, List<EmployeeYearSalesDto> revenueByEmployeeYear, List<ProductQuarterSalesDto> productSalesByQuarter, List<CustomerYearSalesDto>? revenueByCustomerYear = null)
         {
             this.Days = days;
             this.TotalOrders = totalOrders;
@@ -67,6 +68,7 @@ namespace TrangSach.Shared.DTO
             this.RevenueByQuarter = revenueByQuarter;
             this.RevenueByYear = revenueByYear;
             this.RevenueByEmployeeYear = revenueByEmployeeYear;
+            this.RevenueByCustomerYear = revenueByCustomerYear ?? new List<CustomerYearSalesDto>();
             this.ProductSalesByQuarter = productSalesByQuarter;
         }
     }

@@ -44,10 +44,14 @@ namespace TrangSach.BUS
             var previousCompletedCount = dao.Reports.GetPreviousPeriodOrderCount(previousFromUtc, fromUtc);
             var averageCosts = dao.Reports.GetAveragePurchaseCosts();
             var purchaseSpend = dao.Reports.GetPurchaseSpendInPeriod(fromUtc, untilUtc);
+            var purchases = dao.Reports.GetCompletedPurchasesInPeriod(fromUtc, untilUtc);
 
             var knownCostQuantity = orderLines.Where(line => averageCosts.ContainsKey(line.BookId)).Sum(line => line.Qty);
             var soldQuantity = orderLines.Sum(line => line.Qty);
             var estimatedCost = orderLines.Sum(line => averageCosts.GetValueOrDefault(line.BookId) * line.Qty);
+
+            var purchasesByDay = purchases.GroupBy(p => p.CreatedAt.ToLocalTime().Date)
+                .ToDictionary(g => g.Key, g => g.Sum(p => p.Total));
 
             var revenueByDayList = Enumerable.Range(0, days).Select(offset =>
             {
@@ -55,7 +59,7 @@ namespace TrangSach.BUS
                 var localDay = day.ToDateTime(TimeOnly.MinValue);
                 return new RevenueByDayDto(localDay,
                     orders.Where(order => order.CreatedAt.ToLocalTime().Date == localDay).Sum(order => order.Total),
-                    0m,
+                    purchasesByDay.GetValueOrDefault(localDay, 0m),
                     allOrders.Count(order => order.CreatedAt.ToLocalTime().Date == localDay));
             }).ToList();
 
@@ -74,6 +78,10 @@ namespace TrangSach.BUS
                     group.Sum(order => order.Total)))
                 .OrderByDescending(item => item.Revenue).Take(8).ToList();
 
+            var monthlyPurchases = purchases.GroupBy(p =>
+                    (Year: p.CreatedAt.ToLocalTime().Year, Month: p.CreatedAt.ToLocalTime().Month))
+                .ToDictionary(group => group.Key, group => group.Sum(p => p.Total));
+
             var monthlySales = orders.GroupBy(order =>
                     (Year: order.CreatedAt.ToLocalTime().Year, Month: order.CreatedAt.ToLocalTime().Month))
                 .ToDictionary(group => group.Key, group => (Revenue: group.Sum(order => order.Total), Orders: group.Count()));
@@ -81,8 +89,13 @@ namespace TrangSach.BUS
             var revenueByMonth = EnumerateMonths(fromDate, toDate).Select(slot =>
             {
                 var stats = monthlySales.GetValueOrDefault(slot);
-                return new MonthlyRevenueDto(slot.Year, slot.Month, stats.Revenue, stats.Orders, 0m, stats.Revenue);
+                var spend = monthlyPurchases.GetValueOrDefault(slot, 0m);
+                return new MonthlyRevenueDto(slot.Year, slot.Month, stats.Revenue, stats.Orders, spend, stats.Revenue - spend);
             }).ToList();
+
+            var quarterlyPurchases = purchases.GroupBy(p =>
+                    (Year: p.CreatedAt.ToLocalTime().Year, Quarter: (p.CreatedAt.ToLocalTime().Month - 1) / 3 + 1))
+                .ToDictionary(group => group.Key, group => group.Sum(p => p.Total));
 
             var quarterlySales = orders.GroupBy(order =>
                     (Year: order.CreatedAt.ToLocalTime().Year, Quarter: (order.CreatedAt.ToLocalTime().Month - 1) / 3 + 1))
@@ -91,16 +104,26 @@ namespace TrangSach.BUS
             var revenueByQuarter = EnumerateQuarters(fromDate, toDate).Select(slot =>
             {
                 var stats = quarterlySales.GetValueOrDefault(slot);
-                return new QuarterlyRevenueDto(slot.Year, slot.Quarter, stats.Revenue, stats.Orders, 0m, stats.Revenue);
+                var spend = quarterlyPurchases.GetValueOrDefault(slot, 0m);
+                return new QuarterlyRevenueDto(slot.Year, slot.Quarter, stats.Revenue, stats.Orders, spend, stats.Revenue - spend);
             }).ToList();
 
-            var revenueByYear = orders.GroupBy(order => order.CreatedAt.ToLocalTime().Year)
-                .OrderBy(group => group.Key)
-                .Select(group =>
-                {
-                    var rev = group.Sum(order => order.Total);
-                    return new YearlyRevenueDto(group.Key, rev, group.Count(), 0m, rev);
-                }).ToList();
+            var yearlyPurchases = purchases.GroupBy(p => p.CreatedAt.ToLocalTime().Year)
+                .ToDictionary(g => g.Key, g => g.Sum(p => p.Total));
+
+            var allYears = orders.Select(o => o.CreatedAt.ToLocalTime().Year)
+                .Concat(purchases.Select(p => p.CreatedAt.ToLocalTime().Year))
+                .Distinct()
+                .OrderBy(y => y)
+                .ToList();
+
+            var revenueByYear = allYears.Select(y =>
+            {
+                var yearOrders = orders.Where(o => o.CreatedAt.ToLocalTime().Year == y).ToList();
+                var rev = yearOrders.Sum(o => o.Total);
+                var spend = yearlyPurchases.GetValueOrDefault(y, 0m);
+                return new YearlyRevenueDto(y, rev, yearOrders.Count, spend, rev - spend);
+            }).ToList();
 
             var revenueByEmployeeYear = orders.Where(o => !string.IsNullOrEmpty(o.EmployeeId))
                 .GroupBy(order => new
@@ -111,6 +134,17 @@ namespace TrangSach.BUS
                 })
                 .OrderBy(group => group.Key.Year).ThenBy(group => group.Key.EmployeeName)
                 .Select(group => new EmployeeYearSalesDto(group.Key.EmployeeId, group.Key.EmployeeName,
+                    group.Key.Year, group.Count(), group.Sum(order => order.Total))).ToList();
+
+            var revenueByCustomerYear = orders.Where(o => !string.IsNullOrEmpty(o.CustomerId))
+                .GroupBy(order => new
+                {
+                    CustomerId = order.CustomerId,
+                    order.CustomerName,
+                    Year = order.CreatedAt.ToLocalTime().Year
+                })
+                .OrderBy(group => group.Key.Year).ThenBy(group => group.Key.CustomerName)
+                .Select(group => new CustomerYearSalesDto(group.Key.CustomerId, group.Key.CustomerName,
                     group.Key.Year, group.Count(), group.Sum(order => order.Total))).ToList();
 
             var productSalesByQuarter = orderLines.GroupBy(row =>
@@ -171,7 +205,8 @@ namespace TrangSach.BUS
                 revenueByQuarter,
                 revenueByYear,
                 revenueByEmployeeYear,
-                productSalesByQuarter);
+                productSalesByQuarter,
+                revenueByCustomerYear);
         }
 
         private static DateTime ToUtc(DateOnly date)

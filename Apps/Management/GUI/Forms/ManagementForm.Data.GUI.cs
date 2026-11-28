@@ -108,19 +108,153 @@ public partial class ManagementForm
 
     private static List<(string Name, List<object?[]> Rows)> GetReportSheets(ManagerReportDto report, ManagerReportDto history)
     {
+        var currentYear = report.ToDate.Year;
+        var h = history ?? report;
+
+        // 1. Sheet 5.a: Thống kê tổng tiền HĐ từ ngày a đến ngày b
+        var sheet5a = new List<object?[]>
+        {
+            new object?[] { "BÁO CÁO THỐNG KÊ 5.a) TỔNG TIỀN HÓA ĐƠN TỪ NGÀY a ĐẾN NGÀY b" },
+            new object?[] { "Khoảng thời gian đối soát", $"{report.FromDate:dd/MM/yyyy} - {report.ToDate:dd/MM/yyyy}" },
+            new object?[] { },
+            new object?[] { "Chỉ số thống kê", "Giá trị", "Ghi chú đối soát" },
+            new object?[] { "Tổng số hóa đơn phát sinh", report.TotalOrders, $"{report.CompletedOrders} hoàn tất, {report.PendingOrders} chờ, {report.CancelledOrders} hủy" },
+            new object?[] { "HĐ (Tổng thu bán hàng)", report.Revenue, "Tổng tiền bán hàng thực tế sau giảm giá" },
+            new object?[] { "PNH (Tổng chi nhập hàng)", report.PurchaseSpend, "Tổng giá trị phiếu nhập kho trong cùng kỳ" },
+            new object?[] { "Lợi nhuận (Thu - Chi)", report.Revenue - report.PurchaseSpend, "Chênh lệch dòng tiền trực tiếp giữa bán và nhập" }
+        };
+
+        // 2. Sheet 5.b: Thống kê tổng tiền HĐ theo Tháng / Quý / Năm
+        var quarters = h.RevenueByQuarter.Where(x => x.Year == currentYear).ToList();
+        var qRev = new decimal[4];
+        var qCost = new decimal[4];
+        foreach (var q in quarters)
+        {
+            if (q.Quarter is >= 1 and <= 4)
+            {
+                qRev[q.Quarter - 1] = q.Revenue;
+                qCost[q.Quarter - 1] = q.PurchaseSpend;
+            }
+        }
+        var sheet5b = new List<object?[]>
+        {
+            new object?[] { $"BÁO CÁO THỐNG KÊ 5.b) THEO QUÝ NĂM {currentYear} (THU - CHI - LỢI NHUẬN)" },
+            new object?[] { },
+            new object?[] { currentYear.ToString(), "Q1", "Q2", "Q3", "Q4", "TC (Tổng cộng)" },
+            new object?[] { "HĐ (Tổng thu)", qRev[0], qRev[1], qRev[2], qRev[3], qRev.Sum() },
+            new object?[] { "PNH (Tổng chi)", qCost[0], qCost[1], qCost[2], qCost[3], qCost.Sum() },
+            new object?[] { "Lợi nhuận", qRev[0] - qCost[0], qRev[1] - qCost[1], qRev[2] - qCost[2], qRev[3] - qCost[3], qRev.Sum() - qCost.Sum() }
+        };
+
+        // 3. Sheet 5.c.1: Nhân viên qua các năm
+        var empYears = h.RevenueByEmployeeYear.Select(x => x.Year).Distinct().OrderBy(y => y).ToList();
+        if (empYears.Count == 0) empYears.Add(currentYear);
+        var emps = h.RevenueByEmployeeYear.GroupBy(x => new { x.EmployeeId, x.EmployeeName }).Select(g => g.Key).OrderBy(e => e.EmployeeName).ToList();
+        var empTotals = new decimal[empYears.Count];
+
+        var sheet5cEmpHeader = new List<object?> { "NV (Nhân viên)" };
+        foreach (var y in empYears) sheet5cEmpHeader.Add(y.ToString());
+        sheet5cEmpHeader.Add("TC (Tổng cộng)");
+
+        var sheet5cEmp = new List<object?[]>
+        {
+            new object?[] { "BÁO CÁO THỐNG KÊ 5.c) MA TRẬN DOANH SỐ HÓA ĐƠN THEO NHÂN VIÊN VÀ NĂM" },
+            new object?[] { },
+            sheet5cEmpHeader.ToArray()
+        };
+
+        foreach (var emp in emps)
+        {
+            var row = new List<object?> { string.IsNullOrWhiteSpace(emp.EmployeeName) ? emp.EmployeeId : $"{emp.EmployeeName} ({emp.EmployeeId})" };
+            decimal rowTotal = 0m;
+            for (int i = 0; i < empYears.Count; i++)
+            {
+                var y = empYears[i];
+                var rev = h.RevenueByEmployeeYear.FirstOrDefault(x => x.EmployeeId == emp.EmployeeId && x.Year == y)?.Revenue ?? 0m;
+                row.Add(rev);
+                rowTotal += rev;
+                empTotals[i] += rev;
+            }
+            row.Add(rowTotal);
+            sheet5cEmp.Add(row.ToArray());
+        }
+        var tcEmpRow = new List<object?> { "TC" };
+        foreach (var tot in empTotals) tcEmpRow.Add(tot);
+        tcEmpRow.Add(empTotals.Sum());
+        sheet5cEmp.Add(tcEmpRow.ToArray());
+
+        // 4. Sheet 5.c.2: Khách hàng qua các năm
+        var custYears = h.RevenueByCustomerYear.Select(x => x.Year).Distinct().OrderBy(y => y).ToList();
+        if (custYears.Count == 0) custYears.Add(currentYear);
+        var custs = h.RevenueByCustomerYear.GroupBy(x => new { x.CustomerId, x.CustomerName }).Select(g => g.Key).OrderBy(c => c.CustomerName).ToList();
+        var custTotals = new decimal[custYears.Count];
+
+        var sheet5cCustHeader = new List<object?> { "KH (Khách hàng)" };
+        foreach (var y in custYears) sheet5cCustHeader.Add(y.ToString());
+        sheet5cCustHeader.Add("TC (Tổng cộng)");
+
+        var sheet5cCust = new List<object?[]>
+        {
+            new object?[] { "BÁO CÁO THỐNG KÊ 5.c) MA TRẬN DOANH SỐ HÓA ĐƠN THEO KHÁCH HÀNG VÀ NĂM" },
+            new object?[] { },
+            sheet5cCustHeader.ToArray()
+        };
+
+        foreach (var cust in custs)
+        {
+            var row = new List<object?> { string.IsNullOrWhiteSpace(cust.CustomerName) ? "Khách vãng lai" : $"{cust.CustomerName} ({cust.CustomerId})" };
+            decimal rowTotal = 0m;
+            for (int i = 0; i < custYears.Count; i++)
+            {
+                var y = custYears[i];
+                var rev = h.RevenueByCustomerYear.FirstOrDefault(x => x.CustomerId == cust.CustomerId && x.Year == y)?.Revenue ?? 0m;
+                row.Add(rev);
+                rowTotal += rev;
+                custTotals[i] += rev;
+            }
+            row.Add(rowTotal);
+            sheet5cCust.Add(row.ToArray());
+        }
+        var tcCustRow = new List<object?> { "TC" };
+        foreach (var tot in custTotals) tcCustRow.Add(tot);
+        tcCustRow.Add(custTotals.Sum());
+        sheet5cCust.Add(tcCustRow.ToArray());
+
+        // 5. Sheet 5.d: Sản phẩm theo Quý trong Năm
+        var prodData = h.ProductSalesByQuarter.Where(x => x.Year == currentYear).ToList();
+        var prods = prodData.GroupBy(x => new { x.BookId, x.Title }).Select(g => g.Key).OrderBy(p => p.Title).ToList();
+        var prodQTotals = new decimal[4];
+
+        var sheet5d = new List<object?[]>
+        {
+            new object?[] { $"BÁO CÁO THỐNG KÊ 5.d) MA TRẬN TỔNG TIỀN HĐ THEO SẢN PHẨM & QUÝ NĂM {currentYear}" },
+            new object?[] { },
+            new object?[] { "SP (Sản phẩm)", "Q1", "Q2", "Q3", "Q4", "TC (Tổng cộng)" }
+        };
+
+        foreach (var p in prods)
+        {
+            decimal rowTotal = 0m;
+            var row = new List<object?> { $"{p.Title} ({p.BookId})" };
+            for (int q = 1; q <= 4; q++)
+            {
+                var rev = prodData.FirstOrDefault(x => x.BookId == p.BookId && x.Quarter == q)?.Revenue ?? 0m;
+                row.Add(rev);
+                rowTotal += rev;
+                prodQTotals[q - 1] += rev;
+            }
+            row.Add(rowTotal);
+            sheet5d.Add(row.ToArray());
+        }
+        sheet5d.Add(new object?[] { "TC", prodQTotals[0], prodQTotals[1], prodQTotals[2], prodQTotals[3], prodQTotals.Sum() });
+
         return
         [
-            ("Tong quan", BuildSummary(report)),
-            ("Theo ngay", [ ["Ngày", "Số đơn hoàn tất", "Doanh thu bán", "Tiền nhập hàng"], .. report.RevenueByDayDto.OrderBy(x => x.Date).Select(row => new object?[] { row.Date.ToString("yyyy-MM-dd"), row.Orders, row.Revenue, row.PurchaseSpend }) ]),
-            ("Theo thang", [ ["Năm", "Tháng", "Số đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], .. (history.RevenueByMonth.Count > 0 ? history.RevenueByMonth : report.RevenueByMonth).Select(row => new object?[] { row.Year, row.Month, row.Orders, row.Revenue, row.PurchaseSpend, row.EstimatedGrossProfit }) ]),
-            ("Theo quy", [ ["Năm", "Quý", "Số đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], .. (history.RevenueByQuarter.Count > 0 ? history.RevenueByQuarter : report.RevenueByQuarter).Select(row => new object?[] { row.Year, row.Quarter, row.Orders, row.Revenue, row.PurchaseSpend, row.EstimatedGrossProfit }) ]),
-            ("Theo nam", [ ["Năm", "Số đơn bán", "Tiền bán", "Tiền nhập", "Lãi gộp ước tính"], .. (history.RevenueByYear.Count > 0 ? history.RevenueByYear : report.RevenueByYear).Select(row => new object?[] { row.Year, row.Orders, row.Revenue, row.PurchaseSpend, row.EstimatedGrossProfit }) ]),
-            ("Theo nhan vien", [ ["Mã nhân viên", "Nhân viên", "Năm", "Số đơn", "Doanh thu"], .. (history.RevenueByEmployeeYear.Count > 0 ? history.RevenueByEmployeeYear : report.RevenueByEmployeeYear).Select(row => new object?[] { row.EmployeeId, row.EmployeeName, row.Year, row.Orders, row.Revenue }) ]),
-            ("Theo san pham", [ ["Mã sách", "Tên sách", "Năm", "Quý", "Số lượng", "Doanh thu"], .. (history.ProductSalesByQuarter.Count > 0 ? history.ProductSalesByQuarter : report.ProductSalesByQuarter).Select(row => new object?[] { row.BookId, row.Title, row.Year, row.Quarter, row.Quantity, row.Revenue }) ]),
-            ("Sach ban chay", [ ["Mã sách", "Tên sách", "Số lượng bán", "Doanh thu"], .. report.BestSellers.Select(row => new object?[] { row.BookId, row.Title, row.Quantity, row.Revenue }) ]),
-            ("The loai", [ ["Thể loại", "Số lượng bán", "Doanh thu"], .. report.RevenueByCategory.Select(row => new object?[] { row.Category, row.Quantity, row.Revenue }) ]),
-            ("Khach hang", [ ["Mã khách hàng", "Tên khách hàng", "Số đơn", "Số cuốn", "Doanh thu"], .. report.TopCustomers.Select(row => new object?[] { row.CustomerId, row.CustomerName, row.Orders, row.Quantity, row.Revenue }) ]),
-            ("Ton kho", [ ["Thể loại", "Số đầu sách", "Tổng tồn kho", "Sách sắp hết", "Giá trị tồn kho"], .. report.InventoryByCategory.Select(row => new object?[] { row.Category, row.BookCount, row.StockQuantity, row.LowStockBooks, row.StockValue }) ])
+            ("5a_TuNgayDenNgay", sheet5a),
+            ("5b_ThuChiTheoQuy", sheet5b),
+            ("5c_NhanVienTheoNam", sheet5cEmp),
+            ("5c_KhachHangTheoNam", sheet5cCust),
+            ("5d_SanPhamTheoQuy", sheet5d)
         ];
     }
 

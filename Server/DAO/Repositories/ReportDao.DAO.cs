@@ -210,6 +210,25 @@ public class ReportDao
         return (decimal)(cmd.ExecuteScalar() ?? 0m);
     }
 
+    public List<(string Id, DateTime CreatedAt, decimal Total)> GetCompletedPurchasesInPeriod(DateTime fromUtc, DateTime untilUtc)
+    {
+        var list = new List<(string, DateTime, decimal)>();
+        using var conn = DbConnection.Open();
+        var sql = @"
+            SELECT p.MaPNH, p.NgayLap, ISNULL(SUM(c.ThanhTien), p.TongTien)
+            FROM PNH p
+            LEFT JOIN CTPNH c ON c.MaPNH = p.MaPNH
+            WHERE p.TrangThai = 'Completed' AND p.NgayLap >= @from AND p.NgayLap < @until
+            GROUP BY p.MaPNH, p.NgayLap, p.TongTien";
+        using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@from", fromUtc);
+        cmd.Parameters.AddWithValue("@until", untilUtc);
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+            list.Add((r.GetString(0), r.GetDateTime(1), r.GetDecimal(2)));
+        return list;
+    }
+
     // -----------------------------------------------------------------------
     // Dashboard
     // -----------------------------------------------------------------------
